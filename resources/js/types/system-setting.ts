@@ -54,3 +54,9 @@ export type PublicBranch = {
     facebook_link: string | null;
     image_url: string | null;
 };
+
+export type LandingStats = {
+    years_experience: number;
+    branch_count: number;
+    service_count: number;
+};
