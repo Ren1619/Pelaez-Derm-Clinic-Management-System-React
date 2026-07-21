@@ -96,7 +96,7 @@ test('non super admins are locked to their assigned branch', function () {
 test('inactive staff cannot authenticate or access modules', function () {
     $inactiveStaff = StaffAccount::factory()->staff()->inactive()->create();
 
-    $this->post(route('login.store'), [
+    $this->post(route('account.login.store'), [
         'email' => $inactiveStaff->email,
         'password' => 'password',
     ])->assertSessionHasErrors('email');
@@ -111,7 +111,7 @@ test('inactive staff cannot authenticate or access modules', function () {
 test('legacy starter users are not accepted by staff login', function () {
     $user = User::factory()->create();
 
-    $this->post(route('login.store'), [
+    $this->post(route('account.login.store'), [
         'email' => $user->email,
         'password' => 'password',
     ])->assertSessionHasErrors('email');

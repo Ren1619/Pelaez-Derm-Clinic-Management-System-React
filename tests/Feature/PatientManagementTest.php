@@ -4,8 +4,8 @@ use App\Models\Patient;
 use App\Models\StaffAccount;
 use App\Models\User;
 use App\Notifications\PatientAccountInvitation;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\URL;
 use Inertia\Testing\AssertableInertia as Assert;
 
@@ -47,7 +47,7 @@ test('authenticated users can search and filter patients', function () {
             ->where('patients.data.0.full_name', 'Juan Dela Cruz'));
 });
 
-test('authenticated users can create a patient with a temporary password', function () {
+test('authenticated users can create a patient with a secure password setup token', function () {
     Notification::fake();
 
     $user = User::factory()->create();
@@ -78,8 +78,8 @@ test('authenticated users can create a patient with a temporary password', funct
     Notification::assertSentTo(
         $patient,
         PatientAccountInvitation::class,
-        fn (PatientAccountInvitation $notification): bool => $notification->temporaryPassword !== null
-            && Hash::check($notification->temporaryPassword, $patient->password),
+        fn (PatientAccountInvitation $notification): bool => $notification->passwordResetToken !== null
+            && Password::broker('patients')->tokenExists($patient, $notification->passwordResetToken),
     );
 });
 
@@ -209,7 +209,7 @@ test('a valid signed link verifies a patient email', function () {
     );
 
     $this->get($url)
-        ->assertRedirect(route('home'));
+        ->assertRedirect(route('login'));
 
     expect($patient->refresh()->hasVerifiedEmail())->toBeTrue();
 });
@@ -228,4 +228,26 @@ test('an invalid patient verification hash is rejected', function () {
     $this->get($url)->assertForbidden();
 
     expect($patient->refresh()->hasVerifiedEmail())->toBeFalse();
+});
+
+test('a new patient invitation verifies email and continues to password setup', function () {
+    $patient = Patient::factory()->unverified()->create();
+    $token = Password::broker('patients')->createToken($patient);
+    $url = URL::temporarySignedRoute(
+        'patients.verification.verify',
+        now()->addHour(),
+        [
+            'patient' => $patient->getKey(),
+            'hash' => sha1($patient->email),
+            'password_reset_token' => $token,
+        ],
+    );
+
+    $this->get($url)->assertRedirect(route('password.reset', [
+        'accountType' => 'patient',
+        'token' => $token,
+        'email' => $patient->email,
+    ]));
+
+    expect($patient->refresh()->hasVerifiedEmail())->toBeTrue();
 });

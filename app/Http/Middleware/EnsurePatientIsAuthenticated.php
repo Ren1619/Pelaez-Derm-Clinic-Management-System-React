@@ -19,7 +19,7 @@ class EnsurePatientIsAuthenticated
         if (! Auth::guard('patient')->check()) {
             $request->session()->put('url.intended', $request->fullUrl());
 
-            return redirect()->route('patient.login');
+            return redirect()->route('login');
         }
 
         $patient = Auth::guard('patient')->user();
@@ -29,7 +29,7 @@ class EnsurePatientIsAuthenticated
             $request->session()->invalidate();
             $request->session()->regenerateToken();
 
-            return redirect()->route('patient.login')
+            return redirect()->route('login')
                 ->withErrors(['email' => 'Please verify your email address before logging in.']);
         }
 

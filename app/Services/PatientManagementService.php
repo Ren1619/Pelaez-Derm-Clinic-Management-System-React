@@ -8,6 +8,7 @@ use App\Notifications\PatientAccountInvitation;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
 
 class PatientManagementService
@@ -72,15 +73,16 @@ class PatientManagementService
     /** @param array<string, mixed> $attributes */
     public function create(array $attributes): Patient
     {
-        $temporaryPassword = Str::password(16, true, true, true, false);
+        $initialPassword = Str::password(40, true, true, true, false);
 
         $patient = DB::transaction(fn (): Patient => Patient::create([
             ...$attributes,
-            'password' => $temporaryPassword,
+            'password' => $initialPassword,
             'email_verified_at' => null,
         ]));
 
-        $patient->notify(new PatientAccountInvitation($temporaryPassword));
+        $passwordResetToken = Password::broker('patients')->createToken($patient);
+        $patient->notify(new PatientAccountInvitation($passwordResetToken));
 
         return $patient;
     }

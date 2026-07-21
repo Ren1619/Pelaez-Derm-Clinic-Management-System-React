@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\AccountType;
 use App\Models\StaffAccount;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -17,6 +18,16 @@ class StaffEmailVerificationController extends Controller
 
         if (! $staffAccount->hasVerifiedEmail()) {
             $staffAccount->markEmailAsVerified();
+        }
+
+        $passwordResetToken = $request->string('password_reset_token')->toString();
+
+        if ($passwordResetToken !== '') {
+            return redirect()->route('password.reset', [
+                'accountType' => AccountType::Staff->value,
+                'token' => $passwordResetToken,
+                'email' => $staffAccount->email,
+            ]);
         }
 
         return redirect()->route('login')->with(
