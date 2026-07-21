@@ -6,9 +6,6 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('system_settings', function (Blueprint $table) {
@@ -21,14 +18,14 @@ return new class extends Migration
             $table->unsignedSmallInteger('landing_year_started')->default(1990);
             $table->string('landing_hero_image')->nullable();
             $table->string('landing_about_image')->nullable();
-            $table->text('landing_about_description')->default('We provide patient-centered dermatology care backed by experience and compassion.');
+            $table->text('landing_about_description'); // default moved to model
             $table->json('landing_specializations');
-            $table->text('landing_services_description')->default('Explore dermatology services designed around your skin health.');
-            $table->text('landing_branches_description')->default('Visit the clinic branch most convenient for you.');
-            $table->text('landing_contact_description')->default('Contact us to learn more or arrange a consultation.');
+            $table->text('landing_services_description'); // default moved to model
+            $table->text('landing_branches_description'); // default moved to model
+            $table->text('landing_contact_description'); // default moved to model
             $table->string('business_email')->default('clinic@example.com');
             $table->string('landing_cta_title')->default('Ready to care for your skin?');
-            $table->text('landing_cta_description')->default('Book an appointment with our clinic today.');
+            $table->text('landing_cta_description'); // default moved to model
             $table->string('footer_days')->default('Monday - Saturday');
             $table->time('footer_opens_at')->default('08:00');
             $table->time('footer_closes_at')->default('17:00');
@@ -51,9 +48,6 @@ return new class extends Migration
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('system_settings');

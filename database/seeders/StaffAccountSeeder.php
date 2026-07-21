@@ -19,7 +19,7 @@ class StaffAccountSeeder extends Seeder
             'middle_name' => null,
             'last_name' => 'Administrator',
             'contact_number' => '09000000000',
-            'email' => 'staff-admin@example.com',
+            'email' => 'superadmin@gmail.com',
         ]);
     }
 }
