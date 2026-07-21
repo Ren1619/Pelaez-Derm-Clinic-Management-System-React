@@ -13,10 +13,18 @@ class PublicWebsiteController extends Controller
 {
     public function home(): Response
     {
+        $settings = SystemSetting::current();
+
         return Inertia::render('welcome', [
-            'settings' => SystemSetting::current()->toPublicArray(),
-            'services' => $this->serviceCards(6),
+            'settings' => $settings->toPublicArray(),
+            'services' => $this->serviceCards(4),
             'branches' => $this->branchCards(4),
+            'contactBranches' => $this->branchCards(),
+            'stats' => [
+                'years_experience' => max(now()->year - $settings->landing_year_started, 0),
+                'branch_count' => Branch::query()->count(),
+                'service_count' => Service::query()->count(),
+            ],
         ]);
     }
 
@@ -47,7 +55,9 @@ class PublicWebsiteController extends Controller
     private function serviceCards(?int $limit = null): array
     {
         return Service::query()
+            ->select(['service_ID', 'category_ID', 'name', 'description', 'service_img'])
             ->with('category:category_ID,category_name')
+            ->whereHas('category', fn ($query) => $query->where('category_name', '!=', 'Consultations'))
             ->orderBy('name')
             ->when($limit, fn ($query, int $count) => $query->limit($count))
             ->get()
@@ -67,6 +77,15 @@ class PublicWebsiteController extends Controller
     private function branchCards(?int $limit = null): array
     {
         return Branch::query()
+            ->select([
+                'branch_ID',
+                'branch_name',
+                'branch_location',
+                'contact_number',
+                'map_link',
+                'fb_link',
+                'branch_img',
+            ])
             ->orderBy('branch_name')
             ->when($limit, fn ($query, int $count) => $query->limit($count))
             ->get()

@@ -1,6 +1,9 @@
 <?php
 
 use App\Models\ActivityLog;
+use App\Models\Branch;
+use App\Models\Category;
+use App\Models\Service;
 use App\Models\StaffAccount;
 use App\Models\SystemSetting;
 use Illuminate\Http\UploadedFile;
@@ -16,6 +19,33 @@ test('the public website uses the configured content without requiring a setting
             ->where('settings.services_title', 'Our Services'));
 
     $this->assertDatabaseEmpty((new SystemSetting)->getTable());
+});
+
+test('the landing page provides the original service branch contact and clinic statistics data', function () {
+    SystemSetting::factory()->create(['landing_year_started' => 2000]);
+    $treatmentCategory = Category::factory()->service()->create(['category_name' => 'Treatments']);
+    $consultationCategory = Category::factory()->service()->create(['category_name' => 'Consultations']);
+    Service::factory()->for($treatmentCategory, 'category')->create(['name' => 'Acne Treatment']);
+    Service::factory()->for($consultationCategory, 'category')->create(['name' => 'Initial Consultation']);
+    Branch::factory()->count(5)->sequence(
+        ['branch_name' => 'Alpha Clinic'],
+        ['branch_name' => 'Bravo Clinic'],
+        ['branch_name' => 'Charlie Clinic'],
+        ['branch_name' => 'Delta Clinic'],
+        ['branch_name' => 'Echo Clinic'],
+    )->create();
+
+    $this->get(route('home'))
+        ->assertSuccessful()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('welcome')
+            ->has('services', 1)
+            ->where('services.0.name', 'Acne Treatment')
+            ->has('branches', 4)
+            ->has('contactBranches', 5)
+            ->where('stats.years_experience', now()->year - 2000)
+            ->where('stats.branch_count', 5)
+            ->where('stats.service_count', 2));
 });
 
 test('only super admins can open system settings', function () {
