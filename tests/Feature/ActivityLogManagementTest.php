@@ -109,6 +109,9 @@ test('logs can be searched filtered and exported', function () {
             ->component('logs/index')
             ->where('filters.search', 'Acne Cleanser')
             ->where('filters.context', 'inventory')
+            ->where('contexts.inventory', 'Inventory')
+            ->where('contextCounts.all', 1)
+            ->where('contextCounts.inventory', 1)
             ->has('logs.data', 1)
             ->where('logs.data.0.subject.label', 'Acne Cleanser'));
 

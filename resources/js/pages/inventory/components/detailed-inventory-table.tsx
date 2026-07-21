@@ -1,6 +1,7 @@
-import { Eye, ImageIcon, Pencil, Plus, Trash2 } from 'lucide-react';
+import { ImageIcon, Pencil, Plus, Trash2 } from 'lucide-react';
+import { ClickableTableRow } from '@/components/clickable-table-row';
+import { TooltipIconButton } from '@/components/tooltip-icon-button';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import type { ProductBatch } from '@/types';
 import {
     ExpirationBadge,
@@ -40,9 +41,10 @@ export function DetailedInventoryTable({
             </thead>
             <tbody className="divide-y">
                 {products.map((product) => (
-                    <tr
+                    <ClickableTableRow
                         key={product.product_ID}
-                        className="transition-colors hover:bg-muted/30"
+                        accessibleLabel={`View ${product.name} batch ${product.batch_number ?? 'N/A'}`}
+                        onActivate={() => onView(product)}
                     >
                         <td className="px-4 py-3">
                             <div className="flex items-center gap-3">
@@ -57,13 +59,9 @@ export function DetailedInventoryTable({
                                         <ImageIcon className="size-5" />
                                     </div>
                                 )}
-                                <button
-                                    type="button"
-                                    className="font-medium underline-offset-4 hover:underline"
-                                    onClick={() => onView(product)}
-                                >
+                                <span className="font-medium">
                                     {product.name}
-                                </button>
+                                </span>
                             </div>
                         </td>
                         <td className="px-4 py-3">
@@ -101,44 +99,36 @@ export function DetailedInventoryTable({
                         </td>
                         <td className="px-4 py-3">
                             <div className="flex justify-end gap-1">
-                                <Button
+                                <TooltipIconButton
                                     variant="ghost"
                                     size="icon"
-                                    onClick={() => onView(product)}
-                                    aria-label={`View ${product.name}`}
-                                >
-                                    <Eye />
-                                </Button>
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
+                                    tooltip={`Edit ${product.name} batch ${product.batch_number ?? 'N/A'}`}
                                     onClick={() => onEdit(product)}
-                                    aria-label={`Edit ${product.name}`}
                                 >
                                     <Pencil />
-                                </Button>
+                                </TooltipIconButton>
                                 {product.can_restock && (
-                                    <Button
+                                    <TooltipIconButton
                                         variant="ghost"
                                         size="icon"
+                                        tooltip={`Restock ${product.name} batch ${product.batch_number ?? 'N/A'}`}
                                         onClick={() => onRestock(product)}
-                                        aria-label={`Restock ${product.name}`}
                                     >
                                         <Plus className="text-emerald-600" />
-                                    </Button>
+                                    </TooltipIconButton>
                                 )}
-                                <Button
+                                <TooltipIconButton
                                     variant="ghost"
                                     size="icon"
                                     className="text-destructive hover:text-destructive"
+                                    tooltip={`Delete ${product.name} batch ${product.batch_number ?? 'N/A'}`}
                                     onClick={() => onDelete(product)}
-                                    aria-label={`Delete ${product.name}`}
                                 >
                                     <Trash2 />
-                                </Button>
+                                </TooltipIconButton>
                             </div>
                         </td>
-                    </tr>
+                    </ClickableTableRow>
                 ))}
             </tbody>
         </table>
