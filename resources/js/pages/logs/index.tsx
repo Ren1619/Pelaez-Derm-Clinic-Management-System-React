@@ -1,6 +1,7 @@
 import { Head, router } from '@inertiajs/react';
-import { Download, Eye, Search, ScrollText } from 'lucide-react';
+import { Download, Search, ScrollText } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { ClickableTableRow } from '@/components/clickable-table-row';
 import Heading from '@/components/heading';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -87,7 +88,7 @@ export default function LogsIndex({
                 </div>
 
                 <Card className="gap-0 overflow-hidden py-0">
-                    <div className="grid gap-4 border-b p-4 xl:grid-cols-[minmax(16rem,1fr)_repeat(3,minmax(10rem,auto))] xl:items-end">
+                    <div className="grid gap-4 border-b p-4 sm:grid-cols-2 xl:grid-cols-[minmax(14rem,1.5fr)_repeat(4,minmax(8.5rem,1fr))] xl:items-end">
                         <FilterField label="Search logs">
                             <div className="relative">
                                 <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -100,6 +101,42 @@ export default function LogsIndex({
                                     className="pl-9"
                                 />
                             </div>
+                        </FilterField>
+
+                        <FilterField label="Log type">
+                            <Select
+                                value={filters.context}
+                                onValueChange={(context) => visit({ context })}
+                            >
+                                <SelectTrigger className="w-full">
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">
+                                        <ContextOption
+                                            label="All logs"
+                                            count={contextCounts.all ?? 0}
+                                        />
+                                    </SelectItem>
+                                    {Object.entries(contexts).map(
+                                        ([context, label]) => (
+                                            <SelectItem
+                                                key={context}
+                                                value={context}
+                                            >
+                                                <ContextOption
+                                                    label={label}
+                                                    count={
+                                                        contextCounts[
+                                                            context
+                                                        ] ?? 0
+                                                    }
+                                                />
+                                            </SelectItem>
+                                        ),
+                                    )}
+                                </SelectContent>
+                            </Select>
                         </FilterField>
 
                         <FilterField label="Time period">
@@ -124,7 +161,7 @@ export default function LogsIndex({
                                     );
                                 }}
                             >
-                                <SelectTrigger className="w-full xl:w-44">
+                                <SelectTrigger className="w-full">
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -164,7 +201,7 @@ export default function LogsIndex({
                                     })
                                 }
                             >
-                                <SelectTrigger className="w-full xl:w-40">
+                                <SelectTrigger className="w-full">
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -191,7 +228,7 @@ export default function LogsIndex({
                                     })
                                 }
                             >
-                                <SelectTrigger className="w-full xl:w-40">
+                                <SelectTrigger className="w-full">
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -251,28 +288,6 @@ export default function LogsIndex({
                         </div>
                     )}
 
-                    <div
-                        role="tablist"
-                        aria-label="Log categories"
-                        className="flex gap-1 overflow-x-auto border-b px-4 pt-3"
-                    >
-                        <ContextTab
-                            label="All logs"
-                            count={contextCounts.all ?? 0}
-                            active={filters.context === 'all'}
-                            onClick={() => visit({ context: 'all' })}
-                        />
-                        {Object.entries(contexts).map(([context, label]) => (
-                            <ContextTab
-                                key={context}
-                                label={label}
-                                count={contextCounts[context] ?? 0}
-                                active={filters.context === context}
-                                onClick={() => visit({ context })}
-                            />
-                        ))}
-                    </div>
-
                     <div className="hidden overflow-x-auto lg:block">
                         <table className="w-full min-w-5xl text-sm">
                             <thead className="border-b bg-muted/40 text-left text-xs font-medium tracking-wide text-muted-foreground uppercase">
@@ -283,14 +298,14 @@ export default function LogsIndex({
                                     <th className="px-4 py-3">Category</th>
                                     <th className="px-4 py-3">Action</th>
                                     <th className="px-4 py-3">Details</th>
-                                    <th className="w-16 px-4 py-3" />
                                 </tr>
                             </thead>
                             <tbody className="divide-y">
                                 {logs.data.map((log, position) => (
-                                    <tr
+                                    <ClickableTableRow
                                         key={log.activity_log_ID}
-                                        className="transition-colors hover:bg-muted/30"
+                                        accessibleLabel={`View log ${log.activity_log_ID}`}
+                                        onActivate={() => setSelectedLog(log)}
                                     >
                                         <td className="px-4 py-4 text-muted-foreground">
                                             {(logs.current_page - 1) *
@@ -324,19 +339,7 @@ export default function LogsIndex({
                                                     : ''}
                                             </p>
                                         </td>
-                                        <td className="px-4 py-4 text-right">
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                onClick={() =>
-                                                    setSelectedLog(log)
-                                                }
-                                                aria-label={`View log ${log.activity_log_ID}`}
-                                            >
-                                                <Eye />
-                                            </Button>
-                                        </td>
-                                    </tr>
+                                    </ClickableTableRow>
                                 ))}
                             </tbody>
                         </table>
@@ -413,34 +416,14 @@ function FilterField({
     );
 }
 
-function ContextTab({
-    label,
-    count,
-    active,
-    onClick,
-}: {
-    label: string;
-    count: number;
-    active: boolean;
-    onClick: () => void;
-}) {
+function ContextOption({ label, count }: { label: string; count: number }) {
     return (
-        <button
-            type="button"
-            role="tab"
-            aria-selected={active}
-            onClick={onClick}
-            className={`flex shrink-0 items-center gap-2 border-b-2 px-3 py-2 text-sm font-medium transition-colors ${
-                active
-                    ? 'border-primary text-primary'
-                    : 'border-transparent text-muted-foreground hover:text-foreground'
-            }`}
-        >
-            {label}
+        <span className="flex min-w-36 items-center justify-between gap-4">
+            <span>{label}</span>
             <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
                 {count > 999 ? '999+' : count}
             </span>
-        </button>
+        </span>
     );
 }
 

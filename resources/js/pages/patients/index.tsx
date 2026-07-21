@@ -1,7 +1,6 @@
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, router } from '@inertiajs/react';
 import {
     CircleCheckBig,
-    Eye,
     MailWarning,
     Pencil,
     Plus,
@@ -11,7 +10,9 @@ import {
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
+import { ClickableTableRow } from '@/components/clickable-table-row';
 import Heading from '@/components/heading';
+import { TooltipIconButton } from '@/components/tooltip-icon-button';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
@@ -235,9 +236,13 @@ export default function PatientsIndex({
                             </thead>
                             <tbody className="divide-y">
                                 {patients.data.map((patient) => (
-                                    <tr
+                                    <ClickableTableRow
                                         key={patient.PID}
-                                        className="transition-colors hover:bg-muted/30"
+                                        accessibleLabel={`View ${patient.full_name}`}
+                                        activationRole="link"
+                                        onActivate={() =>
+                                            router.visit(show(patient).url)
+                                        }
                                     >
                                         <td className="px-4 py-3">
                                             <div className="font-medium">
@@ -305,19 +310,10 @@ export default function PatientsIndex({
                                         </td>
                                         <td className="px-4 py-3">
                                             <div className="flex justify-end gap-1">
-                                                <Button
+                                                <TooltipIconButton
                                                     variant="ghost"
                                                     size="icon"
-                                                    asChild
-                                                    aria-label={`View ${patient.full_name}`}
-                                                >
-                                                    <Link href={show(patient)}>
-                                                        <Eye />
-                                                    </Link>
-                                                </Button>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
+                                                    tooltip={`Edit ${patient.full_name}`}
                                                     onClick={() =>
                                                         openPatientDialog(
                                                             'edit',
@@ -327,11 +323,12 @@ export default function PatientsIndex({
                                                     aria-label={`Edit ${patient.full_name}`}
                                                 >
                                                     <Pencil />
-                                                </Button>
-                                                <Button
+                                                </TooltipIconButton>
+                                                <TooltipIconButton
                                                     variant="ghost"
                                                     size="icon"
                                                     className="text-destructive hover:text-destructive"
+                                                    tooltip={`Delete ${patient.full_name}`}
                                                     onClick={() =>
                                                         openDeleteDialog(
                                                             patient,
@@ -340,10 +337,10 @@ export default function PatientsIndex({
                                                     aria-label={`Delete ${patient.full_name}`}
                                                 >
                                                     <Trash2 />
-                                                </Button>
+                                                </TooltipIconButton>
                                             </div>
                                         </td>
-                                    </tr>
+                                    </ClickableTableRow>
                                 ))}
                             </tbody>
                         </table>
