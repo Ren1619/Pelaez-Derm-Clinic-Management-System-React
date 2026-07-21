@@ -15,7 +15,7 @@ class PatientAuthController extends Controller
     public function create(): Response|RedirectResponse
     {
         if (Auth::guard('patient')->check()) {
-            return to_route('patient.feedback.index');
+            return to_route('patient.health-record.index');
         }
 
         return Inertia::render('patient/auth/login');
@@ -59,18 +59,18 @@ class PatientAuthController extends Controller
     private function patientIntendedUrl(Request $request, mixed $intended): string
     {
         if (! is_string($intended)) {
-            return route('patient.feedback.index');
+            return route('patient.health-record.index');
         }
 
         $host = parse_url($intended, PHP_URL_HOST);
         $path = '/'.ltrim((string) parse_url($intended, PHP_URL_PATH), '/');
 
         if (($host !== null && $host !== $request->getHost()) || ! str_starts_with($path, '/patient/')) {
-            return route('patient.feedback.index');
+            return route('patient.health-record.index');
         }
 
         if ($path === '/patient/login') {
-            return route('patient.feedback.index');
+            return route('patient.health-record.index');
         }
 
         return $intended;

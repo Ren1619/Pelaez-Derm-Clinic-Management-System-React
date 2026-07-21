@@ -26,7 +26,7 @@ test('verified patients can log in to their portal', function () {
         'email' => $patient->email,
         'password' => 'password',
         'remember' => 'on',
-    ])->assertRedirect(route('patient.feedback.index'));
+    ])->assertRedirect(route('patient.health-record.index'));
 
     $this->assertAuthenticatedAs($patient, 'patient');
 });

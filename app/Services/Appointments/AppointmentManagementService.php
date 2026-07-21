@@ -14,7 +14,7 @@ use Illuminate\Validation\ValidationException;
 class AppointmentManagementService
 {
     /** @param array<string, mixed> $data */
-    public function create(array $data, int $createdBy): Appointment
+    public function create(array $data, ?int $createdBy): Appointment
     {
         return DB::transaction(function () use ($data, $createdBy): Appointment {
             return $this->persist(new Appointment, $data, $createdBy);
