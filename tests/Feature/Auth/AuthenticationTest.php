@@ -1,6 +1,8 @@
 <?php
 
 use App\Models\StaffAccount;
+use App\Models\Patient;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\RateLimiter;
 use Laravel\Fortify\Features;
 
@@ -13,7 +15,7 @@ test('login screen can be rendered', function () {
 test('users can authenticate using the login screen', function () {
     $user = StaffAccount::factory()->staff()->create();
 
-    $response = $this->post(route('login.store'), [
+    $response = $this->post(route('account.login.store'), [
         'email' => $user->email,
         'password' => 'password',
     ]);
@@ -45,7 +47,7 @@ test('users with two factor enabled are redirected to two factor challenge', fun
 test('users can not authenticate with invalid password', function () {
     $user = StaffAccount::factory()->staff()->create();
 
-    $this->post(route('login.store'), [
+    $this->post(route('account.login.store'), [
         'email' => $user->email,
         'password' => 'wrong-password',
     ]);
@@ -68,10 +70,41 @@ test('users are rate limited', function () {
 
     RateLimiter::increment(md5('login'.implode('|', [$user->email, '127.0.0.1'])), amount: 5);
 
-    $response = $this->post(route('login.store'), [
+    $response = $this->post(route('account.login.store'), [
         'email' => $user->email,
         'password' => 'wrong-password',
     ]);
 
     $response->assertTooManyRequests();
+});
+
+test('verified patients authenticate from the shared login screen', function () {
+    $patient = Patient::factory()->create(['password' => 'password']);
+
+    $response = $this->post(route('account.login.store'), [
+        'email' => $patient->email,
+        'password' => 'password',
+    ]);
+
+    $this->assertAuthenticatedAs($patient, 'patient');
+    $response->assertRedirect(route('patient.feedback.index'));
+});
+
+test('account lookup uses no more than two indexed account queries', function () {
+    $patient = Patient::factory()->create(['password' => 'password']);
+    $accountQueries = [];
+
+    DB::listen(function ($query) use (&$accountQueries): void {
+        if (str_contains($query->sql, 'staff_accounts') || str_contains($query->sql, 'patients')) {
+            $accountQueries[] = $query->sql;
+        }
+    });
+
+    $this->post(route('account.login.store'), [
+        'email' => $patient->email,
+        'password' => 'password',
+    ])->assertRedirect(route('patient.feedback.index'));
+
+    expect($accountQueries)->toHaveCount(2)
+        ->each->toContain('email');
 });

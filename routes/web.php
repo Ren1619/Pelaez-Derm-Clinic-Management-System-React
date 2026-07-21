@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Controllers\BranchController;
+use App\Http\Controllers\AccountAuthenticationController;
+use App\Http\Controllers\AccountPasswordResetController;
 use App\Http\Controllers\AppointmentController;
 use App\Http\Controllers\ActivityLogController;
 use App\Http\Controllers\AppointmentStatusController;
@@ -53,9 +55,25 @@ Route::get('patients/verify-email/{patient}/{hash}', PatientEmailVerificationCon
     ->middleware(['signed', 'throttle:6,1'])
     ->name('patients.verification.verify');
 
+Route::middleware(['guest:web', 'guest:patient'])->group(function () {
+    Route::post('account/login', [AccountAuthenticationController::class, 'store'])
+        ->middleware('throttle:login')
+        ->name('account.login.store');
+
+    Route::get('forgot-password', [AccountPasswordResetController::class, 'create'])
+        ->name('password.request');
+    Route::post('forgot-password', [AccountPasswordResetController::class, 'store'])
+        ->middleware('throttle:6,1')
+        ->name('password.email');
+    Route::get('reset-password/{accountType}/{token}', [AccountPasswordResetController::class, 'edit'])
+        ->name('password.reset');
+    Route::post('reset-password', [AccountPasswordResetController::class, 'update'])
+        ->name('password.update');
+});
+
 Route::prefix('patient')->name('patient.')->group(function () {
-    Route::get('login', [PatientAuthController::class, 'create'])->name('login');
-    Route::post('login', [PatientAuthController::class, 'store'])
+    Route::redirect('login', '/login')->name('login');
+    Route::post('login', [AccountAuthenticationController::class, 'store'])
         ->middleware('throttle:patient-login')
         ->name('login.store');
 

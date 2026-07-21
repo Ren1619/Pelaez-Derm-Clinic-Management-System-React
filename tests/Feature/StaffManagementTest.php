@@ -5,8 +5,8 @@ use App\Models\Branch;
 use App\Models\StaffAccount;
 use App\Models\User;
 use App\Notifications\StaffAccountInvitation;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\URL;
 use Inertia\Testing\AssertableInertia as Assert;
 
@@ -65,7 +65,7 @@ test('authenticated users can view search and filter staff', function () {
             ->where('staffAccounts.data.0.role.role_name', 'doctor'));
 });
 
-test('authenticated users can create staff with a random temporary password', function () {
+test('authenticated users can create staff with a secure password setup token', function () {
     Notification::fake();
 
     $roles = createStaffRoles();
@@ -96,8 +96,8 @@ test('authenticated users can create staff with a random temporary password', fu
     Notification::assertSentTo(
         $staffAccount,
         StaffAccountInvitation::class,
-        fn (StaffAccountInvitation $notification): bool => $notification->temporaryPassword !== null
-            && Hash::check($notification->temporaryPassword, $staffAccount->password),
+        fn (StaffAccountInvitation $notification): bool => $notification->passwordResetToken !== null
+            && Password::broker('staff_accounts')->tokenExists($staffAccount, $notification->passwordResetToken),
     );
 });
 
@@ -271,4 +271,29 @@ test('an invalid staff verification hash is rejected', function () {
     $this->get($url)->assertForbidden();
 
     expect($staffAccount->refresh()->hasVerifiedEmail())->toBeFalse();
+});
+
+test('a new staff invitation verifies email and continues to password setup', function () {
+    $roles = createStaffRoles();
+    $staffAccount = StaffAccount::factory()->unverified()->create([
+        'role_ID' => $roles['staff']->role_ID,
+    ]);
+    $token = Password::broker('staff_accounts')->createToken($staffAccount);
+    $url = URL::temporarySignedRoute(
+        'staff.verification.verify',
+        now()->addHour(),
+        [
+            'staffAccount' => $staffAccount->getKey(),
+            'hash' => sha1($staffAccount->email),
+            'password_reset_token' => $token,
+        ],
+    );
+
+    $this->get($url)->assertRedirect(route('password.reset', [
+        'accountType' => 'staff',
+        'token' => $token,
+        'email' => $staffAccount->email,
+    ]));
+
+    expect($staffAccount->refresh()->hasVerifiedEmail())->toBeTrue();
 });
