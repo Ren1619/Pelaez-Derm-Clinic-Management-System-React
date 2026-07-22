@@ -1,6 +1,8 @@
 import { Head, router, usePoll } from '@inertiajs/react';
-import { Eye, Search } from 'lucide-react';
+import { format, parseISO } from 'date-fns';
+import { CalendarDays, Eye, Search } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import type { DateRange } from 'react-day-picker';
 import { DataTableEmptyState } from '@/components/data-table-empty-state';
 import { DataTableLayout } from '@/components/data-table-layout';
 import { DataTablePagination } from '@/components/data-table-pagination';
@@ -8,7 +10,13 @@ import Heading from '@/components/heading';
 import { TooltipIconButton } from '@/components/tooltip-icon-button';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Calendar } from '@/components/ui/calendar';
 import { Input } from '@/components/ui/input';
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from '@/components/ui/popover';
 import {
     Select,
     SelectContent,
@@ -198,47 +206,11 @@ export default function FeedbackIndex({ feedbacks, branches, filters }: Props) {
 
                     <div className="flex flex-col gap-3 border-b p-4 sm:flex-row sm:items-center sm:justify-between">
                         <div className="flex flex-wrap items-center gap-2">
-                            <Input
-                                type="date"
-                                value={filters.date_from ?? ''}
-                                onChange={(event) =>
-                                    visit({
-                                        date_from: event.target.value || null,
-                                        all_dates: false,
-                                    })
-                                }
-                                className="w-auto"
-                                aria-label="Feedback date from"
+                            <FeedbackDateRangePicker
+                                key={`${filters.date_from ?? 'all'}:${filters.date_to ?? 'all'}`}
+                                filters={filters}
+                                onChange={visit}
                             />
-                            <span className="text-sm text-muted-foreground">
-                                to
-                            </span>
-                            <Input
-                                type="date"
-                                value={filters.date_to ?? ''}
-                                min={filters.date_from ?? undefined}
-                                onChange={(event) =>
-                                    visit({
-                                        date_to: event.target.value || null,
-                                        all_dates: false,
-                                    })
-                                }
-                                className="w-auto"
-                                aria-label="Feedback date to"
-                            />
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() =>
-                                    visit({
-                                        date_from: null,
-                                        date_to: null,
-                                        all_dates: true,
-                                    })
-                                }
-                            >
-                                All dates
-                            </Button>
                         </div>
 
                         <div className="text-sm text-muted-foreground">
@@ -280,6 +252,103 @@ export default function FeedbackIndex({ feedbacks, branches, filters }: Props) {
         </>
     );
 }
+
+function FeedbackDateRangePicker({
+    filters,
+    onChange,
+}: {
+    filters: Pick<FeedbackFilters, 'date_from' | 'date_to'>;
+    onChange: (changes: Partial<FeedbackFilters>) => void;
+}) {
+    const [dateRange, setDateRange] = useState<DateRange | undefined>(() =>
+        feedbackDateRange(filters),
+    );
+    const [open, setOpen] = useState(false);
+
+    const selectDateRange = (range: DateRange | undefined) => {
+        setDateRange(range);
+
+        if (!range?.from || !range.to) {
+            return;
+        }
+
+        setOpen(false);
+        onChange({
+            date_from: format(range.from, 'yyyy-MM-dd'),
+            date_to: format(range.to, 'yyyy-MM-dd'),
+            all_dates: false,
+        });
+    };
+
+    const showAllDates = () => {
+        setDateRange(undefined);
+        setOpen(false);
+        onChange({
+            date_from: null,
+            date_to: null,
+            all_dates: true,
+        });
+    };
+
+    return (
+        <>
+            <Popover open={open} onOpenChange={setOpen}>
+                <PopoverTrigger asChild>
+                    <Button
+                        variant="outline"
+                        className="w-full justify-start text-left font-normal sm:w-auto sm:min-w-72"
+                        aria-label="Select feedback date range"
+                    >
+                        <CalendarDays className="size-4" />
+                        {formatDateRange(dateRange)}
+                    </Button>
+                </PopoverTrigger>
+                <PopoverContent
+                    align="start"
+                    className="max-h-[min(38rem,calc(100vh-2rem))] w-auto max-w-[calc(100vw-2rem)] overflow-auto p-0"
+                >
+                    <Calendar
+                        mode="range"
+                        defaultMonth={dateRange?.from}
+                        selected={dateRange}
+                        onSelect={selectDateRange}
+                        numberOfMonths={2}
+                        resetOnSelect
+                        autoFocus
+                    />
+                </PopoverContent>
+            </Popover>
+            <Button variant="ghost" size="sm" onClick={showAllDates}>
+                All dates
+            </Button>
+        </>
+    );
+}
+
+const feedbackDateRange = (
+    filters: Pick<FeedbackFilters, 'date_from' | 'date_to'>,
+): DateRange | undefined => {
+    if (!filters.date_from && !filters.date_to) {
+        return undefined;
+    }
+
+    return {
+        from: filters.date_from ? parseISO(filters.date_from) : undefined,
+        to: filters.date_to ? parseISO(filters.date_to) : undefined,
+    };
+};
+
+const formatDateRange = (range: DateRange | undefined): string => {
+    if (!range?.from) {
+        return 'All dates';
+    }
+
+    if (!range.to) {
+        return format(range.from, 'MMM d, yyyy');
+    }
+
+    return `${format(range.from, 'MMM d, yyyy')} - ${format(range.to, 'MMM d, yyyy')}`;
+};
 
 function FeedbackTable({
     feedbacks,
