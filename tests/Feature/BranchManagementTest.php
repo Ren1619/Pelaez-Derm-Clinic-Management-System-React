@@ -44,8 +44,9 @@ test('authenticated users can create a branch with an image', function () {
         ->post(route('branches.store'), [
             'branch_name' => 'Valencia City',
             'branch_location' => 'Roxas Street, Valencia City, Bukidnon',
+            'latitude' => 7.9075,
+            'longitude' => 125.0942,
             'contact_number' => '09353719162',
-            'map_link' => 'https://maps.example.com/valencia',
             'fb_link' => 'https://facebook.com/valencia-clinic',
             'branch_img' => $image,
         ])
@@ -55,7 +56,42 @@ test('authenticated users can create a branch with an image', function () {
     $branch = Branch::query()->where('branch_name', 'Valencia City')->firstOrFail();
 
     expect($branch->branch_location)->toBe('Roxas Street, Valencia City, Bukidnon');
+    expect($branch->latitude)->toBe(7.9075)
+        ->and($branch->longitude)->toBe(125.0942)
+        ->and($branch->map_link)->toBe(
+            'https://www.google.com/maps/search/?api=1&query=7.9075,125.0942',
+        );
     Storage::disk('public')->assertExists($branch->branch_img);
+});
+
+test('branch images allow up to twenty megabytes', function () {
+    Storage::fake('public');
+
+    $user = User::factory()->create();
+
+    $this->actingAs($user)
+        ->post(route('branches.store'), [
+            'branch_name' => 'Twenty MB Branch',
+            'branch_location' => 'Roxas Street, Valencia City, Bukidnon',
+            'latitude' => 7.9075,
+            'longitude' => 125.0942,
+            'contact_number' => '09353719162',
+            'branch_img' => UploadedFile::fake()->image('branch.jpg')->size(20 * 1024),
+        ])
+        ->assertSessionHasNoErrors();
+
+    $this->actingAs($user)
+        ->from(route('branches.index'))
+        ->post(route('branches.store'), [
+            'branch_name' => 'Oversized Branch',
+            'branch_location' => 'Fortich Street, Malaybalay City, Bukidnon',
+            'latitude' => 8.1575,
+            'longitude' => 125.1277,
+            'contact_number' => '09353719163',
+            'branch_img' => UploadedFile::fake()->image('oversized.jpg')->size((20 * 1024) + 1),
+        ])
+        ->assertRedirect(route('branches.index'))
+        ->assertSessionHasErrors('branch_img');
 });
 
 test('branch input is validated', function () {
@@ -67,15 +103,17 @@ test('branch input is validated', function () {
         ->post(route('branches.store'), [
             'branch_name' => 'Valencia City',
             'branch_location' => '<script>alert(1)</script>',
+            'latitude' => 100,
+            'longitude' => 200,
             'contact_number' => '1234',
-            'map_link' => 'not-a-url',
         ])
         ->assertRedirect(route('branches.index'))
         ->assertSessionHasErrors([
             'branch_name',
             'branch_location',
+            'latitude',
+            'longitude',
             'contact_number',
-            'map_link',
         ]);
 });
 
@@ -95,8 +133,9 @@ test('authenticated users can update a branch and replace its image', function (
         ->put(route('branches.update', $branch), [
             'branch_name' => 'Updated Branch',
             'branch_location' => 'Roxas Street, Valencia City, Bukidnon',
+            'latitude' => 7.9075,
+            'longitude' => 125.0942,
             'contact_number' => '09353719162',
-            'map_link' => 'https://maps.example.com/updated',
             'fb_link' => null,
             'branch_img' => $newImage,
         ])

@@ -2,6 +2,8 @@ export type Branch = {
     branch_ID: number;
     branch_name: string;
     branch_location: string;
+    latitude: number | null;
+    longitude: number | null;
     contact_number: string;
     map_link: string;
     fb_link: string | null;

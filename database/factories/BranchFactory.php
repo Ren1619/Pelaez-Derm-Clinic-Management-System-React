@@ -20,6 +20,8 @@ class BranchFactory extends Factory
         return [
             'branch_name' => fake()->unique()->city().' Branch',
             'branch_location' => fake()->streetAddress().', '.fake()->city(),
+            'latitude' => fake()->latitude(4.5, 21.3),
+            'longitude' => fake()->longitude(116.9, 126.6),
             'contact_number' => fake()->numerify('09#########'),
             'map_link' => fake()->url(),
             'fb_link' => fake()->optional()->url(),

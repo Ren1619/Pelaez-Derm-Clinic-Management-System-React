@@ -49,6 +49,8 @@ export type PublicBranch = {
     id: number;
     name: string;
     location: string;
+    latitude: number | null;
+    longitude: number | null;
     contact_number: string;
     map_link: string;
     facebook_link: string | null;

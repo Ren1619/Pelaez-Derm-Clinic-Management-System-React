@@ -161,12 +161,12 @@ export function ExpenseDialog({
                                 />
                                 <InputError message={errors.amount} />
                             </div>
-                            <DialogFooter className="grid grid-cols-1 gap-3 min-[400px]:grid-cols-2">
+                            <DialogFooter className="flex flex-col-reverse gap-3 border-t pt-4 sm:flex-row sm:justify-end">
                                 <Button
                                     type="button"
+                                    variant="outline"
                                     onClick={() => onOpenChange(false)}
                                     disabled={processing}
-                                    className="w-full bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90"
                                 >
                                     Cancel
                                 </Button>
@@ -175,7 +175,7 @@ export function ExpenseDialog({
                                     disabled={
                                         processing || categories.length === 0
                                     }
-                                    className="w-full bg-pink-600 text-white hover:bg-pink-700"
+                                    className="bg-pink-600 text-white hover:bg-pink-700"
                                 >
                                     {processing ? 'Saving…' : 'Save expense'}
                                 </Button>
@@ -200,9 +200,6 @@ export function ExpenseCategoryDialog({
             <DialogContent>
                 <DialogHeader>
                     <DialogTitle>Add expense category</DialogTitle>
-                    <DialogDescription>
-                        Create a reusable category for clinic expenses.
-                    </DialogDescription>
                 </DialogHeader>
                 <Form
                     {...storeCategory.form()}
@@ -240,7 +237,7 @@ export function ExpenseCategoryDialog({
                                 />
                                 <InputError message={errors.category_name} />
                             </div>
-                            <DialogFooter>
+                            <DialogFooter className="border-t pt-4">
                                 <Button
                                     type="button"
                                     variant="outline"

@@ -63,7 +63,7 @@ abstract class ProductRequest extends FormRequest
     {
         return [
             'nullable',
-            File::types(['jpg', 'jpeg', 'png'])->max(5 * 1024),
+            File::types(['jpg', 'jpeg', 'png'])->max(20 * 1024),
         ];
     }
 
@@ -77,7 +77,7 @@ abstract class ProductRequest extends FormRequest
             'quantity.min' => 'The quantity must be at least :min.',
             'expiration_date.after' => 'The expiration date must be in the future.',
             'new_image.mimes' => 'The image must be a JPEG or PNG file.',
-            'new_image.max' => 'The image must not be larger than 5 MB.',
+            'new_image.max' => 'The image must not be larger than 20 MB.',
         ];
     }
 

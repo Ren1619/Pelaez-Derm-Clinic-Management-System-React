@@ -9,7 +9,6 @@ import { Button } from '@/components/ui/button';
 import {
     Dialog,
     DialogContent,
-    DialogDescription,
     DialogFooter,
     DialogHeader,
     DialogTitle,
@@ -44,10 +43,6 @@ export function CategoryDialog({
                             ? 'Edit'
                             : 'Add'} {categoryType.toLowerCase()} category
                     </DialogTitle>
-                    <DialogDescription>
-                        Categories organize the clinic’s{' '}
-                        {categoryType.toLowerCase()} catalog.
-                    </DialogDescription>
                 </DialogHeader>
 
                 <Form

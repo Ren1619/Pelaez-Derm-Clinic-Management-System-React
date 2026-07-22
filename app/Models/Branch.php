@@ -16,11 +16,22 @@ class Branch extends Model
     protected $fillable = [
         'branch_name',
         'branch_location',
+        'latitude',
+        'longitude',
         'contact_number',
         'map_link',
         'fb_link',
         'branch_img',
     ];
+
+    /** @return array<string, string> */
+    protected function casts(): array
+    {
+        return [
+            'latitude' => 'float',
+            'longitude' => 'float',
+        ];
+    }
 
     /** @return HasMany<StaffAccount, $this> */
     public function staffAccounts(): HasMany

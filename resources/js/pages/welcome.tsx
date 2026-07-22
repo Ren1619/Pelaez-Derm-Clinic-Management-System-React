@@ -10,6 +10,7 @@ import {
     Phone,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import BranchLocationMap from '@/components/branch-location-map';
 import { PublicSiteLayout } from '@/components/public-site-layout';
 import { login as patientLogin } from '@/routes/patient';
 import {
@@ -307,6 +308,14 @@ export default function Welcome({
                                         loading="lazy"
                                     />
                                 </figure>
+                                {branch.latitude !== null &&
+                                    branch.longitude !== null && (
+                                        <BranchLocationMap
+                                            latitude={branch.latitude}
+                                            longitude={branch.longitude}
+                                            className="h-36 rounded-none border-x-0"
+                                        />
+                                    )}
                                 <div className="space-y-4 p-3 sm:p-4">
                                     <h3 className="line-clamp-2 font-semibold transition group-hover:text-primary">
                                         {branch.name}
