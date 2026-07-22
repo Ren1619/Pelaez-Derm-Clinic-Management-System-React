@@ -12,8 +12,10 @@ use Illuminate\Database\Eloquent\Builder;
 
 class AppointmentPageService
 {
+    public function __construct(private AppointmentScheduleService $scheduleService) {}
+
     /** @param array<string, mixed> $filters
-     *  @return array<string, mixed>
+     * @return array<string, mixed>
      */
     public function payload(array $filters): array
     {
@@ -60,11 +62,23 @@ class AppointmentPageService
                 ->orderBy('last_name')->get()->map(fn (StaffAccount $doctor): array => [
                     'account_ID' => $doctor->account_ID, 'full_name' => $doctor->full_name, 'branch_ID' => $doctor->branch_ID,
                 ])->all(),
-            'services' => Service::query()->orderBy('name')->get(['service_ID', 'name']),
-            'timeSlots' => collect(Appointment::TIME_SLOTS)->map(fn (string $time): array => [
-                'value' => $time,
-                'label' => CarbonImmutable::createFromFormat('H:i', $time)->format('g:i A').' – '.CarbonImmutable::createFromFormat('H:i', $time)->addHour()->format('g:i A'),
-            ])->all(),
+            'services' => Service::query()
+                ->with('category:category_ID,category_name')
+                ->whereHas('category', fn (Builder $builder) => $builder->where('category_type', 'Service'))
+                ->orderBy(
+                    fn ($query) => $query->select('category_name')
+                        ->from('categories')
+                        ->whereColumn('categories.category_ID', 'services.category_ID'),
+                )
+                ->orderBy('name')
+                ->get(['service_ID', 'category_ID', 'name'])
+                ->map(fn (Service $service): array => [
+                    'service_ID' => $service->service_ID,
+                    'name' => $service->name,
+                    'category_name' => $service->category->category_name,
+                ])
+                ->all(),
+            'timeSlots' => $this->scheduleService->slots(),
             'filters' => $filters,
         ];
     }
@@ -83,6 +97,7 @@ class AppointmentPageService
             'doctor_name' => $appointment->doctor_account_ID === null ? $appointment->doctor_name : $appointment->doctor?->full_name,
             'visit_ID' => $appointment->visit_ID,
             'scheduled_at' => $appointment->scheduled_at->toISOString(),
+            'previous_scheduled_at' => $appointment->previous_scheduled_at?->toISOString(),
             'appointment_type' => $appointment->appointment_type,
             'concern' => $appointment->concern,
             'services' => $appointment->services->map(fn ($service): array => [
@@ -92,14 +107,19 @@ class AppointmentPageService
             ])->all(),
             'status' => $appointment->status,
             'remarks' => $appointment->remarks,
+            'reschedule_reason' => $appointment->reschedule_reason,
+            'reschedule_requested_at' => $appointment->reschedule_requested_at?->toISOString(),
+            'reschedule_responded_at' => $appointment->reschedule_responded_at?->toISOString(),
             'cancellation_reason' => $appointment->cancellation_reason,
             'confirmed_at' => $appointment->confirmed_at?->toISOString(),
             'started_at' => $appointment->started_at?->toISOString(),
             'completed_at' => $appointment->completed_at?->toISOString(),
             'can_approve' => $appointment->status === 'pending',
-            'can_edit' => $appointment->visit_ID === null && in_array($appointment->status, ['pending', 'upcoming', 'today', 'incomplete', 'cancelled'], true),
-            'can_cancel' => $appointment->visit_ID === null && in_array($appointment->status, ['pending', 'upcoming', 'today'], true),
-            'can_start' => $appointment->visit_ID === null && $appointment->scheduled_at->isToday() && in_array($appointment->status, ['pending', 'upcoming', 'today'], true),
+            'can_edit' => $appointment->visit_ID === null && in_array($appointment->status, ['pending', 'reschedule_requested', 'upcoming', 'today'], true),
+            'can_patient_edit' => $appointment->visit_ID === null && in_array($appointment->status, ['pending', 'reschedule_requested', 'upcoming'], true),
+            'can_accept_reschedule' => $appointment->visit_ID === null && $appointment->status === 'reschedule_requested',
+            'can_cancel' => $appointment->visit_ID === null && in_array($appointment->status, ['pending', 'reschedule_requested', 'upcoming', 'today'], true),
+            'can_start' => $appointment->visit_ID === null && $appointment->scheduled_at->isToday() && $appointment->status === 'today',
             'can_complete' => $appointment->visit_ID !== null && $appointment->status === 'today',
         ];
     }

@@ -7,12 +7,15 @@ use App\Models\Branch;
 use App\Models\Patient;
 use App\Models\Service;
 use App\Services\Appointments\AppointmentPageService;
-use Carbon\CarbonImmutable;
+use App\Services\Appointments\AppointmentScheduleService;
 use Illuminate\Database\Eloquent\Builder;
 
 class PatientAppointmentService
 {
-    public function __construct(private AppointmentPageService $pageService) {}
+    public function __construct(
+        private AppointmentPageService $pageService,
+        private AppointmentScheduleService $scheduleService,
+    ) {}
 
     /**
      * @param  array{status: string, appointment_type: string, search: string, per_page: int}  $filters
@@ -53,11 +56,23 @@ class PatientAppointmentService
                 ->map(fn (Appointment $appointment): array => $this->pageService->serialize($appointment))
                 ->all(),
             'branches' => Branch::query()->orderBy('branch_name')->get(['branch_ID', 'branch_name']),
-            'services' => Service::query()->orderBy('name')->get(['service_ID', 'name']),
-            'timeSlots' => collect(Appointment::TIME_SLOTS)->map(fn (string $time): array => [
-                'value' => $time,
-                'label' => CarbonImmutable::createFromFormat('H:i', $time)->format('g:i A').' – '.CarbonImmutable::createFromFormat('H:i', $time)->addHour()->format('g:i A'),
-            ])->all(),
+            'services' => Service::query()
+                ->with('category:category_ID,category_name')
+                ->whereHas('category', fn (Builder $query) => $query->where('category_type', 'Service'))
+                ->orderBy(
+                    fn ($query) => $query->select('category_name')
+                        ->from('categories')
+                        ->whereColumn('categories.category_ID', 'services.category_ID'),
+                )
+                ->orderBy('name')
+                ->get(['service_ID', 'category_ID', 'name'])
+                ->map(fn (Service $service): array => [
+                    'service_ID' => $service->service_ID,
+                    'name' => $service->name,
+                    'category_name' => $service->category->category_name,
+                ])
+                ->all(),
+            'timeSlots' => $this->scheduleService->slots(),
             'filters' => $filters,
         ];
     }

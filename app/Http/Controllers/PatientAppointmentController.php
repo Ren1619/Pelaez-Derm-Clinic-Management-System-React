@@ -67,7 +67,7 @@ class PatientAppointmentController extends Controller
     {
         $this->ensureOwned($request, $appointment);
         $data = $request->validated();
-        $updated = $this->managementService->update($appointment, [
+        $updated = $this->managementService->patientReschedule($appointment, [
             ...$data,
             'PID' => $this->patient($request)->PID,
             'doctor_account_ID' => null,
@@ -76,6 +76,19 @@ class PatientAppointmentController extends Controller
         $this->notificationService->patientUpdated($updated, $this->patient($request), $data['reschedule_reason'] ?? null);
 
         return back()->with('success', 'Appointment rescheduled and returned for clinic approval.');
+    }
+
+    public function acceptReschedule(Request $request, Appointment $appointment): RedirectResponse
+    {
+        $this->ensureOwned($request, $appointment);
+        $updated = $this->managementService->acceptReschedule($appointment);
+        $this->notificationService->patientUpdated(
+            $updated,
+            $this->patient($request),
+            'Patient accepted the clinic proposed schedule.',
+        );
+
+        return back()->with('success', 'Proposed schedule accepted and returned for clinic approval.');
     }
 
     public function cancel(CancelPatientAppointmentRequest $request, Appointment $appointment): RedirectResponse

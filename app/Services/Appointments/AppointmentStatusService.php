@@ -10,16 +10,20 @@ class AppointmentStatusService
 {
     public function sync(): int
     {
-        $changed = Appointment::query()->whereIn('status', ['pending', 'upcoming', 'today'])->get();
+        $changed = Appointment::query()->whereIn('status', ['pending', 'reschedule_requested', 'upcoming', 'today'])->get();
 
         foreach ($changed as $appointment) {
             if ($appointment->scheduled_at->isBefore(today())) {
                 $appointment->update([
-                    'status' => $appointment->visit_ID === null ? ($appointment->status === 'pending' ? 'cancelled' : 'incomplete') : $appointment->status,
-                    'cancelled_at' => $appointment->status === 'pending' ? now() : $appointment->cancelled_at,
-                    'cancellation_reason' => $appointment->status === 'pending' ? 'Automatically cancelled after the unapproved schedule passed.' : $appointment->cancellation_reason,
+                    'status' => $appointment->visit_ID === null
+                        ? (in_array($appointment->status, ['pending', 'reschedule_requested'], true) ? 'cancelled' : 'incomplete')
+                        : $appointment->status,
+                    'cancelled_at' => in_array($appointment->status, ['pending', 'reschedule_requested'], true) ? now() : $appointment->cancelled_at,
+                    'cancellation_reason' => in_array($appointment->status, ['pending', 'reschedule_requested'], true)
+                        ? 'Automatically cancelled after the unapproved schedule passed.'
+                        : $appointment->cancellation_reason,
                 ]);
-            } elseif ($appointment->scheduled_at->isToday() && in_array($appointment->status, ['pending', 'upcoming'], true)) {
+            } elseif ($appointment->scheduled_at->isToday() && $appointment->status === 'upcoming') {
                 $appointment->update(['status' => 'today']);
             }
         }
@@ -41,7 +45,7 @@ class AppointmentStatusService
 
     public function cancel(Appointment $appointment, string $reason): void
     {
-        if ($appointment->visit_ID !== null || ! in_array($appointment->status, ['pending', 'upcoming', 'today'], true)) {
+        if ($appointment->visit_ID !== null || ! in_array($appointment->status, ['pending', 'reschedule_requested', 'upcoming', 'today'], true)) {
             throw ValidationException::withMessages(['appointment' => 'This appointment can no longer be cancelled.']);
         }
 
