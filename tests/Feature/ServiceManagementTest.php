@@ -89,6 +89,23 @@ test('service input and category type are validated', function () {
         ]);
 });
 
+test('heic and heif service images are rejected', function (string $extension, string $mimeType) {
+    $user = User::factory()->create();
+    $category = Category::factory()->service()->create();
+
+    $this->actingAs($user)
+        ->post(route('services.store'), [
+            'category_ID' => $category->category_ID,
+            'name' => 'Hydra Facial',
+            'description' => 'A deeply hydrating facial treatment.',
+            'new_image' => UploadedFile::fake()->create("service.{$extension}", 100, $mimeType),
+        ])
+        ->assertSessionHasErrors('new_image');
+})->with([
+    'HEIC' => ['heic', 'image/heic'],
+    'HEIF' => ['heif', 'image/heif'],
+]);
+
 test('service names are case insensitive unique within their category', function () {
     $user = User::factory()->create();
     $category = Category::factory()->service()->create();

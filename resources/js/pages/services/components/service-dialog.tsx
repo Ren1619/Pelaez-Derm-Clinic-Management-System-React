@@ -1,9 +1,10 @@
-import { Form, Link } from '@inertiajs/react';
+ import { Form, Link } from '@inertiajs/react';
 import { ImageIcon, Sparkles, Tags } from 'lucide-react';
 import {
     store,
     update,
 } from '@/actions/App/Http/Controllers/ServiceController';
+import ImageUploadField from '@/components/image-upload-field';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import {
@@ -115,8 +116,13 @@ export function ServiceDialog({
                         ) : (
                             <>
                                 All fields with{' '}
-                                <span className="text-pink-600">*</span> are
-                                required.
+                                <span
+                                    className="text-primary"
+                                    aria-hidden="true"
+                                >
+                                    *
+                                </span>{' '}
+                                are required.
                             </>
                         )}
                     </DialogDescription>
@@ -136,47 +142,44 @@ export function ServiceDialog({
                     >
                         {({ errors, processing, progress }) => (
                             <>
-                                <p className="text-sm text-foreground">
-                                    All fields with{' '}
-                                    <span
-                                        className="text-primary"
-                                        aria-hidden="true"
-                                    >
-                                        *
-                                    </span>{' '}
-                                    are required.
-                                </p>
-                                <ServiceImage service={service} />
-
-                                <div className="grid gap-2">
-                                    <Label htmlFor="new_image">
-                                        Service image
-                                    </Label>
-                                    <Input
-                                        id="new_image"
-                                        name="new_image"
-                                        type="file"
-                                        accept=".jpg,.jpeg,.png,.webp,.heic,.heif,image/jpeg,image/png,image/webp,image/heic,image/heif"
-                                        aria-invalid={Boolean(errors.new_image)}
-                                    />
-                                    <p className="text-xs text-muted-foreground">
-                                        JPEG, PNG, WebP, HEIC, or HEIF, up to 20
-                                        MB. Leave blank to keep the current
-                                        image.
-                                    </p>
-                                    <InputError message={errors.new_image} />
-                                    {progress && (
-                                        <progress
-                                            value={progress.percentage}
-                                            max="100"
-                                            className="h-2 w-full"
-                                        >
-                                            {progress.percentage}%
-                                        </progress>
-                                    )}
-                                </div>
+                                <ImageUploadField
+                                    key={`${open}-${service?.service_ID ?? 'new'}`}
+                                    id="service-new-image"
+                                    label="Service image"
+                                    accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
+                                    helpText="JPEG, PNG, or WebP, up to 20 MB. Leave blank to keep the current image."
+                                    existingImageUrl={service?.image_url}
+                                    imageAlt={
+                                        service?.name ?? 'Service image preview'
+                                    }
+                                    error={errors.new_image}
+                                    progress={progress?.percentage}
+                                />
 
                                 <div className="grid gap-4">
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="name">
+                                            Service name
+                                            <span
+                                                className="text-pink-600"
+                                                aria-hidden="true"
+                                            >
+                                                {' '}
+                                                *
+                                            </span>
+                                        </Label>
+                                        <Input
+                                            id="name"
+                                            name="name"
+                                            defaultValue={service?.name ?? ''}
+                                            placeholder="e.g. Hydra Facial"
+                                            maxLength={255}
+                                            required
+                                            aria-invalid={Boolean(errors.name)}
+                                        />
+                                        <InputError message={errors.name} />
+                                    </div>
+
                                     <div className="grid gap-2">
                                         <div className="flex items-center justify-between gap-3">
                                             <Label htmlFor="category_ID">
@@ -241,29 +244,6 @@ export function ServiceDialog({
                                                 creating a service.
                                             </p>
                                         )}
-                                    </div>
-
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="name">
-                                            Service name
-                                            <span
-                                                className="text-pink-600"
-                                                aria-hidden="true"
-                                            >
-                                                {' '}
-                                                *
-                                            </span>
-                                        </Label>
-                                        <Input
-                                            id="name"
-                                            name="name"
-                                            defaultValue={service?.name ?? ''}
-                                            placeholder="e.g. Hydra Facial"
-                                            maxLength={255}
-                                            required
-                                            aria-invalid={Boolean(errors.name)}
-                                        />
-                                        <InputError message={errors.name} />
                                     </div>
 
                                     <div className="grid gap-2">

@@ -207,7 +207,7 @@ function FieldLabel({
         <Label htmlFor={htmlFor}>
             {children}
             {required && (
-                <span className="text-pink-600" aria-hidden="true">
+                <span className="text-primary" aria-hidden="true">
                     {' '}
                     *
                 </span>
@@ -247,9 +247,14 @@ export function PatientDialog({
                         ) : (
                             <>
                                 All fields with{' '}
-                                <span className="text-pink-600">*</span> are
-                                required. An account setup link will be emailed
-                                to the patient.
+                                <span
+                                    className="text-primary"
+                                    aria-hidden="true"
+                                >
+                                    *
+                                </span>{' '}
+                                are required. An account setup link will be
+                                emailed to the patient.
                             </>
                         )}
                     </DialogDescription>
