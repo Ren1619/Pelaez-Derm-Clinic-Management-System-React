@@ -19,24 +19,32 @@ class StartAppointmentVisitService
                 return PatientVisit::query()->findOrFail($locked->visit_ID);
             }
 
-            if (! $locked->scheduled_at->isToday() || ! in_array($locked->status, ['pending', 'upcoming', 'today'], true)) {
-                throw ValidationException::withMessages(['appointment' => 'Only an appointment scheduled for today can start a visit.']);
+            if (! $locked->scheduled_at->isToday() || $locked->status !== 'today') {
+                throw ValidationException::withMessages([
+                    'appointment' => 'Only an approved appointment scheduled for today can start a visit.',
+                ]);
             }
 
-            $doctor = StaffAccount::query()->with('role')->find($doctorId ?? $locked->doctor_account_ID);
-            if ($doctor === null || ! $doctor->is_active || mb_strtolower($doctor->role->role_name) !== 'doctor') {
-                throw ValidationException::withMessages(['doctor_account_ID' => 'Select an active doctor before starting the visit.']);
-            }
-            if ($doctor->branch_ID !== null && $doctor->branch_ID !== $locked->branch_ID) {
-                throw ValidationException::withMessages(['doctor_account_ID' => 'The doctor is assigned to a different clinic.']);
+            $selectedDoctorId = $doctorId ?? $locked->doctor_account_ID;
+            $doctor = $selectedDoctorId === null
+                ? null
+                : StaffAccount::query()->with('role')->find($selectedDoctorId);
+
+            if ($selectedDoctorId !== null) {
+                if ($doctor === null || ! $doctor->is_active || mb_strtolower($doctor->role->role_name) !== 'doctor') {
+                    throw ValidationException::withMessages(['doctor_account_ID' => 'The assigned doctor must be active.']);
+                }
+                if ($doctor->branch_ID !== null && $doctor->branch_ID !== $locked->branch_ID) {
+                    throw ValidationException::withMessages(['doctor_account_ID' => 'The doctor is assigned to a different clinic.']);
+                }
             }
 
             $visit = PatientVisit::query()->create([
                 'PID' => $locked->PID,
                 'branch_ID' => $locked->branch_ID,
-                'doctor_account_ID' => $doctor->account_ID,
+                'doctor_account_ID' => $doctor?->account_ID,
                 'branch_name' => $locked->branch_name,
-                'doctor_name' => $doctor->full_name,
+                'doctor_name' => $doctor?->full_name,
                 'visited_at' => now(),
                 'status' => 'in_progress',
             ]);
@@ -51,8 +59,8 @@ class StartAppointmentVisitService
             }
 
             $locked->update([
-                'doctor_account_ID' => $doctor->account_ID,
-                'doctor_name' => $doctor->full_name,
+                'doctor_account_ID' => $doctor?->account_ID,
+                'doctor_name' => $doctor?->full_name,
                 'visit_ID' => $visit->visit_ID,
                 'status' => 'today',
                 'started_at' => now(),

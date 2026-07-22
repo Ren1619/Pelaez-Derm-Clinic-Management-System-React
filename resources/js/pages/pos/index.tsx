@@ -1,5 +1,7 @@
 import { Head, router } from '@inertiajs/react';
 import {
+    Eye,
+    CalendarIcon,
     ImageIcon,
     Info,
     Plus,
@@ -17,6 +19,7 @@ import { DataTableEmptyState } from '@/components/data-table-empty-state';
 import { DataTableLayout } from '@/components/data-table-layout';
 import { TooltipIconButton } from '@/components/tooltip-icon-button';
 import { Button } from '@/components/ui/button';
+import { Calendar } from '@/components/ui/calendar';
 import { Card } from '@/components/ui/card';
 import {
     Dialog,
@@ -28,6 +31,11 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from '@/components/ui/popover';
 import {
     Select,
     SelectContent,
@@ -94,6 +102,33 @@ const currency = new Intl.NumberFormat('en-PH', {
     style: 'currency',
     currency: 'PHP',
 });
+
+/** Parses an ISO date without shifting it across timezones. */
+function parseIsoDate(date: string): Date | undefined {
+    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date);
+
+    return match
+        ? new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]))
+        : undefined;
+}
+
+/** Formats a date for the Daily Sales filter. */
+function formatLongDate(date: Date): string {
+    return new Intl.DateTimeFormat('en-US', {
+        month: 'long',
+        day: 'numeric',
+        year: 'numeric',
+    }).format(date);
+}
+
+/** Formats a selected calendar date for the POS query string. */
+function formatIsoDate(date: Date): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+
+    return `${year}-${month}-${day}`;
+}
 
 export default function PosIndex({
     branches,
@@ -701,7 +736,7 @@ function CatalogGrid({
                         >
                             <button
                                 type="button"
-                                className="absolute inset-0 block h-full w-full cursor-pointer bg-card text-left focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none focus-visible:ring-inset"
+                                className="absolute inset-0 block h-full w-full bg-card text-left focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none focus-visible:ring-inset"
                                 onClick={() =>
                                     (onAdd as (item: PosProduct) => void)(
                                         product,
@@ -776,7 +811,7 @@ function CatalogGrid({
                     >
                         <button
                             type="button"
-                            className="absolute inset-0 block h-full w-full cursor-pointer bg-card text-left focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none focus-visible:ring-inset"
+                            className="absolute inset-0 block h-full w-full bg-card text-left focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none focus-visible:ring-inset"
                             onClick={() =>
                                 (onAdd as (item: PosService) => void)(service)
                             }
@@ -854,6 +889,9 @@ function DailySales({
     onDateChange: (date: string) => void;
     onView: (sale: PosSale) => void;
 }) {
+    const [calendarOpen, setCalendarOpen] = useState(false);
+    const selectedDate = parseIsoDate(date);
+
     return (
         <div className="space-y-4">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -868,12 +906,46 @@ function DailySales({
                         {currency.format(summary.voided)}
                     </p>
                 </div>
-                <Input
-                    type="date"
-                    value={date}
-                    onChange={(event) => onDateChange(event.target.value)}
-                    className="w-full sm:w-44"
-                />
+                <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+                    <PopoverTrigger asChild>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            className="w-full justify-between font-normal sm:w-52"
+                            aria-label="Select daily sales date"
+                        >
+                            <span>
+                                {selectedDate
+                                    ? formatLongDate(selectedDate)
+                                    : 'June 10, 2026'}
+                            </span>
+                            <CalendarIcon className="size-4 text-muted-foreground" />
+                        </Button>
+                    </PopoverTrigger>
+                    <PopoverContent
+                        className="w-auto max-w-[calc(100vw-2rem)] overflow-auto p-0"
+                        align="end"
+                    >
+                        <Calendar
+                            mode="single"
+                            selected={selectedDate}
+                            defaultMonth={selectedDate}
+                            onSelect={(selected) => {
+                                if (!selected) {
+                                    return;
+                                }
+
+                                onDateChange(formatIsoDate(selected));
+                                setCalendarOpen(false);
+                            }}
+                            captionLayout="dropdown"
+                            startMonth={new Date(2000, 0)}
+                            endMonth={new Date()}
+                            disabled={{ after: new Date() }}
+                            autoFocus
+                        />
+                    </PopoverContent>
+                </Popover>
             </div>
             <DataTableLayout>
                 <Table className="min-w-2xl">
@@ -938,6 +1010,122 @@ function DailySales({
     );
 }
 
+/** Displays a month-and-year-only filter without individual calendar dates. */
+function ExpenseMonthYearFilter({
+    month,
+    year,
+    onChange,
+}: {
+    month: number;
+    year: number;
+    onChange: (changes: Partial<PosFilters>) => void;
+}) {
+    const [open, setOpen] = useState(false);
+    const currentDate = new Date();
+    const currentYear = currentDate.getFullYear();
+    const currentMonth = currentDate.getMonth() + 1;
+    const monthName = new Intl.DateTimeFormat('en-US', {
+        month: 'long',
+    }).format(new Date(year, month - 1, 1));
+
+    return (
+        <Popover open={open} onOpenChange={setOpen}>
+            <PopoverTrigger asChild>
+                <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full justify-between font-normal sm:w-44"
+                    aria-label="Select expense month and year"
+                >
+                    <span>
+                        {monthName} {year}
+                    </span>
+                    <CalendarIcon className="size-4 text-muted-foreground" />
+                </Button>
+            </PopoverTrigger>
+            <PopoverContent
+                className="w-72 max-w-[calc(100vw-2rem)] p-3"
+                align="end"
+            >
+                <div className="grid gap-3">
+                    <Select
+                        value={String(year)}
+                        onValueChange={(value) => {
+                            const selectedYear = Number(value);
+
+                            onChange({
+                                expense_year: selectedYear,
+                                // Prevent a future month when returning to the current year.
+                                expense_month:
+                                    selectedYear === currentYear
+                                        ? Math.min(month, currentMonth)
+                                        : month,
+                            });
+                        }}
+                    >
+                        <SelectTrigger
+                            className="w-full"
+                            aria-label="Expense year"
+                        >
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {Array.from(
+                                { length: currentYear - 1999 },
+                                (_, index) => currentYear - index,
+                            ).map((yearOption) => (
+                                <SelectItem
+                                    key={yearOption}
+                                    value={String(yearOption)}
+                                >
+                                    {yearOption}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+
+                    <div className="grid grid-cols-3 gap-1">
+                        {Array.from(
+                            { length: 12 },
+                            (_, index) => index + 1,
+                        ).map((monthOption) => {
+                            const isFutureMonth =
+                                year === currentYear &&
+                                monthOption > currentMonth;
+
+                            return (
+                                <Button
+                                    key={monthOption}
+                                    type="button"
+                                    size="sm"
+                                    variant={
+                                        monthOption === month
+                                            ? 'default'
+                                            : 'ghost'
+                                    }
+                                    disabled={isFutureMonth}
+                                    onClick={() => {
+                                        onChange({
+                                            expense_month: monthOption,
+                                        });
+                                        setOpen(false);
+                                    }}
+                                >
+                                    {new Intl.DateTimeFormat('en-US', {
+                                        month: 'short',
+                                    }).format(
+                                        new Date(2026, monthOption - 1, 1),
+                                    )}
+                                </Button>
+                            );
+                        })}
+                    </div>
+                </div>
+            </PopoverContent>
+        </Popover>
+    );
+}
+
 function Expenses({
     expenses,
     summary,
@@ -968,39 +1156,10 @@ function Expenses({
                     </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                    <Select
-                        value={String(filters.expense_month)}
-                        onValueChange={(value) =>
-                            onFiltersChange({ expense_month: Number(value) })
-                        }
-                    >
-                        <SelectTrigger className="w-36">
-                            <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {Array.from(
-                                { length: 12 },
-                                (_, index) => index + 1,
-                            ).map((month) => (
-                                <SelectItem key={month} value={String(month)}>
-                                    {new Intl.DateTimeFormat('en', {
-                                        month: 'long',
-                                    }).format(new Date(2026, month - 1, 1))}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                    <Input
-                        type="number"
-                        min={2000}
-                        max={2100}
-                        value={filters.expense_year}
-                        onChange={(event) =>
-                            onFiltersChange({
-                                expense_year: Number(event.target.value),
-                            })
-                        }
-                        className="w-28"
+                    <ExpenseMonthYearFilter
+                        month={filters.expense_month}
+                        year={filters.expense_year}
+                        onChange={onFiltersChange}
                     />
                     <Button variant="outline" onClick={onAddCategory}>
                         <Tags /> Category

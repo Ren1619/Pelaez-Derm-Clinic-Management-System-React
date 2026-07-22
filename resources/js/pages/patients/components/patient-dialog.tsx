@@ -1,5 +1,6 @@
 import { Form } from '@inertiajs/react';
-import { UserRound } from 'lucide-react';
+import { CalendarIcon, UserRound } from 'lucide-react';
+import { useState } from 'react';
 import {
     store,
     update,
@@ -7,6 +8,7 @@ import {
 import InputError from '@/components/input-error';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Calendar } from '@/components/ui/calendar';
 import {
     Dialog,
     DialogContent,
@@ -17,6 +19,11 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from '@/components/ui/popover';
 import type { Patient, PatientDialogMode } from '@/types';
 
 type PatientDialogProps = {
@@ -26,6 +33,115 @@ type PatientDialogProps = {
     onOpenChange: (open: boolean) => void;
 };
 
+/** Parses a stored ISO date without applying a timezone offset. */
+function parseIsoDate(date: string): Date | undefined {
+    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date);
+
+    if (!match) {
+        return undefined;
+    }
+
+    return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+}
+
+/** Formats a selected date for the visible patient form field. */
+function formatDateForDisplay(date: Date | undefined): string {
+    if (!date) {
+        return '';
+    }
+
+    return new Intl.DateTimeFormat('en-US', {
+        month: 'long',
+        day: 'numeric',
+        year: 'numeric',
+    }).format(date);
+}
+
+/** Converts a selected date to the ISO format expected by Laravel. */
+function formatDateForSubmission(date: Date | undefined): string {
+    if (!date) {
+        return '';
+    }
+
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+
+    return `${year}-${month}-${day}`;
+}
+
+/** Displays the Shadcn date picker used for the patient's date of birth. */
+function DateOfBirthInput({
+    defaultValue,
+    invalid,
+}: {
+    defaultValue: string;
+    invalid: boolean;
+}) {
+    const initialDate = parseIsoDate(defaultValue);
+    const [open, setOpen] = useState(false);
+    const [date, setDate] = useState<Date | undefined>(initialDate);
+    const [month, setMonth] = useState<Date | undefined>(initialDate);
+    const today = new Date();
+    const latestDateOfBirth = new Date(
+        today.getFullYear(),
+        today.getMonth(),
+        today.getDate() - 1,
+    );
+
+    return (
+        <>
+            <input
+                type="hidden"
+                name="date_of_birth"
+                value={formatDateForSubmission(date)}
+            />
+            <Popover open={open} onOpenChange={setOpen}>
+                <PopoverTrigger asChild>
+                    <Button
+                        id="date_of_birth"
+                        type="button"
+                        variant="outline"
+                        aria-required="true"
+                        aria-invalid={invalid}
+                        aria-label="Select date of birth"
+                        className="w-full justify-between font-normal aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20"
+                    >
+                        <span className={date ? '' : 'text-muted-foreground'}>
+                            {date
+                                ? formatDateForDisplay(date)
+                                : 'July 10, 2026'}
+                        </span>
+                        <CalendarIcon className="size-4 text-muted-foreground" />
+                    </Button>
+                </PopoverTrigger>
+                <PopoverContent
+                    className="w-auto max-w-[calc(100vw-2rem)] overflow-auto p-0"
+                    align="end"
+                >
+                    <Calendar
+                        mode="single"
+                        selected={date}
+                        month={month}
+                        onMonthChange={setMonth}
+                        onSelect={(selectedDate) => {
+                            setDate(selectedDate);
+                            setMonth(selectedDate);
+                            setOpen(false);
+                        }}
+                        captionLayout="dropdown"
+                        startMonth={new Date(1900, 0)}
+                        endMonth={latestDateOfBirth}
+                        disabled={{ after: latestDateOfBirth }}
+                        autoFocus
+                    />
+                </PopoverContent>
+            </Popover>
+        </>
+    );
+}
+
+/** Displays a label and value in the patient details view. */
 function Detail({ label, value }: { label: string; value: string }) {
     return (
         <div className="grid gap-1.5">
@@ -37,12 +153,13 @@ function Detail({ label, value }: { label: string; value: string }) {
     );
 }
 
+/** Displays the patient's saved profile information. */
 function PatientDetails({ patient }: { patient: Patient }) {
     return (
         <div className="grid gap-5">
-            <div className="flex items-center justify-between rounded-lg border bg-muted/30 p-4">
-                <div>
-                    <p className="font-medium">{patient.full_name}</p>
+            <div className="flex items-center justify-between gap-3 rounded-lg border bg-muted/30 p-4">
+                <div className="min-w-0">
+                    <p className="truncate font-medium">{patient.full_name}</p>
                     <p className="text-sm text-muted-foreground">
                         Patient #{patient.PID}
                     </p>
@@ -55,7 +172,6 @@ function PatientDetails({ patient }: { patient: Patient }) {
                     {patient.email_verified_at ? 'Verified' : 'Unverified'}
                 </Badge>
             </div>
-
             <div className="grid gap-4 sm:grid-cols-2">
                 <Detail label="Email" value={patient.email} />
                 <Detail label="Contact number" value={patient.contact_number} />
@@ -77,6 +193,30 @@ function PatientDetails({ patient }: { patient: Patient }) {
     );
 }
 
+/** Renders a consistent form label and optional required marker. */
+function FieldLabel({
+    htmlFor,
+    children,
+    required = false,
+}: {
+    htmlFor: string;
+    children: React.ReactNode;
+    required?: boolean;
+}) {
+    return (
+        <Label htmlFor={htmlFor}>
+            {children}
+            {required && (
+                <span className="text-pink-600" aria-hidden="true">
+                    {' '}
+                    *
+                </span>
+            )}
+        </Label>
+    );
+}
+
+/** Displays the responsive add, edit, or view patient dialog. */
 export function PatientDialog({
     patient,
     mode,
@@ -93,23 +233,32 @@ export function PatientDialog({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
-                <DialogHeader>
+            <DialogContent className="max-h-[calc(100dvh-1rem)] grid-rows-[auto_minmax(0,1fr)] gap-0 overflow-hidden p-0 sm:max-h-[90vh] sm:max-w-xl">
+                <DialogHeader className="border-b px-5 py-5 pr-12 text-left sm:px-6">
                     <DialogTitle className="flex items-center gap-2">
                         <UserRound className="size-5" />
                         {title}
                     </DialogTitle>
                     <DialogDescription>
-                        {isView
-                            ? 'Review this patient’s identity and contact information.'
-                            : isEdit
-                              ? 'Update the patient record. Changing the email requires verification again.'
-                              : 'Create a patient record and email a temporary password with a verification link.'}
+                        {isView ? (
+                            "Review this patient's identity and contact information."
+                        ) : isEdit ? (
+                            'Update the patient record. Changing the email requires verification again.'
+                        ) : (
+                            <>
+                                All fields with{' '}
+                                <span className="text-pink-600">*</span> are
+                                required. An account setup link will be emailed
+                                to the patient.
+                            </>
+                        )}
                     </DialogDescription>
                 </DialogHeader>
 
                 {isView && patient ? (
-                    <PatientDetails patient={patient} />
+                    <div className="overflow-y-auto px-5 py-5 sm:px-6">
+                        <PatientDetails patient={patient} />
+                    </div>
                 ) : (
                     <Form
                         {...(isEdit && patient
@@ -118,37 +267,25 @@ export function PatientDialog({
                         options={{ preserveScroll: true }}
                         onSuccess={() => onOpenChange(false)}
                         resetOnSuccess={!isEdit}
-                        className="grid gap-5"
+                        className="flex min-h-0 flex-col"
                     >
                         {({ errors, processing }) => (
                             <>
-                                <p className="text-sm text-foreground">
-                                    All fields with{' '}
-                                    <span
-                                        className="text-primary"
-                                        aria-hidden="true"
-                                    >
-                                        *
-                                    </span>{' '}
-                                    are required.
-                                </p>
-                                <div className="grid gap-4 sm:grid-cols-3">
+                                <div className="grid min-h-0 gap-4 overflow-y-auto px-5 py-5 sm:px-6">
                                     <div className="grid gap-2">
-                                        <Label htmlFor="first_name">
+                                        <FieldLabel
+                                            htmlFor="first_name"
+                                            required
+                                        >
                                             First name
-                                            <span
-                                                className="text-primary"
-                                                aria-hidden="true"
-                                            >
-                                                *
-                                            </span>
-                                        </Label>
+                                        </FieldLabel>
                                         <Input
                                             id="first_name"
                                             name="first_name"
                                             defaultValue={
                                                 patient?.first_name ?? ''
                                             }
+                                            placeholder="Enter first name"
                                             required
                                             aria-invalid={Boolean(
                                                 errors.first_name,
@@ -158,17 +295,17 @@ export function PatientDialog({
                                             message={errors.first_name}
                                         />
                                     </div>
-
                                     <div className="grid gap-2">
-                                        <Label htmlFor="middle_name">
+                                        <FieldLabel htmlFor="middle_name">
                                             Middle name
-                                        </Label>
+                                        </FieldLabel>
                                         <Input
                                             id="middle_name"
                                             name="middle_name"
                                             defaultValue={
                                                 patient?.middle_name ?? ''
                                             }
+                                            placeholder="Enter middle name (optional)"
                                             aria-invalid={Boolean(
                                                 errors.middle_name,
                                             )}
@@ -177,23 +314,20 @@ export function PatientDialog({
                                             message={errors.middle_name}
                                         />
                                     </div>
-
                                     <div className="grid gap-2">
-                                        <Label htmlFor="last_name">
+                                        <FieldLabel
+                                            htmlFor="last_name"
+                                            required
+                                        >
                                             Last name
-                                            <span
-                                                className="text-primary"
-                                                aria-hidden="true"
-                                            >
-                                                *
-                                            </span>
-                                        </Label>
+                                        </FieldLabel>
                                         <Input
                                             id="last_name"
                                             name="last_name"
                                             defaultValue={
                                                 patient?.last_name ?? ''
                                             }
+                                            placeholder="Enter last name"
                                             required
                                             aria-invalid={Boolean(
                                                 errors.last_name,
@@ -203,126 +337,119 @@ export function PatientDialog({
                                             message={errors.last_name}
                                         />
                                     </div>
-                                </div>
 
-                                <div className="grid gap-4 sm:grid-cols-2">
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="email">
-                                            Email
-                                            <span
-                                                className="text-primary"
-                                                aria-hidden="true"
+                                    <div className="grid gap-4 sm:grid-cols-2">
+                                        <div className="grid gap-2">
+                                            <FieldLabel
+                                                htmlFor="email"
+                                                required
                                             >
-                                                *
-                                            </span>
-                                        </Label>
-                                        <Input
-                                            id="email"
-                                            name="email"
-                                            type="email"
-                                            defaultValue={patient?.email ?? ''}
-                                            required
-                                            aria-invalid={Boolean(errors.email)}
-                                        />
-                                        <InputError message={errors.email} />
+                                                Email
+                                            </FieldLabel>
+                                            <Input
+                                                id="email"
+                                                name="email"
+                                                type="email"
+                                                defaultValue={
+                                                    patient?.email ?? ''
+                                                }
+                                                placeholder="Enter email address"
+                                                required
+                                                aria-invalid={Boolean(
+                                                    errors.email,
+                                                )}
+                                            />
+                                            <InputError
+                                                message={errors.email}
+                                            />
+                                        </div>
+                                        <div className="grid gap-2">
+                                            <FieldLabel
+                                                htmlFor="contact_number"
+                                                required
+                                            >
+                                                Contact number
+                                            </FieldLabel>
+                                            <Input
+                                                id="contact_number"
+                                                name="contact_number"
+                                                type="tel"
+                                                inputMode="numeric"
+                                                maxLength={11}
+                                                defaultValue={
+                                                    patient?.contact_number ??
+                                                    ''
+                                                }
+                                                placeholder="Enter contact number"
+                                                required
+                                                aria-invalid={Boolean(
+                                                    errors.contact_number,
+                                                )}
+                                            />
+                                            <InputError
+                                                message={errors.contact_number}
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="grid gap-4 sm:grid-cols-2">
+                                        <div className="grid gap-2">
+                                            <FieldLabel htmlFor="sex" required>
+                                                Sex
+                                            </FieldLabel>
+                                            <select
+                                                id="sex"
+                                                name="sex"
+                                                defaultValue={
+                                                    patient?.sex ?? ''
+                                                }
+                                                className="h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+                                                required
+                                                aria-invalid={Boolean(
+                                                    errors.sex,
+                                                )}
+                                            >
+                                                <option value="" disabled>
+                                                    Select sex
+                                                </option>
+                                                <option value="Male">
+                                                    Male
+                                                </option>
+                                                <option value="Female">
+                                                    Female
+                                                </option>
+                                            </select>
+                                            <InputError message={errors.sex} />
+                                        </div>
+                                        <div className="grid gap-2">
+                                            <FieldLabel
+                                                htmlFor="date_of_birth"
+                                                required
+                                            >
+                                                Date of birth
+                                            </FieldLabel>
+                                            <DateOfBirthInput
+                                                key={`${open}-${patient?.date_of_birth ?? 'new'}`}
+                                                defaultValue={
+                                                    patient?.date_of_birth ?? ''
+                                                }
+                                                invalid={Boolean(
+                                                    errors.date_of_birth,
+                                                )}
+                                            />
+                                            <InputError
+                                                message={errors.date_of_birth}
+                                            />
+                                        </div>
                                     </div>
 
                                     <div className="grid gap-2">
-                                        <Label htmlFor="contact_number">
-                                            Contact number
-                                            <span
-                                                className="text-primary"
-                                                aria-hidden="true"
-                                            >
-                                                *
-                                            </span>
-                                        </Label>
-                                        <Input
-                                            id="contact_number"
-                                            name="contact_number"
-                                            type="tel"
-                                            inputMode="numeric"
-                                            maxLength={11}
-                                            defaultValue={
-                                                patient?.contact_number ?? ''
-                                            }
-                                            placeholder="09123456789"
+                                        <FieldLabel
+                                            htmlFor="civil_status"
                                             required
-                                            aria-invalid={Boolean(
-                                                errors.contact_number,
-                                            )}
-                                        />
-                                        <InputError
-                                            message={errors.contact_number}
-                                        />
-                                    </div>
-
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="sex">
-                                            Sex
-                                            <span
-                                                className="text-primary"
-                                                aria-hidden="true"
-                                            >
-                                                *
-                                            </span>
-                                        </Label>
-                                        <select
-                                            id="sex"
-                                            name="sex"
-                                            defaultValue={patient?.sex ?? ''}
-                                            className="h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-                                            required
-                                            aria-invalid={Boolean(errors.sex)}
                                         >
-                                            <option value="" disabled>
-                                                Select sex
-                                            </option>
-                                            <option value="Male">Male</option>
-                                            <option value="Female">
-                                                Female
-                                            </option>
-                                        </select>
-                                        <InputError message={errors.sex} />
-                                    </div>
-
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="date_of_birth">
-                                            Date of birth
-                                            <span
-                                                className="text-primary"
-                                                aria-hidden="true"
-                                            >
-                                                *
-                                            </span>
-                                        </Label>
-                                        <Input
-                                            id="date_of_birth"
-                                            name="date_of_birth"
-                                            type="date"
-                                            defaultValue={
-                                                patient?.date_of_birth ?? ''
-                                            }
-                                            required
-                                            aria-invalid={Boolean(
-                                                errors.date_of_birth,
-                                            )}
-                                        />
-                                        <InputError
-                                            message={errors.date_of_birth}
-                                        />
-                                    </div>
-
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="civil_status">
                                             Civil status
-                                            <span
-                                                className="text-primary"
-                                                aria-hidden="true"
-                                            >
-                                                *
-                                            </span>
-                                        </Label>
+                                        </FieldLabel>
                                         <select
                                             id="civil_status"
                                             name="civil_status"
@@ -355,17 +482,10 @@ export function PatientDialog({
                                             message={errors.civil_status}
                                         />
                                     </div>
-
-                                    <div className="grid gap-2 sm:col-span-2">
-                                        <Label htmlFor="address">
+                                    <div className="grid gap-2">
+                                        <FieldLabel htmlFor="address" required>
                                             Address
-                                            <span
-                                                className="text-primary"
-                                                aria-hidden="true"
-                                            >
-                                                *
-                                            </span>
-                                        </Label>
+                                        </FieldLabel>
                                         <textarea
                                             id="address"
                                             name="address"
@@ -374,6 +494,7 @@ export function PatientDialog({
                                             }
                                             rows={3}
                                             maxLength={500}
+                                            placeholder="Enter complete address"
                                             required
                                             aria-invalid={Boolean(
                                                 errors.address,
@@ -384,16 +505,20 @@ export function PatientDialog({
                                     </div>
                                 </div>
 
-                                <DialogFooter>
+                                <DialogFooter className="grid grid-cols-1 gap-3 border-t bg-background px-5 py-4 min-[400px]:grid-cols-2 sm:px-6">
                                     <Button
                                         type="button"
-                                        variant="outline"
                                         onClick={() => onOpenChange(false)}
                                         disabled={processing}
+                                        className="w-full bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90"
                                     >
                                         Cancel
                                     </Button>
-                                    <Button type="submit" disabled={processing}>
+                                    <Button
+                                        type="submit"
+                                        disabled={processing}
+                                        className="w-full bg-pink-600 text-white hover:bg-pink-700"
+                                    >
                                         {processing
                                             ? 'Saving...'
                                             : isEdit

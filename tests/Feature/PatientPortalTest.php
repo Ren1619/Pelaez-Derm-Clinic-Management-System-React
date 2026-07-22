@@ -11,6 +11,8 @@ use App\Models\PatientVisitPrescription;
 use App\Models\PatientVisitProduct;
 use App\Models\PatientVisitService;
 use App\Models\Service;
+use App\Models\StaffAccount;
+use App\Models\SystemNotification;
 use Inertia\Testing\AssertableInertia as Assert;
 
 test('patient portal modules require a patient session', function (string $routeName) {
@@ -94,6 +96,11 @@ test('patients only see their own appointment history', function () {
     $otherPatient = Patient::factory()->create();
     $ownAppointment = Appointment::factory()->create(['PID' => $patient->PID, 'status' => 'upcoming']);
     Appointment::factory()->create(['PID' => $otherPatient->PID, 'status' => 'upcoming']);
+    $category = Category::factory()->service()->create(['category_name' => 'Facial Treatments']);
+    $service = Service::factory()->create([
+        'category_ID' => $category->category_ID,
+        'name' => 'Hydra Facial',
+    ]);
 
     $this->actingAs($patient, 'patient')
         ->get(route('patient.appointments.index'))
@@ -102,7 +109,10 @@ test('patients only see their own appointment history', function () {
             ->component('patient/appointments/index')
             ->where('patient.PID', $patient->PID)
             ->where('appointments.total', 1)
-            ->where('appointments.data.0.appointment_ID', $ownAppointment->appointment_ID));
+            ->where('appointments.data.0.appointment_ID', $ownAppointment->appointment_ID)
+            ->where('services.0.service_ID', $service->service_ID)
+            ->where('services.0.name', 'Hydra Facial')
+            ->where('services.0.category_name', 'Facial Treatments'));
 });
 
 test('patients can request service appointments only for themselves', function () {
@@ -151,7 +161,90 @@ test('patients cannot reschedule or cancel another patients appointment', functi
         ->post(route('patient.appointments.cancel', $otherAppointment), ['reason' => 'Unauthorized'])
         ->assertForbidden();
 
+    $this->actingAs($patient, 'patient')
+        ->getJson(route('patient.appointments.availability', [
+            'branch_ID' => $branch->branch_ID,
+            'date' => $date,
+            'exclude_appointment_ID' => $otherAppointment->appointment_ID,
+        ]))
+        ->assertForbidden();
+
     expect($otherAppointment->refresh()->status)->toBe('pending');
+});
+
+test('patients can accept a clinic proposal or submit another schedule before staff approval', function () {
+    $patient = Patient::factory()->create();
+    $branch = Branch::factory()->create();
+    $staff = StaffAccount::factory()->admin()->create([
+        'branch_ID' => $branch->branch_ID,
+    ]);
+    $date = now()->next('Monday')->toDateString();
+    $appointment = Appointment::factory()->create([
+        'PID' => $patient->PID,
+        'branch_ID' => $branch->branch_ID,
+        'branch_name' => $branch->branch_name,
+        'scheduled_at' => "{$date} 09:00:00",
+        'status' => 'pending',
+    ]);
+
+    $this->actingAs($staff)
+        ->patch(route('appointments.update', $appointment), [
+            'scheduled_date' => $date,
+            'scheduled_time' => '10:00',
+            'reschedule_reason' => 'The clinic schedule changed.',
+        ])
+        ->assertSessionHasNoErrors();
+
+    expect($appointment->refresh())
+        ->status->toBe('reschedule_requested')
+        ->reschedule_reason->toBe('The clinic schedule changed.')
+        ->and(SystemNotification::query()->where('type', 'appointment_reschedule_requested')->count())
+        ->toBe(1);
+
+    $this->actingAs($patient, 'patient')
+        ->get(route('patient.appointments.index'))
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('appointments.data.0.status', 'reschedule_requested')
+            ->where('appointments.data.0.can_accept_reschedule', true)
+            ->where('appointments.data.0.reschedule_reason', 'The clinic schedule changed.'));
+
+    $this->actingAs($patient, 'patient')
+        ->patch(route('patient.appointments.accept-reschedule', $appointment))
+        ->assertSessionHasNoErrors();
+
+    expect($appointment->refresh())
+        ->status->toBe('pending')
+        ->reschedule_responded_at->not->toBeNull();
+
+    $this->actingAs($staff)
+        ->patch(route('appointments.status', $appointment), ['action' => 'approve'])
+        ->assertSessionHasNoErrors();
+
+    expect($appointment->refresh()->status)->toBe('upcoming');
+
+    $this->actingAs($staff)
+        ->patch(route('appointments.update', $appointment), [
+            'scheduled_date' => $date,
+            'scheduled_time' => '11:00',
+            'reschedule_reason' => 'A second clinic conflict occurred.',
+        ])
+        ->assertSessionHasNoErrors();
+
+    $this->actingAs($patient, 'patient')
+        ->patch(route('patient.appointments.update', $appointment), [
+            'branch_ID' => $branch->branch_ID,
+            'scheduled_date' => $date,
+            'scheduled_time' => '12:00',
+            'appointment_type' => 'consultation',
+            'concern' => $appointment->concern,
+            'reschedule_reason' => 'Noon works better for me.',
+        ])
+        ->assertSessionHasNoErrors();
+
+    expect($appointment->refresh())
+        ->status->toBe('pending')
+        ->scheduled_at->format('H:i')->toBe('12:00')
+        ->reschedule_responded_at->not->toBeNull();
 });
 
 test('the patient service catalog shows clinic services and supports booking links', function () {

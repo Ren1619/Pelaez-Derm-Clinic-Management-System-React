@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\RescheduleAppointmentRequest;
 use App\Http\Requests\StoreAppointmentRequest;
-use App\Http\Requests\UpdateAppointmentRequest;
 use App\Models\Appointment;
 use App\Models\StaffAccount;
 use App\Services\AppointmentNotificationService;
@@ -64,13 +64,22 @@ class AppointmentController extends Controller
         return back()->with('success', 'Appointment scheduled.');
     }
 
-    public function update(UpdateAppointmentRequest $request, Appointment $appointment): RedirectResponse
+    public function update(RescheduleAppointmentRequest $request, Appointment $appointment): RedirectResponse
     {
         Gate::authorize('update', $appointment);
-        $updated = $this->managementService->update($appointment, $request->validated());
-        $this->notificationService->staffRequestedReschedule($updated, $request->user(), $request->string('remarks')->toString() ?: null);
+        $reschedule = [
+            'scheduled_date' => $request->string('scheduled_date')->toString(),
+            'scheduled_time' => $request->string('scheduled_time')->toString(),
+            'reschedule_reason' => $request->string('reschedule_reason')->toString(),
+        ];
+        $updated = $this->managementService->requestReschedule($appointment, $reschedule);
+        $this->notificationService->staffRequestedReschedule(
+            $updated,
+            $request->user(),
+            $reschedule['reschedule_reason'],
+        );
 
-        return back()->with('success', 'Appointment rescheduled and returned to pending approval.');
+        return back()->with('success', 'The proposed schedule was sent to the patient for review.');
     }
 
     public function destroy(Appointment $appointment): RedirectResponse

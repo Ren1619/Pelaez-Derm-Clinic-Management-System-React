@@ -2,6 +2,7 @@ import { Form, Head, Link, router } from '@inertiajs/react';
 import {
     CalendarClock,
     CalendarPlus,
+    Check,
     Pencil,
     Search,
     Trash2,
@@ -9,6 +10,7 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import {
+    acceptReschedule,
     cancel,
     destroy,
     index,
@@ -37,10 +39,13 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { useAppointmentAvailability } from '@/hooks/use-appointment-availability';
+import { availability } from '@/routes/patient/appointments';
 import type {
     Appointment,
     AppointmentPaginator,
     AppointmentStatus,
+    AppointmentTimeSlot,
     AppointmentType,
 } from '@/types';
 
@@ -50,8 +55,12 @@ type Props = {
     summary: Record<AppointmentStatus, number>;
     todayAppointments: Appointment[];
     branches: Array<{ branch_ID: number; branch_name: string }>;
-    services: Array<{ service_ID: number; name: string }>;
-    timeSlots: Array<{ value: string; label: string }>;
+    services: Array<{
+        service_ID: number;
+        name: string;
+        category_name: string;
+    }>;
+    timeSlots: AppointmentTimeSlot[];
     filters: {
         status: AppointmentStatus | 'all';
         appointment_type: AppointmentType | 'all';
@@ -65,6 +74,9 @@ const dateFormatter = new Intl.DateTimeFormat('en-PH', {
     dateStyle: 'medium',
     timeStyle: 'short',
 });
+
+const textareaClassName =
+    'min-h-24 w-full resize-y rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs outline-none transition-[color,box-shadow] placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50';
 
 export default function PatientAppointments({
     appointments,
@@ -130,11 +142,12 @@ export default function PatientAppointments({
                     </Card>
                 )}
 
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-7">
                     {(
                         [
                             'today',
                             'pending',
+                            'reschedule_requested',
                             'upcoming',
                             'completed',
                             'cancelled',
@@ -159,7 +172,7 @@ export default function PatientAppointments({
 
                 <Card className="gap-0 overflow-hidden py-0">
                     <div className="flex flex-col gap-3 border-b p-4 lg:flex-row lg:items-end">
-                        <label className="grid min-w-0 flex-1 gap-1 text-sm">
+                        <label className="grid w-full min-w-0 gap-1 text-sm sm:w-72">
                             <span className="text-muted-foreground">
                                 Search appointments
                             </span>
@@ -202,6 +215,7 @@ export default function PatientAppointments({
                                     [
                                         'today',
                                         'pending',
+                                        'reschedule_requested',
                                         'upcoming',
                                         'completed',
                                         'cancelled',
@@ -230,6 +244,13 @@ export default function PatientAppointments({
                                 key={appointment.appointment_ID}
                                 appointment={appointment}
                                 onEdit={() => setDialog(appointment)}
+                                onAccept={() =>
+                                    router.patch(
+                                        acceptReschedule.url(appointment),
+                                        {},
+                                        { preserveScroll: true },
+                                    )
+                                }
                                 onCancel={() =>
                                     setCancelAppointment(appointment)
                                 }
@@ -286,11 +307,13 @@ export default function PatientAppointments({
 function AppointmentRow({
     appointment,
     onEdit,
+    onAccept,
     onCancel,
     onDelete,
 }: {
     appointment: Appointment;
     onEdit: () => void;
+    onAccept: () => void;
     onCancel: () => void;
     onDelete: () => void;
 }) {
@@ -303,7 +326,7 @@ function AppointmentRow({
                         variant={statusVariant(appointment.status)}
                         className="capitalize"
                     >
-                        {appointment.status}
+                        {appointment.status.replaceAll('_', ' ')}
                     </Badge>
                 </div>
                 <p className="mt-2 text-sm text-muted-foreground">
@@ -320,11 +343,31 @@ function AppointmentRow({
                         Reason: {appointment.cancellation_reason}
                     </p>
                 )}
+                {appointment.status === 'reschedule_requested' && (
+                    <div className="mt-3 rounded-md border border-primary/30 bg-primary/5 p-3 text-sm">
+                        <p className="font-medium">
+                            The clinic proposed this new date and time.
+                        </p>
+                        {appointment.reschedule_reason && (
+                            <p className="mt-1 text-muted-foreground">
+                                Reason: {appointment.reschedule_reason}
+                            </p>
+                        )}
+                    </div>
+                )}
             </div>
             <div className="flex flex-wrap gap-2">
-                {appointment.can_edit && (
+                {appointment.can_accept_reschedule && (
+                    <Button size="sm" onClick={onAccept}>
+                        <Check /> Accept proposed schedule
+                    </Button>
+                )}
+                {appointment.can_patient_edit && (
                     <Button size="sm" variant="outline" onClick={onEdit}>
-                        <Pencil /> Reschedule
+                        <Pencil />
+                        {appointment.can_accept_reschedule
+                            ? 'Choose another time'
+                            : 'Reschedule'}
                     </Button>
                 )}
                 {appointment.can_cancel && (
@@ -369,27 +412,72 @@ function AppointmentDialog({
         appointment?.appointment_type ??
             (initialServiceId ? 'service' : 'consultation'),
     );
+    const [branchId, setBranchId] = useState(
+        String(appointment?.branch_ID ?? branches[0]?.branch_ID ?? ''),
+    );
+    const [scheduledDate, setScheduledDate] = useState(
+        appointment ? formatDateInput(appointment.scheduled_at) : '',
+    );
+    const [scheduledTime, setScheduledTime] = useState(
+        appointment ? formatTimeInput(appointment.scheduled_at) : '',
+    );
+    const availabilityUrl =
+        branchId && scheduledDate
+            ? availability.url({
+                  query: {
+                      branch_ID: Number(branchId),
+                      date: scheduledDate,
+                      exclude_appointment_ID: appointment?.appointment_ID,
+                  },
+              })
+            : null;
+    const { slots: availableTimeSlots, isLoading: isLoadingAvailability } =
+        useAppointmentAvailability(availabilityUrl, timeSlots);
     const form = appointment ? update.form(appointment) : store.form();
     const selectedServices =
         appointment?.services
             .map((service) => service.service_ID)
             .filter((id): id is number => id !== null) ??
         (initialServiceId ? [initialServiceId] : []);
+    const servicesByCategory = Object.groupBy(
+        services,
+        (service) => service.category_name,
+    );
+
+    const selectedTime = availableTimeSlots.some(
+        (slot) => slot.value === scheduledTime && slot.is_available === false,
+    )
+        ? ''
+        : scheduledTime;
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
-                <DialogHeader>
-                    <DialogTitle>
+                <DialogHeader className="gap-1.5">
+                    <DialogTitle className="flex items-center gap-2">
+                        <CalendarClock className="size-5" />
                         {appointment
-                            ? 'Reschedule Appointment'
-                            : 'Set Appointment'}
+                            ? 'Reschedule appointment'
+                            : 'Set appointment'}
                     </DialogTitle>
                     <DialogDescription>
                         Your request remains pending until clinic staff approve
                         it. Available schedules are Monday through Saturday.
                     </DialogDescription>
                 </DialogHeader>
+                {appointment?.status === 'reschedule_requested' && (
+                    <div className="rounded-lg border border-primary/30 bg-primary/5 p-4 text-sm">
+                        <p className="font-medium">
+                            Choose a different schedule below, or close this
+                            dialog and accept the clinic's proposed schedule.
+                        </p>
+                        {appointment.reschedule_reason && (
+                            <p className="mt-2 text-muted-foreground">
+                                Clinic reason: {appointment.reschedule_reason}
+                            </p>
+                        )}
+                    </div>
+                )}
                 <Form
                     {...form}
                     options={{ preserveScroll: true }}
@@ -398,17 +486,7 @@ function AppointmentDialog({
                 >
                     {({ errors, processing }) => (
                         <>
-                            <p className="text-sm text-foreground">
-                                All fields with{' '}
-                                <span
-                                    className="text-primary"
-                                    aria-hidden="true"
-                                >
-                                    *
-                                </span>{' '}
-                                are required.
-                            </p>
-                            <div className="grid gap-4 sm:grid-cols-2">
+                            <div className="grid gap-4 rounded-lg border p-4 sm:grid-cols-2">
                                 <Field
                                     label="Clinic branch"
                                     error={errors.branch_ID}
@@ -416,13 +494,13 @@ function AppointmentDialog({
                                 >
                                     <Select
                                         name="branch_ID"
-                                        defaultValue={String(
-                                            appointment?.branch_ID ??
-                                                branches[0]?.branch_ID ??
-                                                '',
-                                        )}
+                                        value={branchId}
+                                        onValueChange={(value) => {
+                                            setBranchId(value);
+                                            setScheduledTime('');
+                                        }}
                                     >
-                                        <SelectTrigger>
+                                        <SelectTrigger className="w-full">
                                             <SelectValue placeholder="Select a branch" />
                                         </SelectTrigger>
                                         <SelectContent>
@@ -451,7 +529,7 @@ function AppointmentDialog({
                                             setType(value as AppointmentType)
                                         }
                                     >
-                                        <SelectTrigger>
+                                        <SelectTrigger className="w-full">
                                             <SelectValue />
                                         </SelectTrigger>
                                         <SelectContent>
@@ -464,59 +542,66 @@ function AppointmentDialog({
                                         </SelectContent>
                                     </Select>
                                 </Field>
-                            </div>
-                            <div className="grid gap-4 sm:grid-cols-2">
-                                <Field
-                                    label="Date"
-                                    error={errors.scheduled_date}
-                                    required
-                                >
-                                    <Input
-                                        name="scheduled_date"
-                                        type="date"
-                                        min={new Date().toLocaleDateString(
-                                            'en-CA',
-                                        )}
-                                        defaultValue={
-                                            appointment
-                                                ? formatDateInput(
-                                                      appointment.scheduled_at,
-                                                  )
-                                                : ''
-                                        }
-                                        required
-                                    />
-                                </Field>
-                                <Field
-                                    label="Time slot"
-                                    error={errors.scheduled_time}
-                                    required
-                                >
-                                    <Select
-                                        name="scheduled_time"
-                                        defaultValue={
-                                            appointment
-                                                ? formatTimeInput(
-                                                      appointment.scheduled_at,
-                                                  )
-                                                : ''
-                                        }
+                                <div className="grid gap-4 sm:col-span-2 sm:grid-cols-2">
+                                    <Field
+                                        label="Date"
+                                        error={errors.scheduled_date}
                                     >
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Select a time" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {timeSlots.map((slot) => (
-                                                <SelectItem
-                                                    key={slot.value}
-                                                    value={slot.value}
-                                                >
-                                                    {slot.label}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </Field>
+                                        <Input
+                                            name="scheduled_date"
+                                            type="date"
+                                            min={new Date().toLocaleDateString(
+                                                'en-CA',
+                                            )}
+                                            value={scheduledDate}
+                                            onChange={(event) => {
+                                                setScheduledDate(
+                                                    event.target.value,
+                                                );
+                                                setScheduledTime('');
+                                            }}
+                                            className="w-full sm:w-48"
+                                            required
+                                        />
+                                    </Field>
+                                    <Field
+                                        label="Time slot"
+                                        error={errors.scheduled_time}
+                                    >
+                                        <Select
+                                            name="scheduled_time"
+                                            value={selectedTime}
+                                            onValueChange={setScheduledTime}
+                                            disabled={
+                                                !branchId ||
+                                                !scheduledDate ||
+                                                isLoadingAvailability
+                                            }
+                                        >
+                                            <SelectTrigger className="w-full sm:w-48">
+                                                <SelectValue placeholder="Select a time" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {availableTimeSlots.map(
+                                                    (slot) => (
+                                                        <SelectItem
+                                                            key={slot.value}
+                                                            value={slot.value}
+                                                            disabled={
+                                                                slot.is_available ===
+                                                                false
+                                                            }
+                                                        >
+                                                            {formatSlotLabel(
+                                                                slot,
+                                                            )}
+                                                        </SelectItem>
+                                                    ),
+                                                )}
+                                            </SelectContent>
+                                        </Select>
+                                    </Field>
+                                </div>
                             </div>
                             {type === 'consultation' ? (
                                 <Field
@@ -530,7 +615,7 @@ function AppointmentDialog({
                                             appointment?.concern ?? ''
                                         }
                                         rows={4}
-                                        className="w-full rounded-md border bg-transparent px-3 py-2 text-sm"
+                                        className={textareaClassName}
                                         placeholder="Describe what you would like the doctor to check"
                                         required
                                     />
@@ -541,24 +626,47 @@ function AppointmentDialog({
                                     error={errors.service_ids}
                                     required
                                 >
-                                    <div className="grid max-h-52 gap-2 overflow-y-auto rounded-md border p-3 sm:grid-cols-2">
-                                        {services.map((service) => (
-                                            <label
-                                                key={service.service_ID}
-                                                className="flex items-center gap-2 text-sm"
-                                            >
-                                                <Checkbox
-                                                    name="service_ids[]"
-                                                    value={String(
-                                                        service.service_ID,
-                                                    )}
-                                                    defaultChecked={selectedServices.includes(
-                                                        service.service_ID,
-                                                    )}
-                                                />
-                                                {service.name}
-                                            </label>
-                                        ))}
+                                    <div className="grid max-h-64 min-h-24 gap-4 overflow-y-auto rounded-md border p-3">
+                                        {Object.entries(servicesByCategory).map(
+                                            ([
+                                                categoryName,
+                                                categoryServices,
+                                            ]) => (
+                                                <fieldset
+                                                    key={categoryName}
+                                                    className="grid gap-2"
+                                                >
+                                                    <legend className="text-sm font-semibold">
+                                                        {categoryName}
+                                                    </legend>
+                                                    <div className="grid gap-2 sm:grid-cols-2">
+                                                        {categoryServices?.map(
+                                                            (service) => (
+                                                                <label
+                                                                    key={
+                                                                        service.service_ID
+                                                                    }
+                                                                    className="flex items-center gap-2 text-sm"
+                                                                >
+                                                                    <Checkbox
+                                                                        name="service_ids[]"
+                                                                        value={String(
+                                                                            service.service_ID,
+                                                                        )}
+                                                                        defaultChecked={selectedServices.includes(
+                                                                            service.service_ID,
+                                                                        )}
+                                                                    />
+                                                                    {
+                                                                        service.name
+                                                                    }
+                                                                </label>
+                                                            ),
+                                                        )}
+                                                    </div>
+                                                </fieldset>
+                                            ),
+                                        )}
                                     </div>
                                 </Field>
                             )}
@@ -570,11 +678,11 @@ function AppointmentDialog({
                                     <textarea
                                         name="reschedule_reason"
                                         rows={3}
-                                        className="w-full rounded-md border bg-transparent px-3 py-2 text-sm"
+                                        className={textareaClassName}
                                     />
                                 </Field>
                             )}
-                            <DialogFooter>
+                            <DialogFooter className="border-t pt-4">
                                 <Button
                                     type="button"
                                     variant="outline"
@@ -607,8 +715,8 @@ function CancelDialog({
 }) {
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent>
-                <DialogHeader>
+            <DialogContent className="sm:max-w-md">
+                <DialogHeader className="gap-1.5">
                     <DialogTitle>Cancel appointment?</DialogTitle>
                     <DialogDescription>
                         Tell the clinic why you need to cancel this schedule.
@@ -641,11 +749,11 @@ function CancelDialog({
                                     <textarea
                                         name="reason"
                                         rows={4}
-                                        className="w-full rounded-md border bg-transparent px-3 py-2 text-sm"
+                                        className={textareaClassName}
                                         required
                                     />
                                 </Field>
-                                <DialogFooter>
+                                <DialogFooter className="border-t pt-4">
                                     <Button
                                         type="button"
                                         variant="outline"
@@ -680,8 +788,8 @@ function DeleteDialog({
 }) {
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent>
-                <DialogHeader>
+            <DialogContent className="sm:max-w-md">
+                <DialogHeader className="gap-1.5">
                     <DialogTitle>Delete this appointment?</DialogTitle>
                     <DialogDescription>
                         This removes the appointment from your history and
@@ -693,9 +801,10 @@ function DeleteDialog({
                         {...destroy.form(appointment)}
                         options={{ preserveScroll: true }}
                         onSuccess={() => onOpenChange(false)}
+                        className="grid gap-4"
                     >
                         {({ processing }) => (
-                            <DialogFooter>
+                            <DialogFooter className="border-t pt-4">
                                 <Button
                                     type="button"
                                     variant="outline"
@@ -814,15 +923,8 @@ function Field({
     children: React.ReactNode;
 }) {
     return (
-        <div className="grid gap-2">
-            <Label>
-                {label}
-                {required && (
-                    <span className="text-primary" aria-hidden="true">
-                        *
-                    </span>
-                )}
-            </Label>
+        <div className="grid content-start gap-2">
+            <Label>{label}</Label>
             {children}
             <InputError message={error} />
         </div>
@@ -836,7 +938,23 @@ function appointmentLabel(appointment: Appointment): string {
               .join(', ') || 'Service appointment';
 }
 function capitalize(value: string): string {
-    return `${value[0].toUpperCase()}${value.slice(1)}`;
+    const words = value.replaceAll('_', ' ');
+
+    return `${words[0].toUpperCase()}${words.slice(1)}`;
+}
+
+function formatSlotLabel(slot: AppointmentTimeSlot): string {
+    if (slot.is_available === false) {
+        return `${slot.label} — Fully booked`;
+    }
+
+    if (slot.remaining_capacity !== undefined) {
+        const noun = slot.remaining_capacity === 1 ? 'slot' : 'slots';
+
+        return `${slot.label} — ${slot.remaining_capacity} ${noun} left`;
+    }
+
+    return slot.label;
 }
 function statusVariant(
     status: AppointmentStatus,

@@ -120,15 +120,15 @@ test('passwords can be reset through the matching account broker', function (
                 'account_type' => $accountType->value,
                 'token' => $notification->token,
                 'email' => $account->email,
-                'password' => 'new-password',
-                'password_confirmation' => 'new-password',
+                'password' => 'New-password1',
+                'password_confirmation' => 'New-password1',
             ]);
 
             $response
                 ->assertSessionHasNoErrors()
                 ->assertRedirect(route('login'));
 
-            expect(Hash::check('new-password', $account->refresh()->password))->toBeTrue();
+            expect(Hash::check('New-password1', $account->refresh()->password))->toBeTrue();
 
             return true;
         },
@@ -145,8 +145,8 @@ test('password cannot be reset through the wrong account broker', function () {
         'account_type' => AccountType::Staff->value,
         'token' => 'invalid-token',
         'email' => $patient->email,
-        'password' => 'new-password',
-        'password_confirmation' => 'new-password',
+        'password' => 'New-password1',
+        'password_confirmation' => 'New-password1',
     ]);
 
     $response->assertSessionHasErrors('email');
@@ -160,9 +160,28 @@ test('account setup returns a first-time setup success message', function () {
         'account_type' => AccountType::Patient->value,
         'token' => $token,
         'email' => $account->email,
-        'password' => 'new-password',
-        'password_confirmation' => 'new-password',
+        'password' => 'New-password1',
+        'password_confirmation' => 'New-password1',
         'account_setup' => true,
     ])->assertRedirect(route('login'))
         ->assertSessionHas('status', 'Your account is ready. You can now log in.');
 });
+
+test('password reset requires every displayed complexity requirement', function (string $password) {
+    $account = Patient::factory()->create();
+    $token = Password::broker('patients')->createToken($account);
+
+    $this->post(route('password.update'), [
+        'account_type' => AccountType::Patient->value,
+        'token' => $token,
+        'email' => $account->email,
+        'password' => $password,
+        'password_confirmation' => $password,
+    ])->assertSessionHasErrors('password');
+})->with([
+    'missing lowercase' => 'PASSWORD1!',
+    'missing uppercase' => 'password1!',
+    'missing number' => 'Password!',
+    'missing special character' => 'Password1',
+    'fewer than eight characters' => 'Pass1!',
+]);

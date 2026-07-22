@@ -56,6 +56,7 @@ type Props = AppointmentOptions & {
 const statuses: Array<{ value: AppointmentStatus | 'all'; label: string }> = [
     { value: 'today', label: 'Today' },
     { value: 'pending', label: 'Pending' },
+    { value: 'reschedule_requested', label: 'Awaiting Patient' },
     { value: 'upcoming', label: 'Upcoming' },
     { value: 'completed', label: 'Completed' },
     { value: 'cancelled', label: 'Cancelled' },
@@ -154,7 +155,7 @@ export default function AppointmentsIndex(props: Props) {
                     </Button>
                 </div>
 
-                <div className="grid gap-3 sm:grid-cols-3 xl:grid-cols-6">
+                <div className="grid gap-3 sm:grid-cols-3 xl:grid-cols-7">
                     {statuses.map(({ value, label }) => (
                         <button
                             key={value}
@@ -172,68 +173,78 @@ export default function AppointmentsIndex(props: Props) {
                     ))}
                 </div>
 
-                <DataTableLayout>
-                    <div className="grid gap-3 border-b p-4 lg:grid-cols-[minmax(14rem,1fr)_12rem_12rem_auto]">
-                        <div className="relative">
-                            <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-                            <Input
-                                value={search}
-                                onChange={(event) =>
-                                    setSearch(event.target.value)
+                <Card className="gap-0 overflow-hidden py-0">
+                    <div className="flex flex-col gap-3 border-b p-4 lg:flex-row lg:items-center lg:justify-between">
+                        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+                            <div className="relative w-full sm:w-72">
+                                <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+                                <Input
+                                    value={search}
+                                    onChange={(event) =>
+                                        setSearch(event.target.value)
+                                    }
+                                    placeholder="Search patient, concern, or service…"
+                                    className="pl-9"
+                                />
+                            </div>
+                            <Select
+                                value={
+                                    filters.branch_ID
+                                        ? String(filters.branch_ID)
+                                        : 'all'
                                 }
-                                placeholder="Search patient, concern, or service…"
-                                className="pl-9"
-                            />
-                        </div>
-                        <Select
-                            value={
-                                filters.branch_ID
-                                    ? String(filters.branch_ID)
-                                    : 'all'
-                            }
-                            onValueChange={(value) =>
-                                visit({
-                                    branch_ID:
-                                        value === 'all' ? null : Number(value),
-                                })
-                            }
-                        >
-                            <SelectTrigger>
-                                <SelectValue placeholder="All clinics" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">All clinics</SelectItem>
-                                {props.branches.map((branch) => (
-                                    <SelectItem
-                                        key={branch.branch_ID}
-                                        value={String(branch.branch_ID)}
-                                    >
-                                        {branch.branch_name}
+                                onValueChange={(value) =>
+                                    visit({
+                                        branch_ID:
+                                            value === 'all'
+                                                ? null
+                                                : Number(value),
+                                    })
+                                }
+                            >
+                                <SelectTrigger className="w-full sm:w-48">
+                                    <SelectValue placeholder="All clinics" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">
+                                        All clinics
                                     </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                        <Select
-                            value={filters.appointment_type}
-                            onValueChange={(value) =>
-                                visit({
-                                    appointment_type:
-                                        value as AppointmentFilters['appointment_type'],
-                                })
-                            }
-                        >
-                            <SelectTrigger>
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">All types</SelectItem>
-                                <SelectItem value="consultation">
-                                    Consultation
-                                </SelectItem>
-                                <SelectItem value="service">Service</SelectItem>
-                            </SelectContent>
-                        </Select>
-                        <div className="flex rounded-md border p-1">
+                                    {props.branches.map((branch) => (
+                                        <SelectItem
+                                            key={branch.branch_ID}
+                                            value={String(branch.branch_ID)}
+                                        >
+                                            {branch.branch_name}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            <Select
+                                value={filters.appointment_type}
+                                onValueChange={(value) =>
+                                    visit({
+                                        appointment_type:
+                                            value as AppointmentFilters['appointment_type'],
+                                    })
+                                }
+                            >
+                                <SelectTrigger className="w-full sm:w-48">
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">
+                                        All types
+                                    </SelectItem>
+                                    <SelectItem value="consultation">
+                                        Consultation
+                                    </SelectItem>
+                                    <SelectItem value="service">
+                                        Service
+                                    </SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="flex w-fit shrink-0 rounded-md border p-1">
                             <Button
                                 size="sm"
                                 variant={
@@ -418,6 +429,7 @@ export default function AppointmentsIndex(props: Props) {
                 mode={dialogMode}
                 open={dialogOpen}
                 onOpenChange={setDialogOpen}
+                onEdit={(appointment) => openDialog('edit', appointment)}
                 branches={props.branches}
                 patients={props.patients}
                 doctors={props.doctors}

@@ -1,5 +1,13 @@
 import { Form, router } from '@inertiajs/react';
-import { CalendarClock, Check, ExternalLink, Play, X } from 'lucide-react';
+import {
+    CalendarClock,
+    Check,
+    ChevronsUpDown,
+    ExternalLink,
+    Pencil,
+    Play,
+    X,
+} from 'lucide-react';
 import { useState } from 'react';
 import type { ReactNode } from 'react';
 import InputError from '@/components/input-error';
@@ -23,7 +31,9 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { useAppointmentAvailability } from '@/hooks/use-appointment-availability';
 import {
+    availability,
     cancel,
     startVisit,
     status,
@@ -31,13 +41,19 @@ import {
     update,
 } from '@/routes/appointments';
 import { show as patientShow } from '@/routes/patients';
-import type { Appointment, AppointmentOptions, AppointmentType } from '@/types';
+import type {
+    Appointment,
+    AppointmentOptions,
+    AppointmentTimeSlot,
+    AppointmentType,
+} from '@/types';
 
 type AppointmentDialogProps = AppointmentOptions & {
     appointment: Appointment | null;
     mode: 'create' | 'edit' | 'view';
     open: boolean;
     onOpenChange: (open: boolean) => void;
+    onEdit: (appointment: Appointment) => void;
 };
 
 const localDate = (iso?: string) => {
@@ -51,7 +67,7 @@ const localDate = (iso?: string) => {
 };
 const localTime = (iso?: string) => {
     if (!iso) {
-        return '09:00';
+        return '';
     }
 
     const date = new Date(iso);
@@ -59,14 +75,17 @@ const localTime = (iso?: string) => {
     return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
 };
 
+const textareaClassName =
+    'min-h-24 w-full resize-y rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs outline-none transition-[color,box-shadow] placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50';
+
 export function AppointmentDialog({
     appointment,
     mode,
     open,
     onOpenChange,
+    onEdit,
     branches,
     patients,
-    doctors,
     services,
     timeSlots,
 }: AppointmentDialogProps) {
@@ -81,9 +100,34 @@ export function AppointmentDialog({
     const [doctorId, setDoctorId] = useState(
         String(appointment?.doctor_account_ID ?? ''),
     );
-    const availableDoctors = doctors.filter(
-        (doctor) => !doctor.branch_ID || String(doctor.branch_ID) === branchId,
+    const [scheduledDate, setScheduledDate] = useState(
+        localDate(appointment?.scheduled_at),
     );
+    const [scheduledTime, setScheduledTime] = useState(
+        localTime(appointment?.scheduled_at),
+    );
+    const availabilityUrl =
+        branchId && scheduledDate
+            ? availability.url({
+                  query: {
+                      branch_ID: Number(branchId),
+                      date: scheduledDate,
+                      exclude_appointment_ID: appointment?.appointment_ID,
+                  },
+              })
+            : null;
+    const { slots: availableTimeSlots, isLoading: isLoadingAvailability } =
+        useAppointmentAvailability(availabilityUrl, timeSlots);
+    const servicesByCategory = Object.groupBy(
+        services,
+        (service) => service.category_name,
+    );
+
+    const selectedTime = availableTimeSlots.some(
+        (slot) => slot.value === scheduledTime && slot.is_available === false,
+    )
+        ? ''
+        : scheduledTime;
 
     const runAction = (action: 'approve' | 'complete' | 'incomplete') => {
         if (!appointment) {
@@ -102,15 +146,20 @@ export function AppointmentDialog({
             return;
         }
 
-        router.post(startVisit.url(appointment), {
-            doctor_account_ID: doctorId || null,
-        });
+        router.post(startVisit.url(appointment));
     };
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-3xl">
-                <DialogHeader>
+            <DialogContent
+                className="max-h-[90vh] overflow-y-auto sm:max-w-2xl"
+                onOpenAutoFocus={(event) => {
+                    if (mode === 'create') {
+                        event.preventDefault();
+                    }
+                }}
+            >
+                <DialogHeader className="gap-1.5">
                     <DialogTitle className="flex items-center gap-2">
                         <CalendarClock className="size-5" />
                         {isView
@@ -127,7 +176,7 @@ export function AppointmentDialog({
                 </DialogHeader>
 
                 {isView && appointment ? (
-                    <div className="grid gap-5">
+                    <div className="grid gap-4">
                         <div className="grid gap-4 rounded-lg border p-4 sm:grid-cols-2">
                             <Detail
                                 label="Patient"
@@ -147,8 +196,7 @@ export function AppointmentDialog({
                             <Detail
                                 label="Doctor"
                                 value={
-                                    appointment.doctor_name ??
-                                    'Assign when starting'
+                                    appointment.doctor_name ?? 'Not assigned'
                                 }
                             />
                             <Detail
@@ -168,7 +216,7 @@ export function AppointmentDialog({
                                     variant="outline"
                                     className="mt-1 capitalize"
                                 >
-                                    {appointment.status}
+                                    {appointment.status.replaceAll('_', ' ')}
                                 </Badge>
                             </div>
                         </div>
@@ -192,6 +240,12 @@ export function AppointmentDialog({
                                     {appointment.remarks}
                                 </p>
                             )}
+                            {appointment.reschedule_reason && (
+                                <p className="mt-3 text-sm">
+                                    Reschedule reason:{' '}
+                                    {appointment.reschedule_reason}
+                                </p>
+                            )}
                             {appointment.cancellation_reason && (
                                 <p className="mt-3 text-sm">
                                     Cancellation:{' '}
@@ -200,46 +254,10 @@ export function AppointmentDialog({
                             )}
                         </div>
 
-                        {appointment.can_start && (
-                            <div className="grid gap-2 rounded-lg border p-4">
-                                <Label>Doctor for this visit</Label>
-                                <Select
-                                    value={doctorId || 'none'}
-                                    onValueChange={(value) =>
-                                        setDoctorId(
-                                            value === 'none' ? '' : value,
-                                        )
-                                    }
-                                >
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select doctor" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="none">
-                                            Select doctor
-                                        </SelectItem>
-                                        {availableDoctors.map((doctor) => (
-                                            <SelectItem
-                                                key={doctor.account_ID}
-                                                value={String(
-                                                    doctor.account_ID,
-                                                )}
-                                            >
-                                                {doctor.full_name}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                                <p className="text-xs text-muted-foreground">
-                                    Starting creates one clinical visit and
-                                    copies all scheduled services into it.
-                                </p>
-                            </div>
-                        )}
-
-                        <DialogFooter className="flex-wrap sm:justify-between">
+                        <DialogFooter className="border-t pt-4 sm:justify-between">
                             <Button
                                 variant="outline"
+                                className="w-full sm:w-auto"
                                 onClick={() =>
                                     router.visit(
                                         patientShow.url(appointment.PID),
@@ -248,7 +266,15 @@ export function AppointmentDialog({
                             >
                                 Patient record <ExternalLink />
                             </Button>
-                            <div className="flex flex-wrap gap-2">
+                            <div className="grid gap-2 sm:flex sm:flex-wrap">
+                                {appointment.can_edit && (
+                                    <Button
+                                        variant="outline"
+                                        onClick={() => onEdit(appointment)}
+                                    >
+                                        <Pencil /> Reschedule
+                                    </Button>
+                                )}
                                 {appointment.can_approve && (
                                     <Button
                                         variant="outline"
@@ -258,10 +284,7 @@ export function AppointmentDialog({
                                     </Button>
                                 )}
                                 {appointment.can_start && (
-                                    <Button
-                                        onClick={beginVisit}
-                                        disabled={!doctorId}
-                                    >
+                                    <Button onClick={beginVisit}>
                                         <Play /> Start visit
                                     </Button>
                                 )}
@@ -303,257 +326,287 @@ export function AppointmentDialog({
                         options={{ preserveScroll: true }}
                         onSuccess={() => onOpenChange(false)}
                         resetOnSuccess={!isEdit}
-                        className="grid gap-5"
+                        className="grid gap-4"
                     >
                         {({ errors, processing }) => (
                             <>
-                                <p className="text-sm text-foreground">
-                                    All fields with{' '}
-                                    <span
-                                        className="text-primary"
-                                        aria-hidden="true"
-                                    >
-                                        *
-                                    </span>{' '}
-                                    are required.
-                                </p>
-                                <div className="grid gap-4 sm:grid-cols-2">
-                                    <Field
-                                        label="Patient"
-                                        error={errors.PID}
-                                        required
-                                    >
-                                        <Select
-                                            name="PID"
-                                            defaultValue={String(
-                                                appointment?.PID ?? '',
-                                            )}
-                                            required
-                                        >
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="Select patient" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {patients.map((patient) => (
-                                                    <SelectItem
-                                                        key={patient.PID}
-                                                        value={String(
-                                                            patient.PID,
+                                <input
+                                    type="hidden"
+                                    name="doctor_account_ID"
+                                    value={doctorId}
+                                />
+                                <div className="grid gap-4 rounded-lg border p-4 sm:grid-cols-2">
+                                    {isEdit && appointment ? (
+                                        <>
+                                            <div className="sm:col-span-2">
+                                                <Detail
+                                                    label="Patient"
+                                                    value={
+                                                        appointment.patient_name
+                                                    }
+                                                />
+                                            </div>
+                                            <Detail
+                                                label="Clinic"
+                                                value={appointment.branch_name}
+                                            />
+                                            <Detail
+                                                label="Appointment type"
+                                                value={
+                                                    appointment.appointment_type ===
+                                                    'consultation'
+                                                        ? 'Consultation'
+                                                        : 'Service'
+                                                }
+                                            />
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Field
+                                                label="Patient"
+                                                error={errors.PID}
+                                                className="sm:col-span-2"
+                                            >
+                                                <PatientCombobox
+                                                    patients={patients}
+                                                />
+                                            </Field>
+                                            <Field
+                                                label="Clinic"
+                                                error={errors.branch_ID}
+                                            >
+                                                <Select
+                                                    name="branch_ID"
+                                                    value={branchId}
+                                                    onValueChange={(value) => {
+                                                        setBranchId(value);
+                                                        setDoctorId('');
+                                                        setScheduledTime('');
+                                                    }}
+                                                    required
+                                                >
+                                                    <SelectTrigger className="w-full">
+                                                        <SelectValue placeholder="Select clinic" />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        {branches.map(
+                                                            (branch) => (
+                                                                <SelectItem
+                                                                    key={
+                                                                        branch.branch_ID
+                                                                    }
+                                                                    value={String(
+                                                                        branch.branch_ID,
+                                                                    )}
+                                                                >
+                                                                    {
+                                                                        branch.branch_name
+                                                                    }
+                                                                </SelectItem>
+                                                            ),
                                                         )}
-                                                    >
-                                                        {patient.full_name}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                    </Field>
-                                    <Field
-                                        label="Clinic"
-                                        error={errors.branch_ID}
-                                        required
-                                    >
-                                        <Select
-                                            name="branch_ID"
-                                            value={branchId}
-                                            onValueChange={(value) => {
-                                                setBranchId(value);
-                                                setDoctorId('');
-                                            }}
-                                            required
-                                        >
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="Select clinic" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {branches.map((branch) => (
-                                                    <SelectItem
-                                                        key={branch.branch_ID}
-                                                        value={String(
-                                                            branch.branch_ID,
-                                                        )}
-                                                    >
-                                                        {branch.branch_name}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                    </Field>
-                                    <Field
-                                        label="Date"
-                                        error={errors.scheduled_date}
-                                        required
-                                    >
-                                        <Input
-                                            name="scheduled_date"
-                                            type="date"
-                                            min={new Date()
-                                                .toISOString()
-                                                .slice(0, 10)}
-                                            defaultValue={localDate(
-                                                appointment?.scheduled_at,
-                                            )}
-                                            required
-                                        />
-                                    </Field>
-                                    <Field
-                                        label="Time"
-                                        error={errors.scheduled_time}
-                                        required
-                                    >
-                                        <Select
-                                            name="scheduled_time"
-                                            defaultValue={localTime(
-                                                appointment?.scheduled_at,
-                                            )}
-                                            required
-                                        >
-                                            <SelectTrigger>
-                                                <SelectValue />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {timeSlots.map((slot) => (
-                                                    <SelectItem
-                                                        key={slot.value}
-                                                        value={slot.value}
-                                                    >
-                                                        {slot.label}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                    </Field>
-                                    <Field
-                                        label="Doctor (optional)"
-                                        error={errors.doctor_account_ID}
-                                    >
-                                        <input
-                                            type="hidden"
-                                            name="doctor_account_ID"
-                                            value={doctorId}
-                                        />
-                                        <Select
-                                            value={doctorId || 'none'}
-                                            onValueChange={(value) =>
-                                                setDoctorId(
-                                                    value === 'none'
-                                                        ? ''
-                                                        : value,
-                                                )
-                                            }
-                                        >
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="Assign later" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="none">
-                                                    Assign later
-                                                </SelectItem>
-                                                {availableDoctors.map(
-                                                    (doctor) => (
-                                                        <SelectItem
-                                                            key={
-                                                                doctor.account_ID
-                                                            }
-                                                            value={String(
-                                                                doctor.account_ID,
-                                                            )}
-                                                        >
-                                                            {doctor.full_name}
+                                                    </SelectContent>
+                                                </Select>
+                                            </Field>
+                                            <Field
+                                                label="Appointment type"
+                                                error={errors.appointment_type}
+                                            >
+                                                <Select
+                                                    name="appointment_type"
+                                                    value={type}
+                                                    onValueChange={(value) =>
+                                                        setType(
+                                                            value as AppointmentType,
+                                                        )
+                                                    }
+                                                >
+                                                    <SelectTrigger className="w-full">
+                                                        <SelectValue />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="consultation">
+                                                            Consultation
                                                         </SelectItem>
-                                                    ),
-                                                )}
-                                            </SelectContent>
-                                        </Select>
-                                    </Field>
-                                    <Field
-                                        label="Appointment type"
-                                        error={errors.appointment_type}
-                                        required
-                                    >
-                                        <Select
-                                            name="appointment_type"
-                                            value={type}
-                                            onValueChange={(value) =>
-                                                setType(
-                                                    value as AppointmentType,
-                                                )
-                                            }
+                                                        <SelectItem value="service">
+                                                            Service
+                                                        </SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                            </Field>
+                                        </>
+                                    )}
+                                    <div className="grid gap-4 sm:col-span-2 sm:grid-cols-2">
+                                        <Field
+                                            label="Date"
+                                            error={errors.scheduled_date}
                                         >
-                                            <SelectTrigger>
-                                                <SelectValue />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="consultation">
-                                                    Consultation
-                                                </SelectItem>
-                                                <SelectItem value="service">
-                                                    Service
-                                                </SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    </Field>
+                                            <Input
+                                                name="scheduled_date"
+                                                type="date"
+                                                min={new Date()
+                                                    .toISOString()
+                                                    .slice(0, 10)}
+                                                value={scheduledDate}
+                                                onChange={(event) => {
+                                                    setScheduledDate(
+                                                        event.target.value,
+                                                    );
+                                                    setScheduledTime('');
+                                                }}
+                                                className="w-full sm:w-48"
+                                                required
+                                            />
+                                        </Field>
+                                        <Field
+                                            label="Time"
+                                            error={errors.scheduled_time}
+                                        >
+                                            <Select
+                                                name="scheduled_time"
+                                                value={selectedTime}
+                                                onValueChange={setScheduledTime}
+                                                disabled={
+                                                    !branchId ||
+                                                    !scheduledDate ||
+                                                    isLoadingAvailability
+                                                }
+                                                required
+                                            >
+                                                <SelectTrigger className="w-full sm:w-48">
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {availableTimeSlots.map(
+                                                        (slot) => (
+                                                            <SelectItem
+                                                                key={slot.value}
+                                                                value={
+                                                                    slot.value
+                                                                }
+                                                                disabled={
+                                                                    slot.is_available ===
+                                                                    false
+                                                                }
+                                                            >
+                                                                {formatSlotLabel(
+                                                                    slot,
+                                                                )}
+                                                            </SelectItem>
+                                                        ),
+                                                    )}
+                                                </SelectContent>
+                                            </Select>
+                                        </Field>
+                                    </div>
                                 </div>
 
-                                {type === 'consultation' ? (
-                                    <Field
-                                        label="Concern"
-                                        error={errors.concern}
-                                        required
-                                    >
-                                        <textarea
-                                            name="concern"
-                                            defaultValue={
-                                                appointment?.concern ?? ''
-                                            }
-                                            rows={4}
-                                            maxLength={1000}
-                                            required
-                                            className="w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                                        />
-                                    </Field>
-                                ) : (
-                                    <Field
-                                        label="Services"
-                                        error={errors.service_ids}
-                                        required
-                                    >
-                                        <div className="grid max-h-48 gap-2 overflow-y-auto rounded-md border p-3 sm:grid-cols-2">
-                                            {services.map((service) => (
-                                                <label
-                                                    key={service.service_ID}
-                                                    className="flex items-center gap-2 text-sm"
-                                                >
-                                                    <Checkbox
-                                                        name="service_ids[]"
-                                                        value={String(
-                                                            service.service_ID,
-                                                        )}
-                                                        defaultChecked={appointment?.services.some(
-                                                            (item) =>
-                                                                item.service_ID ===
-                                                                service.service_ID,
-                                                        )}
-                                                    />
-                                                    {service.name}
-                                                </label>
-                                            ))}
-                                        </div>
-                                    </Field>
-                                )}
+                                {!isEdit &&
+                                    (type === 'consultation' ? (
+                                        <Field
+                                            label="Concern"
+                                            error={errors.concern}
+                                        >
+                                            <textarea
+                                                name="concern"
+                                                defaultValue={
+                                                    appointment?.concern ?? ''
+                                                }
+                                                rows={4}
+                                                maxLength={1000}
+                                                required
+                                                className={textareaClassName}
+                                            />
+                                        </Field>
+                                    ) : (
+                                        <Field
+                                            label="Services"
+                                            error={errors.service_ids}
+                                        >
+                                            <div className="grid max-h-64 min-h-24 gap-4 overflow-y-auto rounded-md border p-3">
+                                                {Object.entries(
+                                                    servicesByCategory,
+                                                ).map(
+                                                    ([
+                                                        categoryName,
+                                                        categoryServices,
+                                                    ]) => (
+                                                        <fieldset
+                                                            key={categoryName}
+                                                            className="grid gap-2"
+                                                        >
+                                                            <legend className="text-sm font-semibold">
+                                                                {categoryName}
+                                                            </legend>
+                                                            <div className="grid gap-2 sm:grid-cols-2">
+                                                                {categoryServices?.map(
+                                                                    (
+                                                                        service,
+                                                                    ) => (
+                                                                        <label
+                                                                            key={
+                                                                                service.service_ID
+                                                                            }
+                                                                            className="flex items-center gap-2 text-sm"
+                                                                        >
+                                                                            <Checkbox
+                                                                                name="service_ids[]"
+                                                                                value={String(
+                                                                                    service.service_ID,
+                                                                                )}
+                                                                                defaultChecked={appointment?.services.some(
+                                                                                    (
+                                                                                        item,
+                                                                                    ) =>
+                                                                                        item.service_ID ===
+                                                                                        service.service_ID,
+                                                                                )}
+                                                                            />
+                                                                            {
+                                                                                service.name
+                                                                            }
+                                                                        </label>
+                                                                    ),
+                                                                )}
+                                                            </div>
+                                                        </fieldset>
+                                                    ),
+                                                )}
+                                            </div>
+                                        </Field>
+                                    ))}
 
-                                <Field label="Remarks" error={errors.remarks}>
+                                <Field
+                                    label={
+                                        isEdit
+                                            ? 'Reason for rescheduling'
+                                            : 'Remarks'
+                                    }
+                                    error={
+                                        isEdit
+                                            ? errors.reschedule_reason
+                                            : errors.remarks
+                                    }
+                                >
                                     <textarea
-                                        name="remarks"
+                                        name={
+                                            isEdit
+                                                ? 'reschedule_reason'
+                                                : 'remarks'
+                                        }
                                         defaultValue={
-                                            appointment?.remarks ?? ''
+                                            isEdit
+                                                ? ''
+                                                : (appointment?.remarks ?? '')
                                         }
                                         rows={2}
                                         maxLength={1000}
-                                        className="w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                        required={isEdit}
+                                        className={textareaClassName}
                                     />
                                 </Field>
 
-                                <DialogFooter>
+                                <DialogFooter className="border-t pt-4">
                                     <Button
                                         type="button"
                                         variant="outline"
@@ -578,29 +631,196 @@ export function AppointmentDialog({
     );
 }
 
+function formatSlotLabel(slot: AppointmentTimeSlot): string {
+    if (slot.is_available === false) {
+        return `${slot.label} — Fully booked`;
+    }
+
+    if (slot.remaining_capacity !== undefined) {
+        const noun = slot.remaining_capacity === 1 ? 'slot' : 'slots';
+
+        return `${slot.label} — ${slot.remaining_capacity} ${noun} left`;
+    }
+
+    return slot.label;
+}
+
 function Field({
     label,
     error,
-    required = false,
+    className,
     children,
 }: {
     label: string;
     error?: string;
-    required?: boolean;
+    className?: string;
     children: ReactNode;
 }) {
     return (
-        <div className="grid gap-2">
-            <Label>
-                {label}
-                {required && (
-                    <span className="text-primary" aria-hidden="true">
-                        *
-                    </span>
-                )}
-            </Label>
+        <div className={`grid content-start gap-2 ${className ?? ''}`}>
+            <Label>{label}</Label>
             {children}
             <InputError message={error} />
+        </div>
+    );
+}
+
+function PatientCombobox({
+    patients,
+    defaultValue,
+    defaultLabel,
+}: {
+    patients: AppointmentOptions['patients'];
+    defaultValue?: number;
+    defaultLabel?: string;
+}) {
+    const initialPatient = patients.find(
+        (patient) => patient.PID === defaultValue,
+    );
+    const [selectedId, setSelectedId] = useState(
+        defaultValue ? String(defaultValue) : '',
+    );
+    const [query, setQuery] = useState(
+        initialPatient?.full_name ?? defaultLabel ?? '',
+    );
+    const [open, setOpen] = useState(false);
+    const [highlightedIndex, setHighlightedIndex] = useState(0);
+    const normalizedQuery = query.trim().toLocaleLowerCase();
+    const filteredPatients = patients
+        .filter((patient) => {
+            if (!normalizedQuery) {
+                return true;
+            }
+
+            return (
+                patient.full_name
+                    .toLocaleLowerCase()
+                    .includes(normalizedQuery) ||
+                patient.contact_number
+                    ?.toLocaleLowerCase()
+                    .includes(normalizedQuery)
+            );
+        })
+        .slice(0, 10);
+
+    const selectPatient = (patient: AppointmentOptions['patients'][number]) => {
+        setSelectedId(String(patient.PID));
+        setQuery(patient.full_name);
+        setOpen(false);
+        setHighlightedIndex(0);
+    };
+
+    return (
+        <div className="relative">
+            <input type="hidden" name="PID" value={selectedId} />
+            <Input
+                role="combobox"
+                aria-label="Patient"
+                aria-autocomplete="list"
+                aria-expanded={open}
+                aria-controls="patient-combobox-options"
+                aria-activedescendant={
+                    open && filteredPatients[highlightedIndex]
+                        ? `patient-option-${filteredPatients[highlightedIndex].PID}`
+                        : undefined
+                }
+                autoComplete="off"
+                value={query}
+                placeholder="Search patient name or contact number"
+                className="pr-10"
+                onFocus={(event) => {
+                    setOpen(true);
+                    event.currentTarget.select();
+                }}
+                onBlur={() => setOpen(false)}
+                onChange={(event) => {
+                    setQuery(event.target.value);
+                    setSelectedId('');
+                    setHighlightedIndex(0);
+                    setOpen(true);
+                }}
+                onKeyDown={(event) => {
+                    if (event.key === 'ArrowDown') {
+                        event.preventDefault();
+                        setOpen(true);
+                        setHighlightedIndex((current) => {
+                            if (!open) {
+                                return 0;
+                            }
+
+                            return Math.min(
+                                current + 1,
+                                Math.max(filteredPatients.length - 1, 0),
+                            );
+                        });
+                    }
+
+                    if (event.key === 'ArrowUp') {
+                        event.preventDefault();
+                        setHighlightedIndex((current) =>
+                            Math.max(current - 1, 0),
+                        );
+                    }
+
+                    if (
+                        event.key === 'Enter' &&
+                        open &&
+                        filteredPatients[highlightedIndex]
+                    ) {
+                        event.preventDefault();
+                        selectPatient(filteredPatients[highlightedIndex]);
+                    }
+
+                    if (event.key === 'Escape') {
+                        setOpen(false);
+                    }
+                }}
+            />
+            <ChevronsUpDown className="pointer-events-none absolute top-2.5 right-3 size-4 text-muted-foreground" />
+
+            {open && (
+                <div
+                    id="patient-combobox-options"
+                    role="listbox"
+                    className="absolute z-50 mt-1 max-h-60 w-full overflow-y-auto rounded-md border bg-popover p-1 text-popover-foreground shadow-md"
+                >
+                    {filteredPatients.length > 0 ? (
+                        filteredPatients.map((patient, index) => (
+                            <button
+                                id={`patient-option-${patient.PID}`}
+                                key={patient.PID}
+                                type="button"
+                                role="option"
+                                aria-selected={
+                                    selectedId === String(patient.PID)
+                                }
+                                className={`flex w-full items-center gap-2 rounded-sm px-2 py-2 text-left text-sm outline-none ${index === highlightedIndex ? 'bg-accent text-accent-foreground' : ''}`}
+                                onMouseDown={(event) => event.preventDefault()}
+                                onMouseEnter={() => setHighlightedIndex(index)}
+                                onClick={() => selectPatient(patient)}
+                            >
+                                <Check
+                                    className={`size-4 shrink-0 ${selectedId === String(patient.PID) ? 'opacity-100' : 'opacity-0'}`}
+                                />
+                                <span className="min-w-0">
+                                    <span className="block truncate font-medium">
+                                        {patient.full_name}
+                                    </span>
+                                    {patient.contact_number && (
+                                        <span className="block truncate text-xs text-muted-foreground">
+                                            {patient.contact_number}
+                                        </span>
+                                    )}
+                                </span>
+                            </button>
+                        ))
+                    ) : (
+                        <p className="px-2 py-6 text-center text-sm text-muted-foreground">
+                            No patients found.
+                        </p>
+                    )}
+                </div>
+            )}
         </div>
     );
 }
@@ -636,7 +856,7 @@ function CancelButton({
             {...cancel.form(appointment)}
             options={{ preserveScroll: true }}
             onSuccess={onSuccess}
-            className="grid gap-2"
+            className="grid w-full gap-2 sm:flex sm:w-auto"
         >
             <p className="text-sm text-foreground">
                 All fields with{' '}
@@ -656,7 +876,7 @@ function CancelButton({
                 name="cancellation_reason"
                 placeholder="Cancellation reason"
                 required
-                className="min-w-48"
+                className="w-full sm:w-56"
             />
             <div>
                 <Button type="submit" variant="destructive">
