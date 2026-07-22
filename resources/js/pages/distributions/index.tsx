@@ -2,6 +2,7 @@ import { Head, router, useForm, usePage } from '@inertiajs/react';
 import {
     ArrowDownToLine,
     ArrowUpFromLine,
+    CalendarIcon,
     PackageCheck,
     Plus,
     Search,
@@ -19,6 +20,7 @@ import { TooltipIconButton } from '@/components/tooltip-icon-button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Calendar } from '@/components/ui/calendar';
 import { Card, CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -31,6 +33,11 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from '@/components/ui/popover';
 import {
     Select,
     SelectContent,
@@ -115,6 +122,115 @@ const formatDate = (value: string | null, includeTime = false) => {
     }).format(new Date(value));
 };
 
+/** Converts a local date and time into the value expected by Laravel. */
+function formatScheduledDate(date: Date, time: string): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+
+    return `${year}-${month}-${day}T${time}`;
+}
+
+/** Displays a Shadcn calendar with a time field for delivery scheduling. */
+function ScheduledDeliveryDateInput({
+    value,
+    onChange,
+    invalid,
+}: {
+    value: string;
+    onChange: (value: string) => void;
+    invalid: boolean;
+}) {
+    const [open, setOpen] = useState(false);
+    const [datePart, timePart = '09:00'] = value.split('T');
+    const [draftTime, setDraftTime] = useState('09:00');
+    const selectedTime = datePart ? timePart : draftTime;
+    const selectedDate = datePart
+        ? new Date(`${datePart}T00:00:00`)
+        : undefined;
+    const today = new Date();
+    const startOfToday = new Date(
+        today.getFullYear(),
+        today.getMonth(),
+        today.getDate(),
+    );
+    const displayValue = selectedDate
+        ? new Intl.DateTimeFormat('en-US', {
+              month: 'long',
+              day: 'numeric',
+              year: 'numeric',
+              hour: 'numeric',
+              minute: '2-digit',
+          }).format(
+              new Date(
+                  selectedDate.getFullYear(),
+                  selectedDate.getMonth(),
+                  selectedDate.getDate(),
+                  Number(selectedTime.split(':')[0]),
+                  Number(selectedTime.split(':')[1]),
+              ),
+          )
+        : '';
+
+    return (
+        <Popover open={open} onOpenChange={setOpen}>
+            <PopoverTrigger asChild>
+                <Button
+                    id="scheduled-date"
+                    type="button"
+                    variant="outline"
+                    aria-invalid={invalid}
+                    className="w-full justify-between font-normal aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20"
+                >
+                    <span
+                        className={displayValue ? '' : 'text-muted-foreground'}
+                    >
+                        {displayValue || 'July 10, 2026 at 5:24 PM'}
+                    </span>
+                    <CalendarIcon className="size-4 text-muted-foreground" />
+                </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                    mode="single"
+                    selected={selectedDate}
+                    onSelect={(date) => {
+                        if (date) {
+                            onChange(formatScheduledDate(date, selectedTime));
+                        }
+                    }}
+                    disabled={{ before: startOfToday }}
+                    captionLayout="dropdown"
+                    startMonth={startOfToday}
+                    endMonth={new Date(today.getFullYear() + 10, 11)}
+                />
+                <div className="grid gap-2 border-t p-3">
+                    <Label htmlFor="scheduled-time">Delivery time</Label>
+                    <Input
+                        id="scheduled-time"
+                        type="time"
+                        value={selectedTime}
+                        onChange={(event) => {
+                            const nextTime = event.target.value;
+
+                            setDraftTime(nextTime);
+
+                            if (selectedDate && nextTime) {
+                                onChange(
+                                    formatScheduledDate(selectedDate, nextTime),
+                                );
+                            }
+                        }}
+                    />
+                    <Button type="button" onClick={() => setOpen(false)}>
+                        Done
+                    </Button>
+                </div>
+            </PopoverContent>
+        </Popover>
+    );
+}
+
 export default function DistributionIndex({
     distributions,
     filters,
@@ -136,6 +252,7 @@ export default function DistributionIndex({
     const [selectedItems, setSelectedItems] = useState<
         Record<number, number | ''>
     >({});
+    const [productSearch, setProductSearch] = useState('');
     const page = usePage();
     const pageErrors = page.props.errors as Record<string, string>;
     const initialSourceBranch =
@@ -157,6 +274,28 @@ export default function DistributionIndex({
                     Number(createForm.data.from_branch_ID),
             ),
         [availableProducts, createForm.data.from_branch_ID],
+    );
+    const filteredSourceProducts = useMemo(() => {
+        const query = productSearch.trim().toLowerCase();
+
+        if (!query) {
+            return sourceProducts;
+        }
+
+        return sourceProducts.filter((product) =>
+            [
+                product.name,
+                product.category_name,
+                product.measurement_unit,
+            ].some((value) => value.toLowerCase().includes(query)),
+        );
+    }, [productSearch, sourceProducts]);
+    const selectedProducts = useMemo(
+        () =>
+            sourceProducts.filter(
+                (product) => selectedItems[product.product_ID] !== undefined,
+            ),
+        [selectedItems, sourceProducts],
     );
     const hasInvalidQuantities = Object.values(selectedItems).some(
         (quantity) => quantity === '' || quantity < 1,
@@ -237,6 +376,7 @@ export default function DistributionIndex({
             onSuccess: () => {
                 setCreateOpen(false);
                 setSelectedItems({});
+                setProductSearch('');
                 createForm.reset();
                 createForm.setData('from_branch_ID', initialSourceBranch);
             },
@@ -280,6 +420,7 @@ export default function DistributionIndex({
         createForm.setData('from_branch_ID', value);
         createForm.setData('to_branch_ID', '');
         setSelectedItems({});
+        setProductSearch('');
     };
 
     const toggleProduct = (product: DistributionProduct, checked: boolean) => {
@@ -287,7 +428,7 @@ export default function DistributionIndex({
             const next = { ...current };
 
             if (checked) {
-                next[product.product_ID] = '';
+                next[product.product_ID] = 1;
             } else {
                 delete next[product.product_ID];
             }
@@ -558,18 +699,14 @@ export default function DistributionIndex({
             </div>
 
             <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-                <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
-                    <form onSubmit={submitDistribution}>
+                <DialogContent className="max-h-[95dvh] overflow-y-auto sm:max-w-6xl">
+                    <form onSubmit={submitDistribution} className="grid gap-5">
                         <DialogHeader>
-                            <DialogTitle>Create distribution</DialogTitle>
+                            <DialogTitle className="flex items-center gap-2">
+                                <ArrowUpFromLine className="size-5" />
+                                Create distribution
+                            </DialogTitle>
                             <DialogDescription>
-                                Select the source, destination, and exact
-                                product batches to transfer.
-                            </DialogDescription>
-                        </DialogHeader>
-
-                        <div className="grid gap-5 py-5">
-                            <p className="text-sm text-foreground">
                                 All fields with{' '}
                                 <span
                                     className="text-primary"
@@ -578,76 +715,37 @@ export default function DistributionIndex({
                                     *
                                 </span>{' '}
                                 are required.
-                            </p>
-                            <div className="grid gap-4 sm:grid-cols-2">
-                                <div className="grid gap-2">
-                                    <Label htmlFor="from-branch">
-                                        Source branch
-                                        <span
-                                            className="text-primary"
-                                            aria-hidden="true"
+                            </DialogDescription>
+                        </DialogHeader>
+
+                        <div className="grid gap-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
+                            <div className="grid h-full grid-rows-[auto_auto_minmax(0,1fr)] gap-4">
+                                <div className="grid gap-4 sm:grid-cols-2">
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="from-branch">
+                                            Source branch
+                                            <span
+                                                className="text-primary"
+                                                aria-hidden="true"
+                                            >
+                                                *
+                                            </span>
+                                        </Label>
+                                        <Select
+                                            value={
+                                                createForm.data.from_branch_ID
+                                            }
+                                            onValueChange={changeSourceBranch}
+                                            disabled={!canViewAllBranches}
                                         >
-                                            *
-                                        </span>
-                                    </Label>
-                                    <Select
-                                        value={createForm.data.from_branch_ID}
-                                        onValueChange={changeSourceBranch}
-                                        disabled={!canViewAllBranches}
-                                    >
-                                        <SelectTrigger id="from-branch">
-                                            <SelectValue placeholder="Select source" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {branches.map((branch) => (
-                                                <SelectItem
-                                                    key={branch.branch_ID}
-                                                    value={branch.branch_ID.toString()}
-                                                >
-                                                    {branch.branch_name}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                    <FieldError
-                                        message={
-                                            createForm.errors.from_branch_ID
-                                        }
-                                    />
-                                </div>
-                                <div className="grid gap-2">
-                                    <Label htmlFor="to-branch">
-                                        Destination branch
-                                        <span
-                                            className="text-primary"
-                                            aria-hidden="true"
-                                        >
-                                            *
-                                        </span>
-                                    </Label>
-                                    <Select
-                                        value={createForm.data.to_branch_ID}
-                                        onValueChange={(value) =>
-                                            createForm.setData(
-                                                'to_branch_ID',
-                                                value,
-                                            )
-                                        }
-                                    >
-                                        <SelectTrigger id="to-branch">
-                                            <SelectValue placeholder="Select destination" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {branches
-                                                .filter(
-                                                    (branch) =>
-                                                        branch.branch_ID !==
-                                                        Number(
-                                                            createForm.data
-                                                                .from_branch_ID,
-                                                        ),
-                                                )
-                                                .map((branch) => (
+                                            <SelectTrigger
+                                                id="from-branch"
+                                                className="w-full"
+                                            >
+                                                <SelectValue placeholder="Select source" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {branches.map((branch) => (
                                                     <SelectItem
                                                         key={branch.branch_ID}
                                                         value={branch.branch_ID.toString()}
@@ -655,32 +753,83 @@ export default function DistributionIndex({
                                                         {branch.branch_name}
                                                     </SelectItem>
                                                 ))}
-                                        </SelectContent>
-                                    </Select>
-                                    <FieldError
-                                        message={createForm.errors.to_branch_ID}
-                                    />
+                                            </SelectContent>
+                                        </Select>
+                                        <FieldError
+                                            message={
+                                                createForm.errors.from_branch_ID
+                                            }
+                                        />
+                                    </div>
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="to-branch">
+                                            Destination branch
+                                            <span
+                                                className="text-primary"
+                                                aria-hidden="true"
+                                            >
+                                                *
+                                            </span>
+                                        </Label>
+                                        <Select
+                                            value={createForm.data.to_branch_ID}
+                                            onValueChange={(value) =>
+                                                createForm.setData(
+                                                    'to_branch_ID',
+                                                    value,
+                                                )
+                                            }
+                                        >
+                                            <SelectTrigger
+                                                id="to-branch"
+                                                className="w-full"
+                                            >
+                                                <SelectValue placeholder="Select destination" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {branches
+                                                    .filter(
+                                                        (branch) =>
+                                                            branch.branch_ID !==
+                                                            Number(
+                                                                createForm.data
+                                                                    .from_branch_ID,
+                                                            ),
+                                                    )
+                                                    .map((branch) => (
+                                                        <SelectItem
+                                                            key={
+                                                                branch.branch_ID
+                                                            }
+                                                            value={branch.branch_ID.toString()}
+                                                        >
+                                                            {branch.branch_name}
+                                                        </SelectItem>
+                                                    ))}
+                                            </SelectContent>
+                                        </Select>
+                                        <FieldError
+                                            message={
+                                                createForm.errors.to_branch_ID
+                                            }
+                                        />
+                                    </div>
                                 </div>
-                            </div>
-
-                            <div className="grid gap-4 sm:grid-cols-2">
                                 <div className="grid gap-2">
                                     <Label htmlFor="scheduled-date">
-                                        Scheduled date (optional)
+                                        Scheduled delivery date
                                     </Label>
-                                    <Input
-                                        id="scheduled-date"
-                                        type="datetime-local"
-                                        min={new Date()
-                                            .toISOString()
-                                            .slice(0, 16)}
+                                    <ScheduledDeliveryDateInput
                                         value={createForm.data.scheduled_date}
-                                        onChange={(event) =>
+                                        onChange={(value) =>
                                             createForm.setData(
                                                 'scheduled_date',
-                                                event.target.value,
+                                                value,
                                             )
                                         }
+                                        invalid={Boolean(
+                                            createForm.errors.scheduled_date,
+                                        )}
                                     />
                                     <FieldError
                                         message={
@@ -688,10 +837,8 @@ export default function DistributionIndex({
                                         }
                                     />
                                 </div>
-                                <div className="grid gap-2">
-                                    <Label htmlFor="notes">
-                                        Notes (optional)
-                                    </Label>
+                                <div className="grid min-h-0 grid-rows-[auto_minmax(0,1fr)_auto] gap-2">
+                                    <Label htmlFor="notes">Notes</Label>
                                     <textarea
                                         id="notes"
                                         value={createForm.data.notes}
@@ -702,7 +849,8 @@ export default function DistributionIndex({
                                             )
                                         }
                                         maxLength={500}
-                                        className="min-h-20 rounded-md border bg-transparent px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                        placeholder="Add any notes or special instructions..."
+                                        className="h-full min-h-32 resize-none rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
                                     />
                                     <FieldError
                                         message={createForm.errors.notes}
@@ -710,10 +858,10 @@ export default function DistributionIndex({
                                 </div>
                             </div>
 
-                            <div className="grid gap-2">
-                                <div>
-                                    <Label>
-                                        Available product batches
+                            <div className="grid min-w-0 content-start gap-5">
+                                <div className="grid gap-2">
+                                    <Label htmlFor="distribution-product-search">
+                                        Select products
                                         <span
                                             className="text-primary"
                                             aria-hidden="true"
@@ -721,80 +869,229 @@ export default function DistributionIndex({
                                             *
                                         </span>
                                     </Label>
+                                    <div className="relative">
+                                        <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+                                        <Input
+                                            id="distribution-product-search"
+                                            type="search"
+                                            value={productSearch}
+                                            onChange={(event) =>
+                                                setProductSearch(
+                                                    event.target.value,
+                                                )
+                                            }
+                                            placeholder="Search products..."
+                                            className="pl-9"
+                                        />
+                                    </div>
+                                    <div className="max-h-56 divide-y overflow-y-auto rounded-md border">
+                                        {filteredSourceProducts.map(
+                                            (product) => {
+                                                const checked =
+                                                    selectedItems[
+                                                        product.product_ID
+                                                    ] !== undefined;
+
+                                                return (
+                                                    <div
+                                                        key={product.product_ID}
+                                                        className="flex cursor-pointer items-center gap-3 p-3 transition-colors hover:bg-muted/50"
+                                                        onClick={() =>
+                                                            toggleProduct(
+                                                                product,
+                                                                !checked,
+                                                            )
+                                                        }
+                                                    >
+                                                        <Checkbox
+                                                            checked={checked}
+                                                            onClick={(event) =>
+                                                                event.stopPropagation()
+                                                            }
+                                                            onCheckedChange={(
+                                                                value,
+                                                            ) =>
+                                                                toggleProduct(
+                                                                    product,
+                                                                    value ===
+                                                                        true,
+                                                                )
+                                                            }
+                                                            aria-label={`Select ${product.name}`}
+                                                        />
+                                                        <div className="min-w-0 flex-1">
+                                                            <p className="truncate text-sm">
+                                                                {product.name}
+                                                            </p>
+                                                            <p className="text-xs text-muted-foreground">
+                                                                {
+                                                                    product.category_name
+                                                                }{' '}
+                                                                · Expires{' '}
+                                                                {product.expiration_date ??
+                                                                    'N/A'}{' '}
+                                                                ·{' '}
+                                                                {
+                                                                    product.quantity
+                                                                }{' '}
+                                                                {
+                                                                    product.measurement_unit
+                                                                }{' '}
+                                                                available
+                                                            </p>
+                                                        </div>
+                                                        <Badge variant="outline">
+                                                            {product.quantity}{' '}
+                                                            {
+                                                                product.measurement_unit
+                                                            }
+                                                        </Badge>
+                                                    </div>
+                                                );
+                                            },
+                                        )}
+                                        {filteredSourceProducts.length ===
+                                            0 && (
+                                            <p className="p-6 text-center text-sm text-muted-foreground">
+                                                {sourceProducts.length === 0
+                                                    ? 'No distributable stock is available at this branch.'
+                                                    : 'No products match your search.'}
+                                            </p>
+                                        )}
+                                    </div>
+                                </div>
+
+                                <div className="grid min-w-0 gap-2">
+                                    <Label>
+                                        Selected products (
+                                        {selectedProducts.length})
+                                    </Label>
+                                    <div className="max-h-64 overflow-auto rounded-md border">
+                                        <table className="w-full min-w-[640px] text-sm">
+                                            <thead className="sticky top-0 z-10 border-b bg-muted/90 text-left backdrop-blur-sm">
+                                                <tr>
+                                                    <th className="px-3 py-2 font-medium">
+                                                        Product
+                                                    </th>
+                                                    <th className="px-3 py-2 font-medium">
+                                                        Expiry
+                                                    </th>
+                                                    <th className="px-3 py-2 text-right font-medium">
+                                                        Available
+                                                    </th>
+                                                    <th className="px-3 py-2 font-medium">
+                                                        Quantity
+                                                    </th>
+                                                    <th className="px-3 py-2 font-medium">
+                                                        Unit
+                                                    </th>
+                                                    <th className="px-3 py-2 text-center font-medium">
+                                                        Action
+                                                    </th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y">
+                                                {selectedProducts.map(
+                                                    (product) => (
+                                                        <tr
+                                                            key={
+                                                                product.product_ID
+                                                            }
+                                                        >
+                                                            <td className="max-w-44 px-3 py-2.5">
+                                                                <p className="text-sm whitespace-normal">
+                                                                    {
+                                                                        product.name
+                                                                    }
+                                                                </p>
+                                                                <p className="text-xs text-muted-foreground">
+                                                                    {
+                                                                        product.category_name
+                                                                    }
+                                                                </p>
+                                                            </td>
+                                                            <td className="px-3 py-2.5 whitespace-nowrap">
+                                                                {formatDate(
+                                                                    product.expiration_date,
+                                                                )}
+                                                            </td>
+                                                            <td className="px-3 py-2.5 text-right">
+                                                                {
+                                                                    product.quantity
+                                                                }
+                                                            </td>
+                                                            <td className="px-3 py-2.5">
+                                                                <Input
+                                                                    type="number"
+                                                                    min={1}
+                                                                    max={
+                                                                        product.quantity
+                                                                    }
+                                                                    value={
+                                                                        selectedItems[
+                                                                            product
+                                                                                .product_ID
+                                                                        ]
+                                                                    }
+                                                                    onChange={(
+                                                                        event,
+                                                                    ) =>
+                                                                        updateQuantity(
+                                                                            product,
+                                                                            event
+                                                                                .target
+                                                                                .value,
+                                                                        )
+                                                                    }
+                                                                    className="w-24"
+                                                                    aria-label={`Quantity for ${product.name}`}
+                                                                />
+                                                            </td>
+                                                            <td className="px-3 py-2.5">
+                                                                {
+                                                                    product.measurement_unit
+                                                                }
+                                                            </td>
+                                                            <td className="px-3 py-2.5 text-center">
+                                                                <Button
+                                                                    type="button"
+                                                                    variant="ghost"
+                                                                    size="icon"
+                                                                    className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                                                                    onClick={() =>
+                                                                        toggleProduct(
+                                                                            product,
+                                                                            false,
+                                                                        )
+                                                                    }
+                                                                    aria-label={`Remove ${product.name}`}
+                                                                >
+                                                                    <Trash2 className="size-4" />
+                                                                </Button>
+                                                            </td>
+                                                        </tr>
+                                                    ),
+                                                )}
+                                                {selectedProducts.length ===
+                                                    0 && (
+                                                    <tr>
+                                                        <td
+                                                            colSpan={6}
+                                                            className="px-3 py-8 text-center text-muted-foreground"
+                                                        >
+                                                            Select at least one
+                                                            product to
+                                                            distribute.
+                                                        </td>
+                                                    </tr>
+                                                )}
+                                            </tbody>
+                                        </table>
+                                    </div>
                                     <p className="text-xs text-muted-foreground">
                                         Stock is deducted only when the transfer
                                         is marked as sent.
                                     </p>
-                                </div>
-                                <div className="max-h-72 divide-y overflow-y-auto rounded-md border">
-                                    {sourceProducts.map((product) => {
-                                        const checked =
-                                            selectedItems[
-                                                product.product_ID
-                                            ] !== undefined;
-
-                                        return (
-                                            <div
-                                                key={product.product_ID}
-                                                className="flex items-center gap-3 p-3"
-                                            >
-                                                <Checkbox
-                                                    checked={checked}
-                                                    onCheckedChange={(value) =>
-                                                        toggleProduct(
-                                                            product,
-                                                            value === true,
-                                                        )
-                                                    }
-                                                    aria-label={`Select ${product.name}`}
-                                                />
-                                                <div className="min-w-0 flex-1">
-                                                    <p className="truncate font-medium">
-                                                        {product.name}
-                                                    </p>
-                                                    <p className="text-xs text-muted-foreground">
-                                                        {product.category_name}{' '}
-                                                        · Expires{' '}
-                                                        {product.expiration_date ??
-                                                            'N/A'}{' '}
-                                                        · {product.quantity}{' '}
-                                                        {
-                                                            product.measurement_unit
-                                                        }{' '}
-                                                        available
-                                                    </p>
-                                                </div>
-                                                {checked && (
-                                                    <Input
-                                                        type="number"
-                                                        min={1}
-                                                        max={product.quantity}
-                                                        value={
-                                                            selectedItems[
-                                                                product
-                                                                    .product_ID
-                                                            ]
-                                                        }
-                                                        onChange={(event) =>
-                                                            updateQuantity(
-                                                                product,
-                                                                event.target
-                                                                    .value,
-                                                            )
-                                                        }
-                                                        className="w-24"
-                                                        aria-label={`Quantity for ${product.name}`}
-                                                    />
-                                                )}
-                                            </div>
-                                        );
-                                    })}
-                                    {sourceProducts.length === 0 && (
-                                        <p className="p-6 text-center text-sm text-muted-foreground">
-                                            No distributable stock is available
-                                            at this branch.
-                                        </p>
-                                    )}
                                 </div>
                                 <FieldError
                                     message={
@@ -807,11 +1104,12 @@ export default function DistributionIndex({
                             </div>
                         </div>
 
-                        <DialogFooter>
+                        <DialogFooter className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
                             <Button
                                 type="button"
-                                variant="outline"
                                 onClick={() => setCreateOpen(false)}
+                                disabled={createForm.processing}
+                                className="bg-black px-6 text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90"
                             >
                                 Cancel
                             </Button>
@@ -822,8 +1120,11 @@ export default function DistributionIndex({
                                     Object.keys(selectedItems).length === 0 ||
                                     hasInvalidQuantities
                                 }
+                                className="bg-pink-600 px-6 text-white hover:bg-pink-700"
                             >
-                                Create distribution
+                                {createForm.processing
+                                    ? 'Creating...'
+                                    : 'Create distribution'}
                             </Button>
                         </DialogFooter>
                     </form>

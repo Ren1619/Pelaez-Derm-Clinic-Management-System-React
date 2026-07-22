@@ -237,13 +237,13 @@ export function ProductDialog({
                         <Boxes className="size-5" />
                         {title}
                     </DialogTitle>
-                    <DialogDescription>
-                        {isView
-                            ? 'Review the selected inventory batch.'
-                            : isRestock
-                              ? 'Add a future-dated batch or merge into a matching expiration date.'
-                              : 'Provide the inventory batch information below.'}
-                    </DialogDescription>
+                    {(isView || isRestock) && (
+                        <DialogDescription>
+                            {isView
+                                ? 'Review the selected inventory batch.'
+                                : 'Add a future-dated batch or merge into a matching expiration date.'}
+                        </DialogDescription>
+                    )}
                 </DialogHeader>
 
                 {isView && product ? (
