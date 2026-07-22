@@ -4,7 +4,6 @@ import {
     ChevronLeft,
     ChevronRight,
     Clock3,
-    Eye,
     LayoutList,
     Pencil,
     Plus,
@@ -13,7 +12,9 @@ import {
     Trash2,
 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
+import { ClickableTableRow } from '@/components/clickable-table-row';
 import Heading from '@/components/heading';
+import { TooltipIconButton } from '@/components/tooltip-icon-button';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -426,17 +427,16 @@ function AppointmentTable({
                 </thead>
                 <tbody>
                     {appointments.map((appointment) => (
-                        <tr
+                        <ClickableTableRow
                             key={appointment.appointment_ID}
                             className="border-t"
+                            accessibleLabel={`View ${appointment.patient_name}'s appointment`}
+                            onActivate={() => onView(appointment)}
                         >
                             <td className="px-4 py-4">
-                                <button
-                                    className="font-medium hover:underline"
-                                    onClick={() => onView(appointment)}
-                                >
+                                <span className="font-medium">
                                     {appointment.patient_name}
-                                </button>
+                                </span>
                                 <p className="text-xs text-muted-foreground">
                                     {appointment.patient_contact}
                                 </p>
@@ -487,32 +487,24 @@ function AppointmentTable({
                             </td>
                             <td className="px-4 py-4">
                                 <div className="flex justify-end gap-1">
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        aria-label="View appointment"
-                                        onClick={() => onView(appointment)}
-                                    >
-                                        <Eye />
-                                    </Button>
                                     {appointment.can_edit && (
-                                        <Button
+                                        <TooltipIconButton
                                             variant="ghost"
                                             size="icon"
-                                            aria-label="Edit appointment"
+                                            tooltip={`Edit ${appointment.patient_name}'s appointment`}
                                             onClick={() => onEdit(appointment)}
                                         >
                                             <Pencil />
-                                        </Button>
+                                        </TooltipIconButton>
                                     )}
                                     {appointment.visit_ID === null &&
                                         ['pending', 'cancelled'].includes(
                                             appointment.status,
                                         ) && (
-                                            <Button
+                                            <TooltipIconButton
                                                 variant="ghost"
                                                 size="icon"
-                                                aria-label="Delete appointment"
+                                                tooltip={`Delete ${appointment.patient_name}'s appointment`}
                                                 onClick={() => {
                                                     if (
                                                         window.confirm(
@@ -531,11 +523,11 @@ function AppointmentTable({
                                                 }}
                                             >
                                                 <Trash2 />
-                                            </Button>
+                                            </TooltipIconButton>
                                         )}
                                 </div>
                             </td>
-                        </tr>
+                        </ClickableTableRow>
                     ))}
                     {appointments.length === 0 && (
                         <tr>

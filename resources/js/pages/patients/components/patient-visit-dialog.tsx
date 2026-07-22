@@ -64,7 +64,7 @@ export function PatientVisitDialog({
             <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
                 <DialogHeader>
                     <DialogTitle>
-                        <span className="text-[#F91D7C]">
+                        <span className="text-primary">
                             {isEdit ? 'Edit' : 'Add'}
                         </span>{' '}
                         Visit
@@ -225,7 +225,7 @@ export function PatientVisitDialog({
                                 </Button>
                                 <Button
                                     type="submit"
-                                    className="bg-[#F91D7C] hover:bg-[#e01a70]"
+                                    className="bg-primary hover:bg-primary/90"
                                     disabled={processing}
                                 >
                                     {processing

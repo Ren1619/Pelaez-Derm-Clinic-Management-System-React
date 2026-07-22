@@ -1,25 +1,30 @@
 <?php
 
-use App\Http\Controllers\BranchController;
 use App\Http\Controllers\AccountAuthenticationController;
 use App\Http\Controllers\AccountEmailVerificationController;
 use App\Http\Controllers\AccountPasswordResetController;
-use App\Http\Controllers\AppointmentController;
 use App\Http\Controllers\ActivityLogController;
+use App\Http\Controllers\AppointmentController;
 use App\Http\Controllers\AppointmentStatusController;
+use App\Http\Controllers\BranchController;
 use App\Http\Controllers\CategoryController;
-use App\Http\Controllers\FeedbackController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DistributionController;
 use App\Http\Controllers\DistributionStatusController;
-use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\FeedbackController;
 use App\Http\Controllers\InventoryController;
-use App\Http\Controllers\PatientController;
-use App\Http\Controllers\ReportController;
-use App\Http\Controllers\ReportExportController;
-use App\Http\Controllers\ReportPrintController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PatientAllergyController;
+use App\Http\Controllers\PatientAppointmentController;
+use App\Http\Controllers\PatientAuthController;
+use App\Http\Controllers\PatientController;
+use App\Http\Controllers\PatientEmailVerificationController;
+use App\Http\Controllers\PatientFeedbackController;
+use App\Http\Controllers\PatientHealthRecordController;
 use App\Http\Controllers\PatientMedicalConditionController;
 use App\Http\Controllers\PatientMedicationController;
+use App\Http\Controllers\PatientNotificationController;
+use App\Http\Controllers\PatientServiceCatalogController;
 use App\Http\Controllers\PatientVisitController;
 use App\Http\Controllers\PatientVisitDiagnosisController;
 use App\Http\Controllers\PatientVisitPrescriptionController;
@@ -31,14 +36,14 @@ use App\Http\Controllers\PosExpenseCategoryController;
 use App\Http\Controllers\PosExpenseController;
 use App\Http\Controllers\PosReceiptController;
 use App\Http\Controllers\PosSaleReturnController;
-use App\Http\Controllers\PatientEmailVerificationController;
-use App\Http\Controllers\PatientAuthController;
-use App\Http\Controllers\PatientFeedbackController;
+use App\Http\Controllers\PublicWebsiteController;
+use App\Http\Controllers\ReportController;
+use App\Http\Controllers\ReportExportController;
+use App\Http\Controllers\ReportPrintController;
 use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\StaffAccountController;
 use App\Http\Controllers\StaffEmailVerificationController;
 use App\Http\Controllers\StartAppointmentVisitController;
-use App\Http\Controllers\PublicWebsiteController;
 use App\Http\Controllers\SystemSettingsController;
 use App\Http\Middleware\RecordReadActivity;
 use Illuminate\Support\Facades\Route;
@@ -85,6 +90,26 @@ Route::prefix('patient')->name('patient.')->group(function () {
         ->name('login.store');
 
     Route::middleware(['patient.auth', RecordReadActivity::class])->group(function () {
+        Route::get('health-record', [PatientHealthRecordController::class, 'index'])->name('health-record.index');
+        Route::post('health-record/medical-conditions', [PatientHealthRecordController::class, 'storeMedicalCondition'])->name('health-record.medical-conditions.store');
+        Route::patch('health-record/medical-conditions/{medicalCondition}', [PatientHealthRecordController::class, 'updateMedicalCondition'])->name('health-record.medical-conditions.update');
+        Route::delete('health-record/medical-conditions/{medicalCondition}', [PatientHealthRecordController::class, 'destroyMedicalCondition'])->name('health-record.medical-conditions.destroy');
+        Route::post('health-record/allergies', [PatientHealthRecordController::class, 'storeAllergy'])->name('health-record.allergies.store');
+        Route::patch('health-record/allergies/{allergy}', [PatientHealthRecordController::class, 'updateAllergy'])->name('health-record.allergies.update');
+        Route::delete('health-record/allergies/{allergy}', [PatientHealthRecordController::class, 'destroyAllergy'])->name('health-record.allergies.destroy');
+        Route::post('health-record/medications', [PatientHealthRecordController::class, 'storeMedication'])->name('health-record.medications.store');
+        Route::patch('health-record/medications/{medication}', [PatientHealthRecordController::class, 'updateMedication'])->name('health-record.medications.update');
+        Route::delete('health-record/medications/{medication}', [PatientHealthRecordController::class, 'destroyMedication'])->name('health-record.medications.destroy');
+
+        Route::get('appointments', [PatientAppointmentController::class, 'index'])->name('appointments.index');
+        Route::post('appointments', [PatientAppointmentController::class, 'store'])->name('appointments.store');
+        Route::patch('appointments/{appointment}', [PatientAppointmentController::class, 'update'])->name('appointments.update');
+        Route::post('appointments/{appointment}/cancel', [PatientAppointmentController::class, 'cancel'])->name('appointments.cancel');
+        Route::delete('appointments/{appointment}', [PatientAppointmentController::class, 'destroy'])->name('appointments.destroy');
+
+        Route::get('services', [PatientServiceCatalogController::class, 'index'])->name('services.index');
+        Route::patch('notifications/{systemNotification}/read', [PatientNotificationController::class, 'read'])->name('notifications.read');
+        Route::patch('notifications/read-all', [PatientNotificationController::class, 'readAll'])->name('notifications.read-all');
         Route::get('feedback', [PatientFeedbackController::class, 'index'])->name('feedback.index');
         Route::post('feedback', [PatientFeedbackController::class, 'store'])->name('feedback.store');
         Route::post('logout', [PatientAuthController::class, 'destroy'])->name('logout');
@@ -92,6 +117,9 @@ Route::prefix('patient')->name('patient.')->group(function () {
 });
 
 Route::middleware(['auth', 'verified', RecordReadActivity::class])->group(function () {
+    Route::patch('notifications/{systemNotification}/read', [NotificationController::class, 'read'])->name('notifications.read');
+    Route::patch('notifications/read-all', [NotificationController::class, 'readAll'])->name('notifications.read-all');
+
     Route::get('dashboard', DashboardController::class)
         ->middleware('staff.module:dashboard')
         ->name('dashboard');
@@ -172,31 +200,31 @@ Route::middleware(['auth', 'verified', RecordReadActivity::class])->group(functi
     });
 
     Route::middleware('staff.module:patients')->group(function () {
-    Route::resource('patients', PatientController::class)->only(['index', 'show', 'store', 'update', 'destroy']);
-    Route::post('patients/{patient}/medical-conditions', [PatientMedicalConditionController::class, 'store'])->name('patients.medical-conditions.store');
-    Route::patch('patients/{patient}/medical-conditions/{medicalCondition}', [PatientMedicalConditionController::class, 'update'])->scopeBindings()->name('patients.medical-conditions.update');
-    Route::delete('patients/{patient}/medical-conditions/{medicalCondition}', [PatientMedicalConditionController::class, 'destroy'])->scopeBindings()->name('patients.medical-conditions.destroy');
-    Route::post('patients/{patient}/allergies', [PatientAllergyController::class, 'store'])->name('patients.allergies.store');
-    Route::patch('patients/{patient}/allergies/{allergy}', [PatientAllergyController::class, 'update'])->scopeBindings()->name('patients.allergies.update');
-    Route::delete('patients/{patient}/allergies/{allergy}', [PatientAllergyController::class, 'destroy'])->scopeBindings()->name('patients.allergies.destroy');
-    Route::post('patients/{patient}/medications', [PatientMedicationController::class, 'store'])->name('patients.medications.store');
-    Route::patch('patients/{patient}/medications/{medication}', [PatientMedicationController::class, 'update'])->scopeBindings()->name('patients.medications.update');
-    Route::delete('patients/{patient}/medications/{medication}', [PatientMedicationController::class, 'destroy'])->scopeBindings()->name('patients.medications.destroy');
-    Route::post('patients/{patient}/visits', [PatientVisitController::class, 'store'])->name('patients.visits.store');
-    Route::patch('patients/{patient}/visits/{visit}', [PatientVisitController::class, 'update'])->scopeBindings()->name('patients.visits.update');
-    Route::delete('patients/{patient}/visits/{visit}', [PatientVisitController::class, 'destroy'])->scopeBindings()->name('patients.visits.destroy');
-    Route::post('patients/{patient}/visits/{visit}/diagnoses', [PatientVisitDiagnosisController::class, 'store'])->scopeBindings()->name('patients.visits.diagnoses.store');
-    Route::patch('patients/{patient}/visits/{visit}/diagnoses/{diagnosis}', [PatientVisitDiagnosisController::class, 'update'])->scopeBindings()->name('patients.visits.diagnoses.update');
-    Route::delete('patients/{patient}/visits/{visit}/diagnoses/{diagnosis}', [PatientVisitDiagnosisController::class, 'destroy'])->scopeBindings()->name('patients.visits.diagnoses.destroy');
-    Route::post('patients/{patient}/visits/{visit}/prescriptions', [PatientVisitPrescriptionController::class, 'store'])->scopeBindings()->name('patients.visits.prescriptions.store');
-    Route::patch('patients/{patient}/visits/{visit}/prescriptions/{prescription}', [PatientVisitPrescriptionController::class, 'update'])->scopeBindings()->name('patients.visits.prescriptions.update');
-    Route::delete('patients/{patient}/visits/{visit}/prescriptions/{prescription}', [PatientVisitPrescriptionController::class, 'destroy'])->scopeBindings()->name('patients.visits.prescriptions.destroy');
-    Route::post('patients/{patient}/visits/{visit}/services', [PatientVisitServiceController::class, 'store'])->scopeBindings()->name('patients.visits.services.store');
-    Route::patch('patients/{patient}/visits/{visit}/services/{service}', [PatientVisitServiceController::class, 'update'])->scopeBindings()->name('patients.visits.services.update');
-    Route::delete('patients/{patient}/visits/{visit}/services/{service}', [PatientVisitServiceController::class, 'destroy'])->scopeBindings()->name('patients.visits.services.destroy');
-    Route::post('patients/{patient}/visits/{visit}/products', [PatientVisitProductController::class, 'store'])->scopeBindings()->name('patients.visits.products.store');
-    Route::patch('patients/{patient}/visits/{visit}/products/{product}', [PatientVisitProductController::class, 'update'])->scopeBindings()->name('patients.visits.products.update');
-    Route::delete('patients/{patient}/visits/{visit}/products/{product}', [PatientVisitProductController::class, 'destroy'])->scopeBindings()->name('patients.visits.products.destroy');
+        Route::resource('patients', PatientController::class)->only(['index', 'show', 'store', 'update', 'destroy']);
+        Route::post('patients/{patient}/medical-conditions', [PatientMedicalConditionController::class, 'store'])->name('patients.medical-conditions.store');
+        Route::patch('patients/{patient}/medical-conditions/{medicalCondition}', [PatientMedicalConditionController::class, 'update'])->scopeBindings()->name('patients.medical-conditions.update');
+        Route::delete('patients/{patient}/medical-conditions/{medicalCondition}', [PatientMedicalConditionController::class, 'destroy'])->scopeBindings()->name('patients.medical-conditions.destroy');
+        Route::post('patients/{patient}/allergies', [PatientAllergyController::class, 'store'])->name('patients.allergies.store');
+        Route::patch('patients/{patient}/allergies/{allergy}', [PatientAllergyController::class, 'update'])->scopeBindings()->name('patients.allergies.update');
+        Route::delete('patients/{patient}/allergies/{allergy}', [PatientAllergyController::class, 'destroy'])->scopeBindings()->name('patients.allergies.destroy');
+        Route::post('patients/{patient}/medications', [PatientMedicationController::class, 'store'])->name('patients.medications.store');
+        Route::patch('patients/{patient}/medications/{medication}', [PatientMedicationController::class, 'update'])->scopeBindings()->name('patients.medications.update');
+        Route::delete('patients/{patient}/medications/{medication}', [PatientMedicationController::class, 'destroy'])->scopeBindings()->name('patients.medications.destroy');
+        Route::post('patients/{patient}/visits', [PatientVisitController::class, 'store'])->name('patients.visits.store');
+        Route::patch('patients/{patient}/visits/{visit}', [PatientVisitController::class, 'update'])->scopeBindings()->name('patients.visits.update');
+        Route::delete('patients/{patient}/visits/{visit}', [PatientVisitController::class, 'destroy'])->scopeBindings()->name('patients.visits.destroy');
+        Route::post('patients/{patient}/visits/{visit}/diagnoses', [PatientVisitDiagnosisController::class, 'store'])->scopeBindings()->name('patients.visits.diagnoses.store');
+        Route::patch('patients/{patient}/visits/{visit}/diagnoses/{diagnosis}', [PatientVisitDiagnosisController::class, 'update'])->scopeBindings()->name('patients.visits.diagnoses.update');
+        Route::delete('patients/{patient}/visits/{visit}/diagnoses/{diagnosis}', [PatientVisitDiagnosisController::class, 'destroy'])->scopeBindings()->name('patients.visits.diagnoses.destroy');
+        Route::post('patients/{patient}/visits/{visit}/prescriptions', [PatientVisitPrescriptionController::class, 'store'])->scopeBindings()->name('patients.visits.prescriptions.store');
+        Route::patch('patients/{patient}/visits/{visit}/prescriptions/{prescription}', [PatientVisitPrescriptionController::class, 'update'])->scopeBindings()->name('patients.visits.prescriptions.update');
+        Route::delete('patients/{patient}/visits/{visit}/prescriptions/{prescription}', [PatientVisitPrescriptionController::class, 'destroy'])->scopeBindings()->name('patients.visits.prescriptions.destroy');
+        Route::post('patients/{patient}/visits/{visit}/services', [PatientVisitServiceController::class, 'store'])->scopeBindings()->name('patients.visits.services.store');
+        Route::patch('patients/{patient}/visits/{visit}/services/{service}', [PatientVisitServiceController::class, 'update'])->scopeBindings()->name('patients.visits.services.update');
+        Route::delete('patients/{patient}/visits/{visit}/services/{service}', [PatientVisitServiceController::class, 'destroy'])->scopeBindings()->name('patients.visits.services.destroy');
+        Route::post('patients/{patient}/visits/{visit}/products', [PatientVisitProductController::class, 'store'])->scopeBindings()->name('patients.visits.products.store');
+        Route::patch('patients/{patient}/visits/{visit}/products/{product}', [PatientVisitProductController::class, 'update'])->scopeBindings()->name('patients.visits.products.update');
+        Route::delete('patients/{patient}/visits/{visit}/products/{product}', [PatientVisitProductController::class, 'destroy'])->scopeBindings()->name('patients.visits.products.destroy');
     });
 
     Route::resource('staff', StaffAccountController::class)

@@ -3,6 +3,11 @@
 namespace App\Providers;
 
 use App\Mail\BrevoTransport;
+use App\Enums\AccountType;
+use App\Models\Patient;
+use App\Models\Product;
+use App\Models\StaffAccount;
+use App\Observers\ProductObserver;
 use App\Services\ActivityLogRecorder;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Client\Factory as HttpFactory;
@@ -30,6 +35,8 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->registerBrevoMailTransport();
         $this->configureDefaults();
+        $this->configurePasswordResetUrls();
+        Product::observe(ProductObserver::class);
         $this->app->make(ActivityLogRecorder::class)->listen();
     }
 

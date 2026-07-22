@@ -6,6 +6,7 @@ use App\Http\Requests\StoreAppointmentRequest;
 use App\Http\Requests\UpdateAppointmentRequest;
 use App\Models\Appointment;
 use App\Models\StaffAccount;
+use App\Services\AppointmentNotificationService;
 use App\Services\Appointments\AppointmentManagementService;
 use App\Services\Appointments\AppointmentPageService;
 use App\Services\Appointments\AppointmentStatusService;
@@ -22,6 +23,7 @@ class AppointmentController extends Controller
         private AppointmentPageService $pageService,
         private AppointmentManagementService $managementService,
         private AppointmentStatusService $statusService,
+        private AppointmentNotificationService $notificationService,
     ) {}
 
     public function index(Request $request): Response
@@ -65,7 +67,8 @@ class AppointmentController extends Controller
     public function update(UpdateAppointmentRequest $request, Appointment $appointment): RedirectResponse
     {
         Gate::authorize('update', $appointment);
-        $this->managementService->update($appointment, $request->validated());
+        $updated = $this->managementService->update($appointment, $request->validated());
+        $this->notificationService->staffRequestedReschedule($updated, $request->user(), $request->string('remarks')->toString() ?: null);
 
         return back()->with('success', 'Appointment rescheduled and returned to pending approval.');
     }

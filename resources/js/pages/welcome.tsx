@@ -113,7 +113,7 @@ export default function Welcome({
                         <div className="mt-8 flex flex-wrap gap-4">
                             <Link
                                 href={patientLogin()}
-                                className="inline-flex items-center gap-2 rounded-lg bg-primary px-7 py-4 font-semibold text-primary-foreground transition hover:-translate-y-0.5 hover:shadow-xl"
+                                className="inline-flex items-center gap-2 rounded-lg bg-linear-to-br from-brand-bright via-brand-mid to-brand-deep px-7 py-4 font-semibold text-white transition hover:-translate-y-0.5 hover:shadow-xl"
                             >
                                 <CalendarDays className="size-5" /> Book
                                 Appointment
@@ -203,7 +203,7 @@ export default function Welcome({
 
             <section
                 id="services"
-                className="relative min-h-screen scroll-mt-20 overflow-hidden bg-gradient-to-br from-primary/5 via-background to-muted/70 py-20 lg:py-32"
+                className="relative min-h-screen scroll-mt-20 overflow-hidden bg-linear-to-br from-brand-soft via-brand-blush to-brand-mist py-20 lg:py-32 dark:from-background dark:via-accent/40 dark:to-background"
             >
                 <DecorativeGlow className="-top-40 -right-40 size-80" />
                 <DecorativeGlow className="-bottom-40 -left-40 size-[30rem]" />
@@ -448,7 +448,7 @@ export default function Welcome({
                 </div>
             </section>
 
-            <section className="relative overflow-hidden bg-primary py-20 text-primary-foreground">
+            <section className="relative overflow-hidden bg-linear-to-br from-brand-bright via-brand-mid to-brand-deep py-20 text-white">
                 <div
                     className="absolute top-10 left-10 size-32 rounded-full bg-white/10 blur-xl"
                     aria-hidden="true"
