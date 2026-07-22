@@ -238,8 +238,13 @@ export default function Welcome({
                                 </figure>
                                 <div className="flex flex-1 flex-col p-3 sm:p-4">
                                     <p className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
-                                        {service.category ?? 'Service'}
+                                        {service.major_category ?? 'Service'}
                                     </p>
+                                    {service.category && (
+                                        <p className="mt-1 text-xs text-muted-foreground">
+                                            {service.category}
+                                        </p>
+                                    )}
                                     <h3 className="mt-2 line-clamp-2 leading-snug font-semibold transition group-hover:text-primary">
                                         {service.name}
                                     </h3>

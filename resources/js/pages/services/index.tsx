@@ -68,29 +68,41 @@ export default function ServicesIndex({
     const [serviceToDelete, setServiceToDelete] =
         useState<ClinicService | null>(null);
 
+    const visitWithFilters = (
+        nextFilters: Partial<ServiceFilters>,
+        page?: number,
+    ) => {
+        const next = { ...filters, ...nextFilters };
+
+        router.get(
+            index.url(),
+            {
+                search: next.search || undefined,
+                per_page: next.per_page,
+                page,
+            },
+            {
+                only: ['services', 'filters'],
+                preserveState: true,
+                preserveScroll: true,
+                replace: page === undefined,
+            },
+        );
+    };
+
     useEffect(() => {
         if (search === filters.search) {
             return;
         }
 
         const timeout = window.setTimeout(() => {
-            router.get(
-                index.url(),
-                {
-                    search: search || undefined,
-                    per_page: filters.per_page,
-                },
-                {
-                    only: ['services', 'filters'],
-                    preserveState: true,
-                    preserveScroll: true,
-                    replace: true,
-                },
-            );
+            visitWithFilters({ search });
         }, 350);
 
         return () => window.clearTimeout(timeout);
-    }, [filters.per_page, filters.search, search]);
+        // The current server-side filters intentionally define the next visit.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [search, filters.search]);
 
     const openServiceDialog = (
         mode: ServiceDialogMode,
@@ -104,22 +116,6 @@ export default function ServicesIndex({
     const openDeleteDialog = (service: ClinicService) => {
         setServiceToDelete(service);
         setDeleteDialogOpen(true);
-    };
-
-    const changePerPage = (value: string) => {
-        router.get(
-            index.url(),
-            {
-                search: filters.search || undefined,
-                per_page: Number(value),
-            },
-            {
-                only: ['services', 'filters'],
-                preserveState: true,
-                preserveScroll: true,
-                replace: true,
-            },
-        );
     };
 
     return (
@@ -185,19 +181,9 @@ export default function ServicesIndex({
                         <DataTablePagination
                             paginator={services}
                             itemLabel="services"
-                            onPageChange={(page) =>
-                                router.get(
-                                    index.url(),
-                                    { ...filters, page },
-                                    {
-                                        only: ['services', 'filters'],
-                                        preserveState: true,
-                                        preserveScroll: true,
-                                    },
-                                )
-                            }
+                            onPageChange={(page) => visitWithFilters({}, page)}
                             onPerPageChange={(perPage) =>
-                                changePerPage(String(perPage))
+                                visitWithFilters({ per_page: perPage })
                             }
                         />
                     }
@@ -241,7 +227,15 @@ export default function ServicesIndex({
                                         </div>
                                     </TableCell>
                                     <TableCell className="whitespace-nowrap text-muted-foreground">
-                                        {service.category.category_name}
+                                        <span className="block font-medium text-foreground">
+                                            {
+                                                service.category
+                                                    .major_service_category.name
+                                            }
+                                        </span>
+                                        <span className="block text-xs">
+                                            {service.category.category_name}
+                                        </span>
                                     </TableCell>
                                     <TableCell className="max-w-md text-muted-foreground">
                                         <p className="line-clamp-2">

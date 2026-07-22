@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Category;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
 
 class CategoryService
@@ -26,14 +27,25 @@ class CategoryService
                 'category_ID',
                 'category_name',
                 'category_type',
+                'major_service_category_ID',
                 'description',
                 'created_at',
             ])
+            ->with('majorServiceCategory:major_service_category_ID,name')
             ->where('category_type', $categoryType)
             ->when(
                 $search,
-                fn ($query, string $searchTerm) => $query->whereLike('category_name', "%{$searchTerm}%"),
+                fn (Builder $query, string $searchTerm): Builder => $query->where(
+                    fn (Builder $searchQuery): Builder => $searchQuery
+                        ->whereLike('category_name', "%{$searchTerm}%")
+                        ->orWhereHas(
+                            'majorServiceCategory',
+                            fn (Builder $majorCategoryQuery): Builder => $majorCategoryQuery
+                                ->whereLike('name', "%{$searchTerm}%"),
+                        ),
+                ),
             )
+            ->orderBy('major_service_category_ID')
             ->orderBy('category_name')
             ->paginate($perPage)
             ->withQueryString();

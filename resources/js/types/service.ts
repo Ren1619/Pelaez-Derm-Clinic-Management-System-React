@@ -1,6 +1,12 @@
+import type { MajorServiceCategory } from './category';
+
 export type ServiceCategoryOption = {
     category_ID: number;
     category_name: string;
+    major_service_category: Pick<
+        MajorServiceCategory,
+        'major_service_category_ID' | 'name'
+    >;
 };
 
 export type ClinicService = {

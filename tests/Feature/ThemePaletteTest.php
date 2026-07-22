@@ -25,3 +25,15 @@ test('react views use the shared theme instead of duplicating the legacy pink co
         ->not->toContain('#f91d7c')
         ->not->toContain('#e01a70');
 });
+
+test('native dropdowns use readable light and dark color schemes globally', function () {
+    $stylesheet = File::get(resource_path('css/app.css'));
+
+    expect($stylesheet)
+        ->toContain('select {')
+        ->toContain('.dark select {')
+        ->toContain('color-scheme: dark;')
+        ->toContain('select option,')
+        ->toContain('background-color: var(--popover);')
+        ->toContain('color: var(--popover-foreground);');
+});

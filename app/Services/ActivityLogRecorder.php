@@ -13,6 +13,7 @@ use App\Models\DistributionItem;
 use App\Models\Expense;
 use App\Models\ExpenseCategory;
 use App\Models\Feedback;
+use App\Models\MajorServiceCategory;
 use App\Models\Patient;
 use App\Models\PatientAllergy;
 use App\Models\PatientMedicalCondition;
@@ -53,6 +54,7 @@ class ActivityLogRecorder
         Expense::class => 'point_of_sale',
         ExpenseCategory::class => 'point_of_sale',
         Feedback::class => 'feedback',
+        MajorServiceCategory::class => 'categories',
         Patient::class => 'patients',
         PatientAllergy::class => 'patients',
         PatientMedicalCondition::class => 'patients',

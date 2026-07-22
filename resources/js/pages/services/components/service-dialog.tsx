@@ -66,7 +66,15 @@ function ServiceDetails({ service }: { service: ClinicService }) {
                 </div>
                 <div className="grid gap-1.5">
                     <span className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-                        Category
+                        Major category
+                    </span>
+                    <span className="text-sm">
+                        {service.category.major_service_category.name}
+                    </span>
+                </div>
+                <div className="grid gap-1.5">
+                    <span className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                        Service category
                     </span>
                     <span className="text-sm">
                         {service.category.category_name}
@@ -99,6 +107,10 @@ export function ServiceDialog({
         : isEdit
           ? 'Edit service'
           : 'Add service';
+    const categoriesByMajorCategory = Object.groupBy(
+        categories,
+        (category) => category.major_service_category.name,
+    );
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
@@ -226,14 +238,38 @@ export function ServiceDialog({
                                             <option value="" disabled>
                                                 Select a category
                                             </option>
-                                            {categories.map((category) => (
-                                                <option
-                                                    key={category.category_ID}
-                                                    value={category.category_ID}
-                                                >
-                                                    {category.category_name}
-                                                </option>
-                                            ))}
+                                            {Object.entries(
+                                                categoriesByMajorCategory,
+                                            ).map(
+                                                ([
+                                                    majorCategoryName,
+                                                    groupedCategories,
+                                                ]) => (
+                                                    <optgroup
+                                                        key={majorCategoryName}
+                                                        label={
+                                                            majorCategoryName
+                                                        }
+                                                    >
+                                                        {groupedCategories?.map(
+                                                            (category) => (
+                                                                <option
+                                                                    key={
+                                                                        category.category_ID
+                                                                    }
+                                                                    value={
+                                                                        category.category_ID
+                                                                    }
+                                                                >
+                                                                    {
+                                                                        category.category_name
+                                                                    }
+                                                                </option>
+                                                            ),
+                                                        )}
+                                                    </optgroup>
+                                                ),
+                                            )}
                                         </select>
                                         <InputError
                                             message={errors.category_ID}

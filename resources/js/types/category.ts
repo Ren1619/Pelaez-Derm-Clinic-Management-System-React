@@ -1,9 +1,21 @@
 export type CategoryType = 'Product' | 'Service';
 
+export type MajorServiceCategory = {
+    major_service_category_ID: number;
+    name: string;
+    description: string;
+    categories_count?: number;
+};
+
 export type Category = {
     category_ID: number;
     category_name: string;
     category_type: CategoryType;
+    major_service_category_ID: number | null;
+    major_service_category: Pick<
+        MajorServiceCategory,
+        'major_service_category_ID' | 'name'
+    > | null;
     description: string;
     created_at: string | null;
 };
