@@ -1,7 +1,6 @@
 import { Head, router } from '@inertiajs/react';
 import {
     Building2,
-    Eye,
     ImageIcon,
     MapPin,
     Pencil,
@@ -10,7 +9,9 @@ import {
     Trash2,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { ClickableTableRow } from '@/components/clickable-table-row';
 import Heading from '@/components/heading';
+import { TooltipIconButton } from '@/components/tooltip-icon-button';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -190,9 +191,12 @@ export default function BranchesIndex({
                             </thead>
                             <tbody className="divide-y">
                                 {branches.data.map((branch) => (
-                                    <tr
+                                    <ClickableTableRow
                                         key={branch.branch_ID}
-                                        className="transition-colors hover:bg-muted/30"
+                                        accessibleLabel={`View ${branch.branch_name}`}
+                                        onActivate={() =>
+                                            openBranchDialog('view', branch)
+                                        }
                                     >
                                         <td className="px-4 py-3">
                                             <div className="flex items-center gap-3">
@@ -225,22 +229,10 @@ export default function BranchesIndex({
                                         </td>
                                         <td className="px-4 py-3">
                                             <div className="flex justify-end gap-1">
-                                                <Button
+                                                <TooltipIconButton
                                                     variant="ghost"
                                                     size="icon"
-                                                    onClick={() =>
-                                                        openBranchDialog(
-                                                            'view',
-                                                            branch,
-                                                        )
-                                                    }
-                                                    aria-label={`View ${branch.branch_name}`}
-                                                >
-                                                    <Eye />
-                                                </Button>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
+                                                    tooltip={`Edit ${branch.branch_name}`}
                                                     onClick={() =>
                                                         openBranchDialog(
                                                             'edit',
@@ -250,21 +242,22 @@ export default function BranchesIndex({
                                                     aria-label={`Edit ${branch.branch_name}`}
                                                 >
                                                     <Pencil />
-                                                </Button>
-                                                <Button
+                                                </TooltipIconButton>
+                                                <TooltipIconButton
                                                     variant="ghost"
                                                     size="icon"
                                                     className="text-destructive hover:text-destructive"
+                                                    tooltip={`Delete ${branch.branch_name}`}
                                                     onClick={() =>
                                                         openDeleteDialog(branch)
                                                     }
                                                     aria-label={`Delete ${branch.branch_name}`}
                                                 >
                                                     <Trash2 />
-                                                </Button>
+                                                </TooltipIconButton>
                                             </div>
                                         </td>
-                                    </tr>
+                                    </ClickableTableRow>
                                 ))}
                             </tbody>
                         </table>

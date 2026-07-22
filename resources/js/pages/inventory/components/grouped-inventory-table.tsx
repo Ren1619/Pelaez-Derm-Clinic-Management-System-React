@@ -1,14 +1,8 @@
-import {
-    ChevronRight,
-    Eye,
-    ImageIcon,
-    Pencil,
-    Plus,
-    Trash2,
-} from 'lucide-react';
+import { ChevronRight, ImageIcon, Pencil, Plus, Trash2 } from 'lucide-react';
 import { useState } from 'react';
+import { ClickableTableRow } from '@/components/clickable-table-row';
+import { TooltipIconButton } from '@/components/tooltip-icon-button';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import type { ProductBatch, ProductGroup } from '@/types';
 import {
     ExpirationBadge,
@@ -108,20 +102,23 @@ function GroupRows({
 }: GroupRowsProps) {
     return (
         <>
-            <tr className="transition-colors hover:bg-muted/30">
+            <ClickableTableRow
+                accessibleLabel={`View ${group.name}`}
+                onActivate={() => onView(group.primary_batch)}
+            >
                 <td className="px-4 py-3">
-                    <Button
+                    <TooltipIconButton
                         type="button"
                         variant="ghost"
                         size="icon"
+                        tooltip={`${expanded ? 'Collapse' : 'Expand'} ${group.name} batches`}
                         onClick={onToggle}
                         aria-expanded={expanded}
-                        aria-label={`${expanded ? 'Collapse' : 'Expand'} ${group.name} batches`}
                     >
                         <ChevronRight
                             className={`transition-transform ${expanded ? 'rotate-90' : ''}`}
                         />
-                    </Button>
+                    </TooltipIconButton>
                 </td>
                 <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
@@ -136,13 +133,7 @@ function GroupRows({
                                 <ImageIcon className="size-5" />
                             </div>
                         )}
-                        <button
-                            type="button"
-                            className="font-medium underline-offset-4 hover:underline"
-                            onClick={() => onView(group.primary_batch)}
-                        >
-                            {group.name}
-                        </button>
+                        <span className="font-medium">{group.name}</span>
                     </div>
                 </td>
                 <td className="px-4 py-3">
@@ -176,31 +167,36 @@ function GroupRows({
                 </td>
                 <td className="px-4 py-3">
                     <div className="flex justify-end gap-1">
-                        <Button
+                        <TooltipIconButton
                             variant="ghost"
                             size="icon"
+                            tooltip={`Edit ${group.name}`}
                             onClick={() => onEdit(group.primary_batch)}
-                            aria-label={`Edit ${group.name}`}
                         >
                             <Pencil />
-                        </Button>
+                        </TooltipIconButton>
                         {group.can_restock && (
-                            <Button
+                            <TooltipIconButton
                                 variant="ghost"
                                 size="icon"
+                                tooltip={`Restock ${group.name}`}
                                 onClick={() => onRestock(group.primary_batch)}
-                                aria-label={`Restock ${group.name}`}
                             >
                                 <Plus className="text-emerald-600" />
-                            </Button>
+                            </TooltipIconButton>
                         )}
                     </div>
                 </td>
-            </tr>
+            </ClickableTableRow>
 
             {expanded &&
                 group.batches.map((batch) => (
-                    <tr key={batch.product_ID} className="bg-muted/20">
+                    <ClickableTableRow
+                        key={batch.product_ID}
+                        className="bg-muted/20"
+                        accessibleLabel={`View ${batch.name} batch ${batch.batch_number}`}
+                        onActivate={() => onView(batch)}
+                    >
                         <td className="px-4 py-3" />
                         <td className="px-4 py-3">
                             <div className="flex flex-wrap items-center gap-2">
@@ -236,34 +232,26 @@ function GroupRows({
                         </td>
                         <td className="px-4 py-3">
                             <div className="flex justify-end gap-1">
-                                <Button
+                                <TooltipIconButton
                                     variant="ghost"
                                     size="icon"
-                                    onClick={() => onView(batch)}
-                                    aria-label={`View ${batch.name} batch ${batch.batch_number}`}
-                                >
-                                    <Eye />
-                                </Button>
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
+                                    tooltip={`Edit ${batch.name} batch ${batch.batch_number}`}
                                     onClick={() => onEdit(batch)}
-                                    aria-label={`Edit ${batch.name} batch ${batch.batch_number}`}
                                 >
                                     <Pencil />
-                                </Button>
-                                <Button
+                                </TooltipIconButton>
+                                <TooltipIconButton
                                     variant="ghost"
                                     size="icon"
                                     className="text-destructive hover:text-destructive"
+                                    tooltip={`Delete ${batch.name} batch ${batch.batch_number}`}
                                     onClick={() => onDelete(batch)}
-                                    aria-label={`Delete ${batch.name} batch ${batch.batch_number}`}
                                 >
                                     <Trash2 />
-                                </Button>
+                                </TooltipIconButton>
                             </div>
                         </td>
-                    </tr>
+                    </ClickableTableRow>
                 ))}
         </>
     );

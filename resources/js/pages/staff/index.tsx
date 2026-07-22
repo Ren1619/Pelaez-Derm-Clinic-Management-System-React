@@ -1,7 +1,6 @@
 import { Head, router } from '@inertiajs/react';
 import {
     CircleCheckBig,
-    Eye,
     MailWarning,
     Pencil,
     Plus,
@@ -12,7 +11,9 @@ import {
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
+import { ClickableTableRow } from '@/components/clickable-table-row';
 import Heading from '@/components/heading';
+import { TooltipIconButton } from '@/components/tooltip-icon-button';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
@@ -276,9 +277,15 @@ export default function StaffIndex({
                             </thead>
                             <tbody className="divide-y">
                                 {staffAccounts.data.map((staffAccount) => (
-                                    <tr
+                                    <ClickableTableRow
                                         key={staffAccount.account_ID}
-                                        className="transition-colors hover:bg-muted/30"
+                                        accessibleLabel={`View ${staffAccount.full_name}`}
+                                        onActivate={() =>
+                                            openStaffDialog(
+                                                'view',
+                                                staffAccount,
+                                            )
+                                        }
                                     >
                                         <td className="px-4 py-3">
                                             <div className="font-medium">
@@ -338,22 +345,10 @@ export default function StaffIndex({
                                         </td>
                                         <td className="px-4 py-3">
                                             <div className="flex justify-end gap-1">
-                                                <Button
+                                                <TooltipIconButton
                                                     variant="ghost"
                                                     size="icon"
-                                                    onClick={() =>
-                                                        openStaffDialog(
-                                                            'view',
-                                                            staffAccount,
-                                                        )
-                                                    }
-                                                    aria-label={`View ${staffAccount.full_name}`}
-                                                >
-                                                    <Eye />
-                                                </Button>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
+                                                    tooltip={`Edit ${staffAccount.full_name}`}
                                                     onClick={() =>
                                                         openStaffDialog(
                                                             'edit',
@@ -363,8 +358,8 @@ export default function StaffIndex({
                                                     aria-label={`Edit ${staffAccount.full_name}`}
                                                 >
                                                     <Pencil />
-                                                </Button>
-                                                <Button
+                                                </TooltipIconButton>
+                                                <TooltipIconButton
                                                     variant="ghost"
                                                     size="icon"
                                                     className={
@@ -372,6 +367,7 @@ export default function StaffIndex({
                                                             ? 'text-destructive hover:text-destructive'
                                                             : 'text-emerald-600 hover:text-emerald-600'
                                                     }
+                                                    tooltip={`${staffAccount.is_active ? 'Disable' : 'Enable'} ${staffAccount.full_name}`}
                                                     onClick={() =>
                                                         openStatusDialog(
                                                             staffAccount,
@@ -384,10 +380,10 @@ export default function StaffIndex({
                                                     ) : (
                                                         <Power />
                                                     )}
-                                                </Button>
+                                                </TooltipIconButton>
                                             </div>
                                         </td>
-                                    </tr>
+                                    </ClickableTableRow>
                                 ))}
                             </tbody>
                         </table>

@@ -2,6 +2,7 @@ import { Head, router } from '@inertiajs/react';
 import {
     Eye,
     ImageIcon,
+    Info,
     Plus,
     ReceiptText,
     Search,
@@ -49,7 +50,9 @@ import {
     ExpenseDialog,
 } from './components/expense-dialogs';
 import { PosCart } from './components/pos-cart';
+import { ProductDetailsDialog } from './components/product-details-dialog';
 import { SaleDetailsDialog } from './components/sale-details-dialog';
+import { ServiceDetailsDialog } from './components/service-details-dialog';
 
 type PosIndexProps = {
     branches: PosBranch[];
@@ -109,10 +112,15 @@ export default function PosIndex({
     );
     const [servicePrice, setServicePrice] = useState(0);
     const [serviceQuantity, setServiceQuantity] = useState(1);
+    const [serviceDetailsOpen, setServiceDetailsOpen] = useState(false);
     const [selectedSale, setSelectedSale] = useState<PosSale | null>(null);
     const [saleDialogOpen, setSaleDialogOpen] = useState(false);
     const [expenseDialogOpen, setExpenseDialogOpen] = useState(false);
     const [categoryDialogOpen, setCategoryDialogOpen] = useState(false);
+    const [selectedProduct, setSelectedProduct] = useState<PosProduct | null>(
+        null,
+    );
+    const [productDetailsOpen, setProductDetailsOpen] = useState(false);
 
     const subtotal = useMemo(
         () => cart.reduce((sum, item) => sum + item.price * item.quantity, 0),
@@ -387,6 +395,10 @@ export default function PosIndex({
                                 items={filteredProducts}
                                 type="product"
                                 onAdd={addProduct}
+                                onViewProduct={(product) => {
+                                    setSelectedProduct(product);
+                                    setProductDetailsOpen(true);
+                                }}
                             />
                         )}
                         {activeTab === 'services' && (
@@ -394,6 +406,10 @@ export default function PosIndex({
                                 items={filteredServices}
                                 type="service"
                                 onAdd={openServiceDialog}
+                                onViewService={(service) => {
+                                    setSelectedService(service);
+                                    setServiceDetailsOpen(true);
+                                }}
                             />
                         )}
                         {activeTab === 'daily-sales' && (
@@ -572,6 +588,21 @@ export default function PosIndex({
                 open={saleDialogOpen}
                 onOpenChange={setSaleDialogOpen}
             />
+            <ProductDetailsDialog
+                product={selectedProduct}
+                branchName={
+                    branches.find(
+                        (branch) => branch.branch_ID === filters.branch_ID,
+                    )?.branch_name ?? 'Selected branch'
+                }
+                open={productDetailsOpen}
+                onOpenChange={setProductDetailsOpen}
+            />
+            <ServiceDetailsDialog
+                service={selectedService}
+                open={serviceDetailsOpen}
+                onOpenChange={setServiceDetailsOpen}
+            />
             <ExpenseDialog
                 key={`${filters.branch_ID}-${expenseCategories.length}`}
                 open={expenseDialogOpen}
@@ -592,10 +623,14 @@ function CatalogGrid({
     items,
     type,
     onAdd,
+    onViewProduct,
+    onViewService,
 }: {
     items: PosProduct[] | PosService[];
     type: 'product' | 'service';
     onAdd: ((item: PosProduct) => void) | ((item: PosService) => void);
+    onViewProduct?: (product: PosProduct) => void;
+    onViewService?: (service: PosService) => void;
 }) {
     if (items.length === 0) {
         return (
@@ -613,68 +648,140 @@ function CatalogGrid({
     }
 
     return (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
             {items.map((item) => {
                 const isProduct = type === 'product';
-                const product = isProduct ? (item as PosProduct) : null;
-                const service = !isProduct ? (item as PosService) : null;
-                const id = product?.product_ID ?? service?.service_ID;
+
+                if (isProduct) {
+                    const product = item as PosProduct;
+
+                    return (
+                        <article
+                            key={`product-${product.product_ID}`}
+                            className="group relative aspect-square overflow-hidden rounded-xl border bg-card shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
+                        >
+                            <button
+                                type="button"
+                                className="absolute inset-0 block h-full w-full bg-card text-left focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring focus-visible:outline-none"
+                                onClick={() =>
+                                    (onAdd as (item: PosProduct) => void)(
+                                        product,
+                                    )
+                                }
+                                aria-label={`Add ${product.name} to cart`}
+                            >
+                                <span className="absolute inset-0 flex items-center justify-center bg-muted/40 p-2">
+                                    {product.image_url ? (
+                                        <img
+                                            src={product.image_url}
+                                            alt={product.name}
+                                            className="h-full w-full object-contain"
+                                        />
+                                    ) : (
+                                        <ImageIcon className="size-14 text-muted-foreground" />
+                                    )}
+                                </span>
+                                <span className="absolute inset-0 flex min-w-0 flex-col justify-end bg-linear-to-t from-background via-background/60 to-transparent px-3 pb-3">
+                                    <span
+                                        className="block truncate text-sm leading-tight font-semibold text-foreground"
+                                        title={product.name}
+                                    >
+                                        {product.name}
+                                    </span>
+                                    <span className="mt-1 flex min-w-0 items-end justify-between gap-2">
+                                        <span
+                                            className="min-w-0 truncate text-xs text-muted-foreground"
+                                            title={`${product.quantity} ${product.measurement_unit} available`}
+                                        >
+                                            {product.quantity}{' '}
+                                            {product.measurement_unit} available
+                                        </span>
+                                        <span
+                                            className="shrink-0 text-xs font-bold text-primary"
+                                            title={currency.format(
+                                                Number(product.price),
+                                            )}
+                                        >
+                                            {currency.format(
+                                                Number(product.price),
+                                            )}
+                                        </span>
+                                    </span>
+                                </span>
+                            </button>
+                            <button
+                                type="button"
+                                className="absolute top-2 right-2 z-10 flex size-8 items-center justify-center rounded-full border bg-background/90 text-foreground shadow-sm backdrop-blur-sm transition-colors hover:bg-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
+                                onClick={() => onViewProduct?.(product)}
+                                aria-label={`View information for ${product.name}`}
+                                title={`View information for ${product.name}`}
+                            >
+                                <Info className="size-4" />
+                            </button>
+                        </article>
+                    );
+                }
+
+                const service = item as PosService;
 
                 return (
                     <article
-                        key={`${type}-${id}`}
-                        className="group flex min-h-64 flex-col overflow-hidden rounded-lg border bg-card shadow-sm transition-shadow hover:shadow-md"
+                        key={`service-${service.service_ID}`}
+                        className="group relative aspect-square overflow-hidden rounded-xl border bg-card shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
                     >
-                        <div className="relative flex aspect-square items-center justify-center overflow-hidden bg-muted/40">
-                            {item.image_url ? (
-                                <img
-                                    src={item.image_url}
-                                    alt=""
-                                    className="h-full w-full object-cover transition-transform group-hover:scale-105"
-                                />
-                            ) : (
-                                <ImageIcon className="size-10 text-muted-foreground" />
-                            )}
-                            <span className="absolute top-2 left-2 rounded-full border bg-background/90 px-2 py-0.5 text-[10px] font-medium">
-                                {product?.status ??
-                                    service?.category ??
-                                    'Service'}
-                            </span>
-                        </div>
-                        <div className="flex flex-1 flex-col justify-between p-3">
-                            <div>
-                                <h3 className="line-clamp-2 text-sm font-semibold">
-                                    {item.name}
-                                </h3>
-                                <p className="mt-1 truncate text-xs text-muted-foreground">
-                                    {product
-                                        ? `${product.measurement_unit} · ${product.quantity} available`
-                                        : service?.description ||
-                                          service?.category}
-                                </p>
-                            </div>
-                            <p className="mt-3 border-t pt-2 text-base font-bold text-primary">
-                                {product
-                                    ? currency.format(Number(product.price))
-                                    : 'Custom price'}
-                            </p>
-                        </div>
                         <button
                             type="button"
-                            className="bg-primary px-3 py-2.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90"
-                            onClick={() => {
-                                if (isProduct) {
-                                    (onAdd as (item: PosProduct) => void)(
-                                        item as PosProduct,
-                                    );
-                                } else {
-                                    (onAdd as (item: PosService) => void)(
-                                        item as PosService,
-                                    );
-                                }
-                            }}
+                            className="absolute inset-0 block h-full w-full bg-card text-left focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring focus-visible:outline-none"
+                            onClick={() =>
+                                (onAdd as (item: PosService) => void)(service)
+                            }
+                            aria-label={`Add ${service.name} to cart`}
                         >
-                            Add to cart
+                            <span className="absolute inset-0 flex items-center justify-center bg-muted/40 p-2">
+                                {service.image_url ? (
+                                    <img
+                                        src={service.image_url}
+                                        alt={service.name}
+                                        className="h-full w-full object-contain"
+                                    />
+                                ) : (
+                                    <ImageIcon className="size-14 text-muted-foreground" />
+                                )}
+                            </span>
+                            <span className="absolute inset-0 flex min-w-0 flex-col justify-end bg-linear-to-t from-background via-background/60 to-transparent px-3 pb-3">
+                                <span
+                                    className="block truncate text-sm leading-tight font-semibold text-foreground"
+                                    title={service.name}
+                                >
+                                    {service.name}
+                                </span>
+                                <span className="mt-1 flex min-w-0 items-end justify-between gap-2">
+                                    <span
+                                        className="min-w-0 truncate text-xs text-muted-foreground"
+                                        title={
+                                            service.description ||
+                                            service.category ||
+                                            'Service'
+                                        }
+                                    >
+                                        {service.description ||
+                                            service.category ||
+                                            'Service'}
+                                    </span>
+                                    <span className="shrink-0 text-xs font-bold text-primary">
+                                        Custom price
+                                    </span>
+                                </span>
+                            </span>
+                        </button>
+                        <button
+                            type="button"
+                            className="absolute top-2 right-2 z-10 flex size-8 items-center justify-center rounded-full border bg-background/90 text-foreground shadow-sm backdrop-blur-sm transition-colors hover:bg-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
+                            onClick={() => onViewService?.(service)}
+                            aria-label={`View information for ${service.name}`}
+                            title={`View information for ${service.name}`}
+                        >
+                            <Info className="size-4" />
                         </button>
                     </article>
                 );

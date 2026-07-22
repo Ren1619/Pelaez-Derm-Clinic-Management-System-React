@@ -1,6 +1,5 @@
 import { Head, Link, router } from '@inertiajs/react';
 import {
-    Eye,
     ImageIcon,
     Pencil,
     Plus,
@@ -10,7 +9,9 @@ import {
     Trash2,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { ClickableTableRow } from '@/components/clickable-table-row';
 import Heading from '@/components/heading';
+import { TooltipIconButton } from '@/components/tooltip-icon-button';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -207,9 +208,12 @@ export default function ServicesIndex({
                             </thead>
                             <tbody className="divide-y">
                                 {services.data.map((service) => (
-                                    <tr
+                                    <ClickableTableRow
                                         key={service.service_ID}
-                                        className="transition-colors hover:bg-muted/30"
+                                        accessibleLabel={`View ${service.name}`}
+                                        onActivate={() =>
+                                            openServiceDialog('view', service)
+                                        }
                                     >
                                         <td className="px-4 py-3">
                                             <div className="flex items-center gap-3">
@@ -224,18 +228,9 @@ export default function ServicesIndex({
                                                         <ImageIcon className="size-5" />
                                                     </div>
                                                 )}
-                                                <button
-                                                    type="button"
-                                                    className="font-medium underline-offset-4 hover:underline"
-                                                    onClick={() =>
-                                                        openServiceDialog(
-                                                            'view',
-                                                            service,
-                                                        )
-                                                    }
-                                                >
+                                                <span className="font-medium">
                                                     {service.name}
-                                                </button>
+                                                </span>
                                             </div>
                                         </td>
                                         <td className="px-4 py-3 whitespace-nowrap text-muted-foreground">
@@ -248,22 +243,10 @@ export default function ServicesIndex({
                                         </td>
                                         <td className="px-4 py-3">
                                             <div className="flex justify-end gap-1">
-                                                <Button
+                                                <TooltipIconButton
                                                     variant="ghost"
                                                     size="icon"
-                                                    onClick={() =>
-                                                        openServiceDialog(
-                                                            'view',
-                                                            service,
-                                                        )
-                                                    }
-                                                    aria-label={`View ${service.name}`}
-                                                >
-                                                    <Eye />
-                                                </Button>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
+                                                    tooltip={`Edit ${service.name}`}
                                                     onClick={() =>
                                                         openServiceDialog(
                                                             'edit',
@@ -273,11 +256,12 @@ export default function ServicesIndex({
                                                     aria-label={`Edit ${service.name}`}
                                                 >
                                                     <Pencil />
-                                                </Button>
-                                                <Button
+                                                </TooltipIconButton>
+                                                <TooltipIconButton
                                                     variant="ghost"
                                                     size="icon"
                                                     className="text-destructive hover:text-destructive"
+                                                    tooltip={`Delete ${service.name}`}
                                                     onClick={() =>
                                                         openDeleteDialog(
                                                             service,
@@ -286,10 +270,10 @@ export default function ServicesIndex({
                                                     aria-label={`Delete ${service.name}`}
                                                 >
                                                     <Trash2 />
-                                                </Button>
+                                                </TooltipIconButton>
                                             </div>
                                         </td>
-                                    </tr>
+                                    </ClickableTableRow>
                                 ))}
                             </tbody>
                         </table>
