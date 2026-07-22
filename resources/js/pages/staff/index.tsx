@@ -12,6 +12,12 @@ import {
 import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { ClickableTableRow } from '@/components/clickable-table-row';
+import { DataTableEmptyState } from '@/components/data-table-empty-state';
+import {
+    DataTableLayout,
+    DataTableToolbar,
+} from '@/components/data-table-layout';
+import { DataTablePagination } from '@/components/data-table-pagination';
 import Heading from '@/components/heading';
 import { TooltipIconButton } from '@/components/tooltip-icon-button';
 import { Badge } from '@/components/ui/badge';
@@ -25,6 +31,14 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/components/ui/table';
 import { index } from '@/routes/staff';
 import type {
     AccountRole,
@@ -36,7 +50,6 @@ import type {
     StaffSummary,
 } from '@/types';
 import { StaffDialog } from './components/staff-dialog';
-import { StaffPagination } from './components/staff-pagination';
 import { StaffStatusDialog } from './components/staff-status-dialog';
 
 type StaffIndexProps = {
@@ -158,256 +171,251 @@ export default function StaffIndex({
                     />
                 </div>
 
-                <Card className="gap-0 overflow-hidden py-0">
-                    <div className="grid gap-3 border-b p-4 lg:grid-cols-[minmax(14rem,1fr)_repeat(4,minmax(9rem,auto))]">
-                        <div className="relative">
-                            <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-                            <Input
-                                value={search}
-                                onChange={(event) =>
-                                    setSearch(event.target.value)
-                                }
-                                placeholder="Search staff..."
-                                className="pl-9"
-                                aria-label="Search staff"
-                            />
-                        </div>
-
-                        <FilterSelect
-                            value={filters.branch_ID?.toString() ?? 'all'}
-                            placeholder="All branches"
-                            onValueChange={(value) =>
-                                visitWithFilters({
-                                    branch_ID:
-                                        value === 'all' ? null : Number(value),
-                                })
-                            }
-                            options={branches.map((branch) => ({
-                                value: String(branch.branch_ID),
-                                label: branch.branch_name,
-                            }))}
-                        />
-                        <FilterSelect
-                            value={filters.role_ID?.toString() ?? 'all'}
-                            placeholder="All roles"
-                            onValueChange={(value) =>
-                                visitWithFilters({
-                                    role_ID:
-                                        value === 'all' ? null : Number(value),
-                                })
-                            }
-                            options={roles.map((role) => ({
-                                value: String(role.role_ID),
-                                label:
-                                    roleLabels[role.role_name] ??
-                                    role.role_name,
-                            }))}
-                        />
-                        <FilterSelect
-                            value={filters.verification ?? 'all'}
-                            placeholder="All verification"
-                            onValueChange={(value) =>
-                                visitWithFilters({
-                                    verification:
-                                        value === 'all'
-                                            ? null
-                                            : (value as
-                                                  'verified' | 'unverified'),
-                                })
-                            }
-                            options={[
-                                { value: 'verified', label: 'Verified' },
-                                { value: 'unverified', label: 'Unverified' },
-                            ]}
-                        />
-                        <FilterSelect
-                            value={filters.status ?? 'all'}
-                            placeholder="All statuses"
-                            onValueChange={(value) =>
-                                visitWithFilters({
-                                    status:
-                                        value === 'all'
-                                            ? null
-                                            : (value as 'active' | 'inactive'),
-                                })
-                            }
-                            options={[
-                                { value: 'active', label: 'Active' },
-                                { value: 'inactive', label: 'Inactive' },
-                            ]}
-                        />
-                    </div>
-
-                    <div className="flex items-center justify-end gap-2 border-b px-4 py-3 text-sm text-muted-foreground">
-                        <span>Rows</span>
-                        <Select
-                            value={String(filters.per_page)}
-                            onValueChange={(value) =>
-                                visitWithFilters({ per_page: Number(value) })
-                            }
-                        >
-                            <SelectTrigger
-                                className="w-20"
-                                aria-label="Rows per page"
-                            >
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="10">10</SelectItem>
-                                <SelectItem value="25">25</SelectItem>
-                                <SelectItem value="50">50</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-
-                    <div className="overflow-x-auto">
-                        <table className="w-full min-w-5xl text-sm">
-                            <thead className="border-b bg-muted/40 text-left text-xs font-medium tracking-wide text-muted-foreground uppercase">
-                                <tr>
-                                    <th className="px-4 py-3">Staff member</th>
-                                    <th className="px-4 py-3">Role</th>
-                                    <th className="px-4 py-3">Branch</th>
-                                    <th className="px-4 py-3">Contact</th>
-                                    <th className="px-4 py-3">Verification</th>
-                                    <th className="px-4 py-3">Status</th>
-                                    <th className="px-4 py-3 text-right">
-                                        Actions
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y">
-                                {staffAccounts.data.map((staffAccount) => (
-                                    <ClickableTableRow
-                                        key={staffAccount.account_ID}
-                                        accessibleLabel={`View ${staffAccount.full_name}`}
-                                        onActivate={() =>
-                                            openStaffDialog(
-                                                'view',
-                                                staffAccount,
-                                            )
-                                        }
-                                    >
-                                        <td className="px-4 py-3">
-                                            <div className="font-medium">
-                                                {staffAccount.last_name},{' '}
-                                                {staffAccount.first_name}{' '}
-                                                {staffAccount.middle_name ?? ''}
-                                            </div>
-                                            <a
-                                                href={`mailto:${staffAccount.email}`}
-                                                className="text-xs text-muted-foreground hover:underline"
-                                            >
-                                                {staffAccount.email}
-                                            </a>
-                                        </td>
-                                        <td className="px-4 py-3">
-                                            {roleLabels[
-                                                staffAccount.role.role_name
-                                            ] ?? staffAccount.role.role_name}
-                                        </td>
-                                        <td className="px-4 py-3 text-muted-foreground">
-                                            {staffAccount.branch?.branch_name ??
-                                                'All branches'}
-                                        </td>
-                                        <td className="px-4 py-3 whitespace-nowrap text-muted-foreground">
-                                            <a
-                                                href={`tel:${staffAccount.contact_number}`}
-                                                className="hover:underline"
-                                            >
-                                                {staffAccount.contact_number}
-                                            </a>
-                                        </td>
-                                        <td className="px-4 py-3">
-                                            <Badge
-                                                variant={
-                                                    staffAccount.email_verified_at
-                                                        ? 'outline'
-                                                        : 'secondary'
-                                                }
-                                            >
-                                                {staffAccount.email_verified_at
-                                                    ? 'Verified'
-                                                    : 'Unverified'}
-                                            </Badge>
-                                        </td>
-                                        <td className="px-4 py-3">
-                                            <Badge
-                                                variant={
-                                                    staffAccount.is_active
-                                                        ? 'default'
-                                                        : 'secondary'
-                                                }
-                                            >
-                                                {staffAccount.is_active
-                                                    ? 'Active'
-                                                    : 'Inactive'}
-                                            </Badge>
-                                        </td>
-                                        <td className="px-4 py-3">
-                                            <div className="flex justify-end gap-1">
-                                                <TooltipIconButton
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    tooltip={`Edit ${staffAccount.full_name}`}
-                                                    onClick={() =>
-                                                        openStaffDialog(
-                                                            'edit',
-                                                            staffAccount,
-                                                        )
-                                                    }
-                                                    aria-label={`Edit ${staffAccount.full_name}`}
-                                                >
-                                                    <Pencil />
-                                                </TooltipIconButton>
-                                                <TooltipIconButton
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className={
-                                                        staffAccount.is_active
-                                                            ? 'text-destructive hover:text-destructive'
-                                                            : 'text-emerald-600 hover:text-emerald-600'
-                                                    }
-                                                    tooltip={`${staffAccount.is_active ? 'Disable' : 'Enable'} ${staffAccount.full_name}`}
-                                                    onClick={() =>
-                                                        openStatusDialog(
-                                                            staffAccount,
-                                                        )
-                                                    }
-                                                    aria-label={`${staffAccount.is_active ? 'Disable' : 'Enable'} ${staffAccount.full_name}`}
-                                                >
-                                                    {staffAccount.is_active ? (
-                                                        <PowerOff />
-                                                    ) : (
-                                                        <Power />
-                                                    )}
-                                                </TooltipIconButton>
-                                            </div>
-                                        </td>
-                                    </ClickableTableRow>
-                                ))}
-                            </tbody>
-                        </table>
-
-                        {staffAccounts.data.length === 0 && (
-                            <div className="flex flex-col items-center gap-3 px-4 py-16 text-center">
-                                <Users className="size-10 text-muted-foreground" />
-                                <div>
-                                    <p className="font-medium">
-                                        No staff members found
-                                    </p>
-                                    <p className="text-sm text-muted-foreground">
-                                        Try changing the search or filters.
-                                    </p>
-                                </div>
+                <DataTableLayout
+                    toolbar={
+                        <DataTableToolbar className="grid lg:grid lg:grid-cols-[minmax(14rem,1fr)_repeat(4,minmax(9rem,auto))]">
+                            <div className="relative">
+                                <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+                                <Input
+                                    value={search}
+                                    onChange={(event) =>
+                                        setSearch(event.target.value)
+                                    }
+                                    placeholder="Search staff..."
+                                    className="pl-9"
+                                    aria-label="Search staff"
+                                />
                             </div>
-                        )}
-                    </div>
 
-                    <StaffPagination
-                        staffAccounts={staffAccounts}
-                        filters={filters}
-                    />
-                </Card>
+                            <FilterSelect
+                                value={filters.branch_ID?.toString() ?? 'all'}
+                                placeholder="All branches"
+                                onValueChange={(value) =>
+                                    visitWithFilters({
+                                        branch_ID:
+                                            value === 'all'
+                                                ? null
+                                                : Number(value),
+                                    })
+                                }
+                                options={branches.map((branch) => ({
+                                    value: String(branch.branch_ID),
+                                    label: branch.branch_name,
+                                }))}
+                            />
+                            <FilterSelect
+                                value={filters.role_ID?.toString() ?? 'all'}
+                                placeholder="All roles"
+                                onValueChange={(value) =>
+                                    visitWithFilters({
+                                        role_ID:
+                                            value === 'all'
+                                                ? null
+                                                : Number(value),
+                                    })
+                                }
+                                options={roles.map((role) => ({
+                                    value: String(role.role_ID),
+                                    label:
+                                        roleLabels[role.role_name] ??
+                                        role.role_name,
+                                }))}
+                            />
+                            <FilterSelect
+                                value={filters.verification ?? 'all'}
+                                placeholder="All verification"
+                                onValueChange={(value) =>
+                                    visitWithFilters({
+                                        verification:
+                                            value === 'all'
+                                                ? null
+                                                : (value as
+                                                      | 'verified'
+                                                      | 'unverified'),
+                                    })
+                                }
+                                options={[
+                                    { value: 'verified', label: 'Verified' },
+                                    {
+                                        value: 'unverified',
+                                        label: 'Unverified',
+                                    },
+                                ]}
+                            />
+                            <FilterSelect
+                                value={filters.status ?? 'all'}
+                                placeholder="All statuses"
+                                onValueChange={(value) =>
+                                    visitWithFilters({
+                                        status:
+                                            value === 'all'
+                                                ? null
+                                                : (value as
+                                                      'active' | 'inactive'),
+                                    })
+                                }
+                                options={[
+                                    { value: 'active', label: 'Active' },
+                                    { value: 'inactive', label: 'Inactive' },
+                                ]}
+                            />
+                        </DataTableToolbar>
+                    }
+                    footer={
+                        <DataTablePagination
+                            paginator={staffAccounts}
+                            itemLabel="staff members"
+                            onPageChange={(page) =>
+                                router.get(
+                                    index.url(),
+                                    { ...filters, page },
+                                    {
+                                        only: ['staffAccounts', 'filters'],
+                                        preserveState: true,
+                                        preserveScroll: true,
+                                    },
+                                )
+                            }
+                            onPerPageChange={(perPage) =>
+                                visitWithFilters({ per_page: perPage })
+                            }
+                        />
+                    }
+                >
+                    <Table className="min-w-5xl">
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Staff member</TableHead>
+                                <TableHead>Role</TableHead>
+                                <TableHead>Branch</TableHead>
+                                <TableHead>Contact</TableHead>
+                                <TableHead>Verification</TableHead>
+                                <TableHead>Status</TableHead>
+                                <TableHead className="text-right">
+                                    Actions
+                                </TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {staffAccounts.data.map((staffAccount) => (
+                                <ClickableTableRow
+                                    key={staffAccount.account_ID}
+                                    accessibleLabel={`View ${staffAccount.full_name}`}
+                                    onActivate={() =>
+                                        openStaffDialog('view', staffAccount)
+                                    }
+                                >
+                                    <TableCell>
+                                        <div className="font-medium">
+                                            {staffAccount.last_name},{' '}
+                                            {staffAccount.first_name}{' '}
+                                            {staffAccount.middle_name ?? ''}
+                                        </div>
+                                        <a
+                                            href={`mailto:${staffAccount.email}`}
+                                            className="text-xs text-muted-foreground hover:underline"
+                                        >
+                                            {staffAccount.email}
+                                        </a>
+                                    </TableCell>
+                                    <TableCell>
+                                        {roleLabels[
+                                            staffAccount.role.role_name
+                                        ] ?? staffAccount.role.role_name}
+                                    </TableCell>
+                                    <TableCell className="text-muted-foreground">
+                                        {staffAccount.branch?.branch_name ??
+                                            'All branches'}
+                                    </TableCell>
+                                    <TableCell className="whitespace-nowrap text-muted-foreground">
+                                        <a
+                                            href={`tel:${staffAccount.contact_number}`}
+                                            className="hover:underline"
+                                        >
+                                            {staffAccount.contact_number}
+                                        </a>
+                                    </TableCell>
+                                    <TableCell>
+                                        <Badge
+                                            variant={
+                                                staffAccount.email_verified_at
+                                                    ? 'outline'
+                                                    : 'secondary'
+                                            }
+                                        >
+                                            {staffAccount.email_verified_at
+                                                ? 'Verified'
+                                                : 'Unverified'}
+                                        </Badge>
+                                    </TableCell>
+                                    <TableCell>
+                                        <Badge
+                                            variant={
+                                                staffAccount.is_active
+                                                    ? 'default'
+                                                    : 'secondary'
+                                            }
+                                        >
+                                            {staffAccount.is_active
+                                                ? 'Active'
+                                                : 'Inactive'}
+                                        </Badge>
+                                    </TableCell>
+                                    <TableCell>
+                                        <div className="flex justify-end gap-1">
+                                            <TooltipIconButton
+                                                variant="ghost"
+                                                size="icon"
+                                                tooltip={`Edit ${staffAccount.full_name}`}
+                                                onClick={() =>
+                                                    openStaffDialog(
+                                                        'edit',
+                                                        staffAccount,
+                                                    )
+                                                }
+                                                aria-label={`Edit ${staffAccount.full_name}`}
+                                            >
+                                                <Pencil />
+                                            </TooltipIconButton>
+                                            <TooltipIconButton
+                                                variant="ghost"
+                                                size="icon"
+                                                className={
+                                                    staffAccount.is_active
+                                                        ? 'text-destructive hover:text-destructive'
+                                                        : 'text-emerald-600 hover:text-emerald-600'
+                                                }
+                                                tooltip={`${staffAccount.is_active ? 'Disable' : 'Enable'} ${staffAccount.full_name}`}
+                                                onClick={() =>
+                                                    openStatusDialog(
+                                                        staffAccount,
+                                                    )
+                                                }
+                                                aria-label={`${staffAccount.is_active ? 'Disable' : 'Enable'} ${staffAccount.full_name}`}
+                                            >
+                                                {staffAccount.is_active ? (
+                                                    <PowerOff />
+                                                ) : (
+                                                    <Power />
+                                                )}
+                                            </TooltipIconButton>
+                                        </div>
+                                    </TableCell>
+                                </ClickableTableRow>
+                            ))}
+                            {staffAccounts.data.length === 0 && (
+                                <DataTableEmptyState
+                                    colSpan={7}
+                                    icon={
+                                        <Users className="size-10 text-muted-foreground" />
+                                    }
+                                    title="No staff members found"
+                                    description="Try changing the search or filters."
+                                />
+                            )}
+                        </TableBody>
+                    </Table>
+                </DataTableLayout>
             </div>
 
             <StaffDialog

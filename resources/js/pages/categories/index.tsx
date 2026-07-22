@@ -10,18 +10,25 @@ import {
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
+import { DataTableEmptyState } from '@/components/data-table-empty-state';
+import {
+    DataTableLayout,
+    DataTableToolbar,
+} from '@/components/data-table-layout';
+import { DataTablePagination } from '@/components/data-table-pagination';
 import Heading from '@/components/heading';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/components/ui/table';
 import { index } from '@/routes/categories';
 import type {
     Category,
@@ -32,7 +39,6 @@ import type {
 } from '@/types';
 import { CategoryDeleteDialog } from './components/category-delete-dialog';
 import { CategoryDialog } from './components/category-dialog';
-import { CategoryPagination } from './components/category-pagination';
 
 type CategoriesIndexProps = {
     categories: CategoryPaginator;
@@ -138,176 +144,159 @@ export default function CategoriesIndex({
                     />
                 </div>
 
-                <Card className="gap-0 overflow-hidden py-0">
-                    <div className="flex flex-col gap-3 border-b p-4 lg:flex-row lg:items-center lg:justify-between">
-                        <div
-                            role="tablist"
-                            aria-label="Category type"
-                            className="inline-flex w-fit rounded-lg bg-muted p-1"
-                        >
-                            <button
-                                type="button"
-                                role="tab"
-                                aria-selected={filters.tab === 'products'}
-                                onClick={() => changeTab('products')}
-                                className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
-                                    filters.tab === 'products'
-                                        ? 'bg-background text-foreground shadow-sm'
-                                        : 'text-muted-foreground hover:text-foreground'
-                                }`}
+                <DataTableLayout
+                    toolbar={
+                        <DataTableToolbar>
+                            <div
+                                role="tablist"
+                                aria-label="Category type"
+                                className="inline-flex w-fit rounded-lg bg-muted p-1"
                             >
-                                Product categories
-                            </button>
-                            <button
-                                type="button"
-                                role="tab"
-                                aria-selected={filters.tab === 'services'}
-                                onClick={() => changeTab('services')}
-                                className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
-                                    filters.tab === 'services'
-                                        ? 'bg-background text-foreground shadow-sm'
-                                        : 'text-muted-foreground hover:text-foreground'
-                                }`}
-                            >
-                                Service categories
-                            </button>
-                        </div>
-
-                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                            <div className="relative w-full sm:w-72">
-                                <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-                                <Input
-                                    value={search}
-                                    onChange={(event) =>
-                                        setSearch(event.target.value)
-                                    }
-                                    placeholder="Search categories..."
-                                    className="pl-9"
-                                    aria-label="Search categories"
-                                />
-                            </div>
-
-                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                <span>Rows</span>
-                                <Select
-                                    value={String(filters.per_page)}
-                                    onValueChange={(value) =>
-                                        visitWithFilters({
-                                            per_page: Number(value),
-                                        })
-                                    }
+                                <button
+                                    type="button"
+                                    role="tab"
+                                    aria-selected={filters.tab === 'products'}
+                                    onClick={() => changeTab('products')}
+                                    className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                                        filters.tab === 'products'
+                                            ? 'bg-background text-foreground shadow-sm'
+                                            : 'text-muted-foreground hover:text-foreground'
+                                    }`}
                                 >
-                                    <SelectTrigger
-                                        className="w-20"
-                                        aria-label="Rows per page"
-                                    >
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="10">10</SelectItem>
-                                        <SelectItem value="25">25</SelectItem>
-                                        <SelectItem value="50">50</SelectItem>
-                                    </SelectContent>
-                                </Select>
+                                    Product categories
+                                </button>
+                                <button
+                                    type="button"
+                                    role="tab"
+                                    aria-selected={filters.tab === 'services'}
+                                    onClick={() => changeTab('services')}
+                                    className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                                        filters.tab === 'services'
+                                            ? 'bg-background text-foreground shadow-sm'
+                                            : 'text-muted-foreground hover:text-foreground'
+                                    }`}
+                                >
+                                    Service categories
+                                </button>
                             </div>
-                        </div>
-                    </div>
 
-                    <div className="overflow-x-auto">
-                        <table className="w-full min-w-2xl text-sm">
-                            <thead className="border-b bg-muted/40 text-left text-xs font-medium tracking-wide text-muted-foreground uppercase">
-                                <tr>
-                                    <th className="w-20 px-4 py-3">#</th>
-                                    <th className="px-4 py-3">Category name</th>
-                                    <th className="px-4 py-3">Description</th>
-                                    <th className="px-4 py-3 text-right">
-                                        Actions
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y">
-                                {categories.data.map((category, index) => (
-                                    <tr
-                                        key={category.category_ID}
-                                        className="transition-colors hover:bg-muted/30"
-                                    >
-                                        <td className="px-4 py-3 text-muted-foreground">
-                                            {(categories.current_page - 1) *
-                                                categories.per_page +
-                                                index +
-                                                1}
-                                        </td>
-                                        <td className="px-4 py-3">
-                                            <div className="flex items-center gap-2">
-                                                <Tags className="size-4 text-muted-foreground" />
-                                                <span className="font-medium">
-                                                    {category.category_name}
-                                                </span>
-                                                <Badge variant="outline">
-                                                    {category.category_type}
-                                                </Badge>
-                                            </div>
-                                        </td>
-                                        <td className="max-w-xl px-4 py-3 text-muted-foreground">
-                                            <p className="line-clamp-2">
-                                                {category.description}
-                                            </p>
-                                        </td>
-                                        <td className="px-4 py-3">
-                                            <div className="flex justify-end gap-1">
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    onClick={() =>
-                                                        openEditDialog(category)
-                                                    }
-                                                    aria-label={`Edit ${category.category_name}`}
-                                                >
-                                                    <Pencil />
-                                                </Button>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="text-destructive hover:text-destructive"
-                                                    onClick={() =>
-                                                        openDeleteDialog(
-                                                            category,
-                                                        )
-                                                    }
-                                                    aria-label={`Delete ${category.category_name}`}
-                                                >
-                                                    <Trash2 />
-                                                </Button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-
-                        {categories.data.length === 0 && (
-                            <div className="flex flex-col items-center gap-3 px-4 py-16 text-center">
-                                <Tags className="size-10 text-muted-foreground" />
-                                <div>
-                                    <p className="font-medium">
-                                        No {categoryType.toLowerCase()}{' '}
-                                        categories found
-                                    </p>
-                                    <p className="text-sm text-muted-foreground">
-                                        {filters.search
-                                            ? 'Try a different search term.'
-                                            : `Add the first ${categoryType.toLowerCase()} category to get started.`}
-                                    </p>
+                            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                                <div className="relative w-full sm:w-72">
+                                    <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+                                    <Input
+                                        value={search}
+                                        onChange={(event) =>
+                                            setSearch(event.target.value)
+                                        }
+                                        placeholder="Search categories..."
+                                        className="pl-9"
+                                        aria-label="Search categories"
+                                    />
                                 </div>
                             </div>
-                        )}
-                    </div>
-
-                    <CategoryPagination
-                        categories={categories}
-                        filters={filters}
-                    />
-                </Card>
+                        </DataTableToolbar>
+                    }
+                    footer={
+                        <DataTablePagination
+                            paginator={categories}
+                            itemLabel="categories"
+                            onPageChange={(page) =>
+                                router.get(
+                                    index.url(),
+                                    { ...filters, page },
+                                    {
+                                        only: ['categories', 'filters'],
+                                        preserveState: true,
+                                        preserveScroll: true,
+                                    },
+                                )
+                            }
+                            onPerPageChange={(perPage) =>
+                                visitWithFilters({ per_page: perPage })
+                            }
+                        />
+                    }
+                >
+                    <Table className="min-w-2xl">
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead className="w-20">#</TableHead>
+                                <TableHead>Category name</TableHead>
+                                <TableHead>Description</TableHead>
+                                <TableHead className="text-right">
+                                    Actions
+                                </TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {categories.data.map((category, index) => (
+                                <TableRow key={category.category_ID}>
+                                    <TableCell className="text-muted-foreground">
+                                        {(categories.current_page - 1) *
+                                            categories.per_page +
+                                            index +
+                                            1}
+                                    </TableCell>
+                                    <TableCell>
+                                        <div className="flex items-center gap-2">
+                                            <Tags className="size-4 text-muted-foreground" />
+                                            <span className="font-medium">
+                                                {category.category_name}
+                                            </span>
+                                            <Badge variant="outline">
+                                                {category.category_type}
+                                            </Badge>
+                                        </div>
+                                    </TableCell>
+                                    <TableCell className="max-w-xl text-muted-foreground">
+                                        <p className="line-clamp-2">
+                                            {category.description}
+                                        </p>
+                                    </TableCell>
+                                    <TableCell>
+                                        <div className="flex justify-end gap-1">
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                onClick={() =>
+                                                    openEditDialog(category)
+                                                }
+                                                aria-label={`Edit ${category.category_name}`}
+                                            >
+                                                <Pencil />
+                                            </Button>
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="text-destructive hover:text-destructive"
+                                                onClick={() =>
+                                                    openDeleteDialog(category)
+                                                }
+                                                aria-label={`Delete ${category.category_name}`}
+                                            >
+                                                <Trash2 />
+                                            </Button>
+                                        </div>
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                            {categories.data.length === 0 && (
+                                <DataTableEmptyState
+                                    colSpan={4}
+                                    icon={
+                                        <Tags className="size-10 text-muted-foreground" />
+                                    }
+                                    title={`No ${categoryType.toLowerCase()} categories found`}
+                                    description={
+                                        filters.search
+                                            ? 'Try a different search term.'
+                                            : `Add the first ${categoryType.toLowerCase()} category to get started.`
+                                    }
+                                />
+                            )}
+                        </TableBody>
+                    </Table>
+                </DataTableLayout>
             </div>
 
             <CategoryDialog

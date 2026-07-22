@@ -8,7 +8,7 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import type { PosProduct } from '@/types';
-import { formatInventoryDate } from '../../Inventory/components/expiration-badge';
+import { formatInventoryDate } from '../../inventory/components/expiration-badge';
 
 type ProductDetailsDialogProps = {
     product: PosProduct | null;
@@ -70,7 +70,9 @@ export function ProductDetailsDialog({
                             <div className="flex h-52 items-center justify-center rounded-lg border border-dashed bg-muted/40 text-muted-foreground">
                                 <div className="flex flex-col items-center gap-2">
                                     <ImageIcon className="size-8" />
-                                    <span className="text-sm">No product image</span>
+                                    <span className="text-sm">
+                                        No product image
+                                    </span>
                                 </div>
                             </div>
                         )}

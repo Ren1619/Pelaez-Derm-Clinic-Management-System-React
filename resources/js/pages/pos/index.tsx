@@ -1,6 +1,5 @@
 import { Head, router } from '@inertiajs/react';
 import {
-    Eye,
     ImageIcon,
     Info,
     Plus,
@@ -13,6 +12,9 @@ import {
     WalletCards,
 } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import { ClickableTableRow } from '@/components/clickable-table-row';
+import { DataTableEmptyState } from '@/components/data-table-empty-state';
+import { DataTableLayout } from '@/components/data-table-layout';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import {
@@ -32,6 +34,14 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/components/ui/table';
 import { checkout, index } from '@/routes/pos';
 import { destroy as destroyExpense } from '@/routes/pos/expenses';
 import type {
@@ -662,7 +672,7 @@ function CatalogGrid({
                         >
                             <button
                                 type="button"
-                                className="absolute inset-0 block h-full w-full bg-card text-left focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring focus-visible:outline-none"
+                                className="absolute inset-0 block h-full w-full bg-card text-left focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none focus-visible:ring-inset"
                                 onClick={() =>
                                     (onAdd as (item: PosProduct) => void)(
                                         product,
@@ -731,7 +741,7 @@ function CatalogGrid({
                     >
                         <button
                             type="button"
-                            className="absolute inset-0 block h-full w-full bg-card text-left focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring focus-visible:outline-none"
+                            className="absolute inset-0 block h-full w-full bg-card text-left focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none focus-visible:ring-inset"
                             onClick={() =>
                                 (onAdd as (item: PosService) => void)(service)
                             }
@@ -824,41 +834,39 @@ function DailySales({
                     className="w-full sm:w-44"
                 />
             </div>
-            <div className="overflow-x-auto rounded-lg border">
-                <table className="w-full min-w-2xl text-sm">
-                    <thead className="border-b bg-muted/40 text-left text-xs text-muted-foreground uppercase">
-                        <tr>
-                            <th className="px-3 py-3">Customer</th>
-                            <th className="px-3 py-3">Items</th>
-                            <th className="px-3 py-3">Time</th>
-                            <th className="px-3 py-3">Status</th>
-                            <th className="px-3 py-3 text-right">Amount</th>
-                            <th className="px-3 py-3 text-right">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y">
+            <DataTableLayout>
+                <Table className="min-w-2xl">
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Customer</TableHead>
+                            <TableHead>Items</TableHead>
+                            <TableHead>Time</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead className="text-right">Amount</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
                         {sales.map((sale) => (
-                            <tr
+                            <ClickableTableRow
                                 key={sale.sale_ID}
-                                className="hover:bg-muted/30"
+                                accessibleLabel={`View invoice ${sale.invoice_number}`}
+                                onActivate={() => onView(sale)}
                             >
-                                <td className="px-3 py-3">
+                                <TableCell>
                                     <p className="font-medium">
                                         {sale.customer_name}
                                     </p>
                                     <p className="text-xs text-muted-foreground">
                                         {sale.invoice_number}
                                     </p>
-                                </td>
-                                <td className="px-3 py-3">
-                                    {sale.total_items}
-                                </td>
-                                <td className="px-3 py-3">
+                                </TableCell>
+                                <TableCell>{sale.total_items}</TableCell>
+                                <TableCell>
                                     {new Intl.DateTimeFormat('en-PH', {
                                         timeStyle: 'short',
                                     }).format(new Date(sale.created_at))}
-                                </td>
-                                <td className="px-3 py-3">
+                                </TableCell>
+                                <TableCell>
                                     <span className="rounded-full border px-2 py-1 text-xs">
                                         {sale.is_voided
                                             ? 'Voided'
@@ -866,33 +874,25 @@ function DailySales({
                                               ? 'Returned'
                                               : 'Completed'}
                                     </span>
-                                </td>
-                                <td className="px-3 py-3 text-right font-medium">
+                                </TableCell>
+                                <TableCell className="text-right font-medium">
                                     {currency.format(Number(sale.net_total))}
-                                </td>
-                                <td className="px-3 py-3 text-right">
-                                    <Button
-                                        size="icon"
-                                        variant="ghost"
-                                        onClick={() => onView(sale)}
-                                    >
-                                        <Eye />
-                                        <span className="sr-only">
-                                            View sale
-                                        </span>
-                                    </Button>
-                                </td>
-                            </tr>
+                                </TableCell>
+                            </ClickableTableRow>
                         ))}
-                    </tbody>
-                </table>
-                {sales.length === 0 && (
-                    <div className="flex flex-col items-center gap-2 py-16 text-muted-foreground">
-                        <ReceiptText className="size-10" />
-                        <p>No sales for this date.</p>
-                    </div>
-                )}
-            </div>
+                        {sales.length === 0 && (
+                            <DataTableEmptyState
+                                colSpan={5}
+                                icon={
+                                    <ReceiptText className="size-10 text-muted-foreground" />
+                                }
+                                title="No sales found"
+                                description="No sales for this date."
+                            />
+                        )}
+                    </TableBody>
+                </Table>
+            </DataTableLayout>
         </div>
     );
 }
@@ -969,31 +969,26 @@ function Expenses({
                     </Button>
                 </div>
             </div>
-            <div className="overflow-x-auto rounded-lg border">
-                <table className="w-full min-w-3xl text-sm">
-                    <thead className="border-b bg-muted/40 text-left text-xs text-muted-foreground uppercase">
-                        <tr>
-                            <th className="px-3 py-3">Description</th>
-                            <th className="px-3 py-3">Category</th>
-                            <th className="px-3 py-3">Date</th>
-                            <th className="px-3 py-3">Staff</th>
-                            <th className="px-3 py-3 text-right">Amount</th>
-                            <th className="px-3 py-3 text-right">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y">
+            <DataTableLayout>
+                <Table className="min-w-3xl">
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Description</TableHead>
+                            <TableHead>Category</TableHead>
+                            <TableHead>Date</TableHead>
+                            <TableHead>Staff</TableHead>
+                            <TableHead className="text-right">Amount</TableHead>
+                            <TableHead className="text-right">Action</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
                         {expenses.map((expense) => (
-                            <tr
-                                key={expense.expense_ID}
-                                className="hover:bg-muted/30"
-                            >
-                                <td className="px-3 py-3 font-medium">
+                            <TableRow key={expense.expense_ID}>
+                                <TableCell className="font-medium">
                                     {expense.description}
-                                </td>
-                                <td className="px-3 py-3">
-                                    {expense.category}
-                                </td>
-                                <td className="px-3 py-3">
+                                </TableCell>
+                                <TableCell>{expense.category}</TableCell>
+                                <TableCell>
                                     {new Intl.DateTimeFormat('en-PH', {
                                         dateStyle: 'medium',
                                     }).format(
@@ -1001,14 +996,12 @@ function Expenses({
                                             `${expense.expense_date}T00:00:00`,
                                         ),
                                     )}
-                                </td>
-                                <td className="px-3 py-3">
-                                    {expense.created_by}
-                                </td>
-                                <td className="px-3 py-3 text-right font-medium">
+                                </TableCell>
+                                <TableCell>{expense.created_by}</TableCell>
+                                <TableCell className="text-right font-medium">
                                     {currency.format(Number(expense.amount))}
-                                </td>
-                                <td className="px-3 py-3 text-right">
+                                </TableCell>
+                                <TableCell className="text-right">
                                     <Button
                                         size="icon"
                                         variant="ghost"
@@ -1033,18 +1026,22 @@ function Expenses({
                                             Delete expense
                                         </span>
                                     </Button>
-                                </td>
-                            </tr>
+                                </TableCell>
+                            </TableRow>
                         ))}
-                    </tbody>
-                </table>
-                {expenses.length === 0 && (
-                    <div className="flex flex-col items-center gap-2 py-16 text-muted-foreground">
-                        <ShoppingBag className="size-10" />
-                        <p>No expenses for this period.</p>
-                    </div>
-                )}
-            </div>
+                        {expenses.length === 0 && (
+                            <DataTableEmptyState
+                                colSpan={6}
+                                icon={
+                                    <ShoppingBag className="size-10 text-muted-foreground" />
+                                }
+                                title="No expenses found"
+                                description="No expenses for this period."
+                            />
+                        )}
+                    </TableBody>
+                </Table>
+            </DataTableLayout>
         </div>
     );
 }

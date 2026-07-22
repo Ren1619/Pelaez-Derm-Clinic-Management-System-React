@@ -1,7 +1,16 @@
 import { ImageIcon, Pencil, Plus, Trash2 } from 'lucide-react';
+import type { ReactNode } from 'react';
 import { ClickableTableRow } from '@/components/clickable-table-row';
 import { TooltipIconButton } from '@/components/tooltip-icon-button';
 import { Badge } from '@/components/ui/badge';
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/components/ui/table';
 import type { ProductBatch } from '@/types';
 import {
     ExpirationBadge,
@@ -15,6 +24,7 @@ type DetailedInventoryTableProps = {
     onEdit: (product: ProductBatch) => void;
     onRestock: (product: ProductBatch) => void;
     onDelete: (product: ProductBatch) => void;
+    emptyState?: ReactNode;
 };
 
 export function DetailedInventoryTable({
@@ -23,30 +33,31 @@ export function DetailedInventoryTable({
     onEdit,
     onRestock,
     onDelete,
+    emptyState,
 }: DetailedInventoryTableProps) {
     return (
-        <table className="w-full min-w-6xl text-sm">
-            <thead className="border-b bg-muted/40 text-left text-xs font-medium tracking-wide text-muted-foreground uppercase">
-                <tr>
-                    <th className="px-4 py-3">Product</th>
-                    <th className="px-4 py-3">Batch</th>
-                    <th className="px-4 py-3">Unit</th>
-                    <th className="px-4 py-3">Category</th>
-                    <th className="px-4 py-3">Branch</th>
-                    <th className="px-4 py-3">Quantity</th>
-                    <th className="px-4 py-3">Price</th>
-                    <th className="px-4 py-3">Expiration</th>
-                    <th className="px-4 py-3 text-right">Actions</th>
-                </tr>
-            </thead>
-            <tbody className="divide-y">
+        <Table className="min-w-6xl">
+            <TableHeader>
+                <TableRow>
+                    <TableHead>Product</TableHead>
+                    <TableHead>Batch</TableHead>
+                    <TableHead>Unit</TableHead>
+                    <TableHead>Category</TableHead>
+                    <TableHead>Branch</TableHead>
+                    <TableHead>Quantity</TableHead>
+                    <TableHead>Price</TableHead>
+                    <TableHead>Expiration</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+            </TableHeader>
+            <TableBody>
                 {products.map((product) => (
                     <ClickableTableRow
                         key={product.product_ID}
                         accessibleLabel={`View ${product.name} batch ${product.batch_number ?? 'N/A'}`}
                         onActivate={() => onView(product)}
                     >
-                        <td className="px-4 py-3">
+                        <TableCell>
                             <div className="flex items-center gap-3">
                                 {product.image_url ? (
                                     <img
@@ -63,31 +74,31 @@ export function DetailedInventoryTable({
                                     {product.name}
                                 </span>
                             </div>
-                        </td>
-                        <td className="px-4 py-3">
+                        </TableCell>
+                        <TableCell>
                             <div className="flex flex-wrap gap-2">
                                 <Badge variant="secondary">
                                     Batch {product.batch_number ?? 'N/A'}
                                 </Badge>
                                 {product.is_primary && <Badge>Primary</Badge>}
                             </div>
-                        </td>
-                        <td className="px-4 py-3 text-muted-foreground">
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">
                             {product.measurement_unit}
-                        </td>
-                        <td className="px-4 py-3 text-muted-foreground">
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">
                             {product.category.category_name}
-                        </td>
-                        <td className="px-4 py-3 text-muted-foreground">
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">
                             {product.branch.branch_name}
-                        </td>
-                        <td className="px-4 py-3 font-medium">
+                        </TableCell>
+                        <TableCell className="font-medium">
                             {product.quantity}
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap">
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap">
                             {formatInventoryPrice(product.price)}
-                        </td>
-                        <td className="px-4 py-3">
+                        </TableCell>
+                        <TableCell>
                             <div className="flex flex-col items-start gap-2 whitespace-nowrap">
                                 <span>
                                     {formatInventoryDate(
@@ -96,8 +107,8 @@ export function DetailedInventoryTable({
                                 </span>
                                 <ExpirationBadge product={product} />
                             </div>
-                        </td>
-                        <td className="px-4 py-3">
+                        </TableCell>
+                        <TableCell>
                             <div className="flex justify-end gap-1">
                                 <TooltipIconButton
                                     variant="ghost"
@@ -127,10 +138,11 @@ export function DetailedInventoryTable({
                                     <Trash2 />
                                 </TooltipIconButton>
                             </div>
-                        </td>
+                        </TableCell>
                     </ClickableTableRow>
                 ))}
-            </tbody>
-        </table>
+                {products.length === 0 && emptyState}
+            </TableBody>
+        </Table>
     );
 }
