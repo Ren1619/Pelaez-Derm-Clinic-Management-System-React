@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Database\Factories\ActivityLogFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -25,7 +26,7 @@ use Illuminate\Database\Eloquent\Model;
  */
 class ActivityLog extends Model
 {
-    /** @use HasFactory<\Database\Factories\ActivityLogFactory> */
+    /** @use HasFactory<ActivityLogFactory> */
     use HasFactory;
 
     protected $primaryKey = 'activity_log_ID';
@@ -62,6 +63,7 @@ class ActivityLog extends Model
             'distribution' => 'Distribution',
             'feedback' => 'Feedback',
             'inventory' => 'Inventory',
+            'notifications' => 'Notifications',
             'patients' => 'Patients',
             'point_of_sale' => 'Point of Sale',
             'reports' => 'Reports',

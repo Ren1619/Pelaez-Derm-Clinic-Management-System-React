@@ -6,6 +6,7 @@ use App\Http\Requests\CancelPatientAppointmentRequest;
 use App\Http\Requests\SavePatientAppointmentRequest;
 use App\Models\Appointment;
 use App\Models\Patient;
+use App\Services\AppointmentNotificationService;
 use App\Services\Appointments\AppointmentManagementService;
 use App\Services\Appointments\AppointmentStatusService;
 use App\Services\PatientAppointmentService;
@@ -21,6 +22,7 @@ class PatientAppointmentController extends Controller
         private PatientAppointmentService $pageService,
         private AppointmentManagementService $managementService,
         private AppointmentStatusService $statusService,
+        private AppointmentNotificationService $notificationService,
     ) {}
 
     public function index(Request $request): Response
@@ -49,12 +51,14 @@ class PatientAppointmentController extends Controller
     public function store(SavePatientAppointmentRequest $request): RedirectResponse
     {
         $data = $request->validated();
-        $this->managementService->create([
+        $patient = $this->patient($request);
+        $appointment = $this->managementService->create([
             ...$data,
-            'PID' => $this->patient($request)->PID,
+            'PID' => $patient->PID,
             'doctor_account_ID' => null,
             'remarks' => 'Patient requested appointment — awaiting approval.',
         ], null);
+        $this->notificationService->patientCreated($appointment, $patient);
 
         return back()->with('success', 'Appointment request submitted for clinic approval.');
     }
@@ -63,12 +67,13 @@ class PatientAppointmentController extends Controller
     {
         $this->ensureOwned($request, $appointment);
         $data = $request->validated();
-        $this->managementService->update($appointment, [
+        $updated = $this->managementService->update($appointment, [
             ...$data,
             'PID' => $this->patient($request)->PID,
             'doctor_account_ID' => null,
             'remarks' => $data['reschedule_reason'] ?? 'Patient rescheduled appointment — awaiting approval.',
         ]);
+        $this->notificationService->patientUpdated($updated, $this->patient($request), $data['reschedule_reason'] ?? null);
 
         return back()->with('success', 'Appointment rescheduled and returned for clinic approval.');
     }
@@ -77,6 +82,7 @@ class PatientAppointmentController extends Controller
     {
         $this->ensureOwned($request, $appointment);
         $this->statusService->cancel($appointment, $request->string('reason')->toString());
+        $this->notificationService->patientUpdated($appointment->refresh(), $this->patient($request), $request->string('reason')->toString());
 
         return back()->with('success', 'Appointment cancelled.');
     }

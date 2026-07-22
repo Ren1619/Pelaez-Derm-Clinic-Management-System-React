@@ -8,6 +8,7 @@ export type * from './feedback';
 export type * from './inventory';
 export type * from './log';
 export type * from './navigation';
+export type * from './notification';
 export type * from './patient';
 export type * from './pos';
 export type * from './report';

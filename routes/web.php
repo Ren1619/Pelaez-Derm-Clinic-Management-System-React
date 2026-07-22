@@ -1,17 +1,18 @@
 <?php
 
-use App\Http\Controllers\BranchController;
 use App\Http\Controllers\AccountAuthenticationController;
 use App\Http\Controllers\AccountPasswordResetController;
-use App\Http\Controllers\AppointmentController;
 use App\Http\Controllers\ActivityLogController;
+use App\Http\Controllers\AppointmentController;
 use App\Http\Controllers\AppointmentStatusController;
+use App\Http\Controllers\BranchController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DistributionController;
 use App\Http\Controllers\DistributionStatusController;
 use App\Http\Controllers\FeedbackController;
 use App\Http\Controllers\InventoryController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PatientAllergyController;
 use App\Http\Controllers\PatientAppointmentController;
 use App\Http\Controllers\PatientAuthController;
@@ -21,6 +22,7 @@ use App\Http\Controllers\PatientFeedbackController;
 use App\Http\Controllers\PatientHealthRecordController;
 use App\Http\Controllers\PatientMedicalConditionController;
 use App\Http\Controllers\PatientMedicationController;
+use App\Http\Controllers\PatientNotificationController;
 use App\Http\Controllers\PatientServiceCatalogController;
 use App\Http\Controllers\PatientVisitController;
 use App\Http\Controllers\PatientVisitDiagnosisController;
@@ -99,6 +101,8 @@ Route::prefix('patient')->name('patient.')->group(function () {
         Route::delete('appointments/{appointment}', [PatientAppointmentController::class, 'destroy'])->name('appointments.destroy');
 
         Route::get('services', [PatientServiceCatalogController::class, 'index'])->name('services.index');
+        Route::patch('notifications/{systemNotification}/read', [PatientNotificationController::class, 'read'])->name('notifications.read');
+        Route::patch('notifications/read-all', [PatientNotificationController::class, 'readAll'])->name('notifications.read-all');
         Route::get('feedback', [PatientFeedbackController::class, 'index'])->name('feedback.index');
         Route::post('feedback', [PatientFeedbackController::class, 'store'])->name('feedback.store');
         Route::post('logout', [PatientAuthController::class, 'destroy'])->name('logout');
@@ -106,6 +110,9 @@ Route::prefix('patient')->name('patient.')->group(function () {
 });
 
 Route::middleware(['auth', 'verified', RecordReadActivity::class])->group(function () {
+    Route::patch('notifications/{systemNotification}/read', [NotificationController::class, 'read'])->name('notifications.read');
+    Route::patch('notifications/read-all', [NotificationController::class, 'readAll'])->name('notifications.read-all');
+
     Route::get('dashboard', DashboardController::class)
         ->middleware('staff.module:dashboard')
         ->name('dashboard');

@@ -4,7 +4,9 @@ namespace App\Providers;
 
 use App\Enums\AccountType;
 use App\Models\Patient;
+use App\Models\Product;
 use App\Models\StaffAccount;
+use App\Observers\ProductObserver;
 use App\Services\ActivityLogRecorder;
 use Carbon\CarbonImmutable;
 use Illuminate\Auth\Notifications\ResetPassword;
@@ -30,6 +32,7 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->configureDefaults();
         $this->configurePasswordResetUrls();
+        Product::observe(ProductObserver::class);
         $this->app->make(ActivityLogRecorder::class)->listen();
     }
 

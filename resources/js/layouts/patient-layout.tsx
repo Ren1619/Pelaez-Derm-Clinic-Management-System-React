@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import AppLogoIcon from '@/components/app-logo-icon';
+import { SystemNotificationBell } from '@/components/system-notification-bell';
 import { Button } from '@/components/ui/button';
 import { logout } from '@/routes/patient';
 import { index as appointmentsIndex } from '@/routes/patient/appointments';
@@ -35,7 +36,11 @@ export default function PatientLayout({
     const [menuOpen, setMenuOpen] = useState(false);
     const links = [
         { label: 'Health Record', href: healthRecordIndex(), icon: FileHeart },
-        { label: 'Appointments', href: appointmentsIndex(), icon: CalendarDays },
+        {
+            label: 'Appointments',
+            href: appointmentsIndex(),
+            icon: CalendarDays,
+        },
         { label: 'Services', href: servicesIndex(), icon: Sparkles },
         { label: 'Feedback', href: feedbackIndex(), icon: MessageSquareText },
     ];
@@ -56,11 +61,19 @@ export default function PatientLayout({
                 className={`fixed inset-y-0 left-0 z-40 flex w-64 flex-col border-r bg-background transition-transform lg:translate-x-0 ${menuOpen ? 'translate-x-0' : '-translate-x-full'}`}
             >
                 <div className="flex h-20 items-center justify-between border-b px-5">
-                    <Link href={healthRecordIndex()} className="flex items-center gap-3 font-semibold">
+                    <Link
+                        href={healthRecordIndex()}
+                        className="flex items-center gap-3 font-semibold"
+                    >
                         <AppLogoIcon className="size-9 fill-current" />
                         <span>Patient Portal</span>
                     </Link>
-                    <Button variant="ghost" size="icon" className="lg:hidden" onClick={() => setMenuOpen(false)}>
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="lg:hidden"
+                        onClick={() => setMenuOpen(false)}
+                    >
                         <X className="size-5" />
                     </Button>
                 </div>
@@ -86,12 +99,21 @@ export default function PatientLayout({
 
                 <div className="border-t p-4">
                     <div className="mb-3 min-w-0 px-2">
-                        <p className="truncate text-sm font-medium">{patient.name}</p>
-                        <p className="truncate text-xs text-muted-foreground">{patient.email}</p>
+                        <p className="truncate text-sm font-medium">
+                            {patient.name}
+                        </p>
+                        <p className="truncate text-xs text-muted-foreground">
+                            {patient.email}
+                        </p>
                     </div>
                     <Form {...logout.form()}>
                         {({ processing }) => (
-                            <Button type="submit" variant="outline" className="w-full justify-start" disabled={processing}>
+                            <Button
+                                type="submit"
+                                variant="outline"
+                                className="w-full justify-start"
+                                disabled={processing}
+                            >
                                 <LogOut className="size-4" /> Log out
                             </Button>
                         )}
@@ -100,14 +122,22 @@ export default function PatientLayout({
             </aside>
 
             <header className="sticky top-0 z-20 flex h-20 items-center gap-4 border-b bg-background/95 px-4 backdrop-blur sm:px-6">
-                <Button variant="ghost" size="icon" className="lg:hidden" onClick={() => setMenuOpen(true)}>
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    className="lg:hidden"
+                    onClick={() => setMenuOpen(true)}
+                >
                     <Menu className="size-5" />
                 </Button>
-                <h1 className="text-lg font-semibold">{current?.label ?? 'Patient Portal'}</h1>
+                <h1 className="text-lg font-semibold">
+                    {current?.label ?? 'Patient Portal'}
+                </h1>
                 <div className="ml-auto hidden text-right sm:block">
                     <p className="text-sm font-medium">{patient.name}</p>
                     <p className="text-xs text-muted-foreground">Patient</p>
                 </div>
+                <SystemNotificationBell audience="patient" />
             </header>
 
             <main className="p-4 sm:p-6 lg:p-8">{children}</main>

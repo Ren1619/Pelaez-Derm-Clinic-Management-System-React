@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\CancelAppointmentRequest;
 use App\Models\Appointment;
+use App\Services\AppointmentNotificationService;
 use App\Services\Appointments\AppointmentStatusService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -12,7 +13,10 @@ use Illuminate\Validation\Rule;
 
 class AppointmentStatusController extends Controller
 {
-    public function __construct(private AppointmentStatusService $statusService) {}
+    public function __construct(
+        private AppointmentStatusService $statusService,
+        private AppointmentNotificationService $notificationService,
+    ) {}
 
     public function update(Request $request, Appointment $appointment): RedirectResponse
     {
@@ -31,6 +35,7 @@ class AppointmentStatusController extends Controller
     {
         Gate::authorize('update', $appointment);
         $this->statusService->cancel($appointment, (string) $request->string('cancellation_reason'));
+        $this->notificationService->staffRejected($appointment->refresh(), $request->user(), (string) $request->string('cancellation_reason'));
 
         return back()->with('success', 'Appointment cancelled. The slot is available again.');
     }

@@ -11,6 +11,8 @@ use Illuminate\Validation\ValidationException;
 
 class PatientFeedbackService
 {
+    public function __construct(private FeedbackNotificationService $notifications) {}
+
     /** @return array<string, mixed> */
     public function payload(Patient $patient): array
     {
@@ -44,7 +46,7 @@ class PatientFeedbackService
     /** @param array<string, mixed> $data */
     public function create(Patient $patient, array $data): Feedback
     {
-        return DB::transaction(function () use ($patient, $data): Feedback {
+        $feedback = DB::transaction(function () use ($patient, $data): Feedback {
             $appointment = Appointment::query()
                 ->whereKey($data['appointment_ID'])
                 ->where('PID', $patient->PID)
@@ -74,6 +76,10 @@ class PatientFeedbackService
                 'description' => Arr::get($data, 'description') ?: null,
             ]);
         }, 3);
+
+        $this->notifications->submitted($feedback, $patient);
+
+        return $feedback;
     }
 
     /** @return array<string, mixed> */

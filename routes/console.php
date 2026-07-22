@@ -9,3 +9,5 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 Schedule::command('appointments:sync-statuses')->everyFiveMinutes()->withoutOverlapping();
+Schedule::command('appointments:generate-reminders')->everyFifteenMinutes()->withoutOverlapping();
+Schedule::command('inventory:sync-low-stock-notifications')->everyFifteenMinutes()->withoutOverlapping();

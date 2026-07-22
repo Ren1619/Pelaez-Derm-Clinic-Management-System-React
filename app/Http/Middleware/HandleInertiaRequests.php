@@ -4,9 +4,12 @@ namespace App\Http\Middleware;
 
 use App\Enums\StaffModule;
 use App\Enums\StaffRole;
+use App\Models\Patient;
 use App\Models\StaffAccount;
 use App\Models\SystemSetting;
 use App\Models\User;
+use App\Services\AppointmentNotificationService;
+use App\Services\SystemNotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Middleware;
@@ -42,6 +45,7 @@ class HandleInertiaRequests extends Middleware
     public function share(Request $request): array
     {
         $user = Auth::guard('web')->user();
+        $patient = Auth::guard('patient')->user();
         $systemSettings = SystemSetting::current()->toPublicArray();
 
         return [
@@ -55,8 +59,27 @@ class HandleInertiaRequests extends Middleware
                 'user' => $this->serializeUser($user),
                 'permissions' => $this->serializePermissions($user),
             ],
+            'notificationSummary' => fn (): array => $this->notificationSummary($user, $patient),
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
         ];
+    }
+
+    /** @return array{unread_count: int, items: list<array<string, mixed>>} */
+    private function notificationSummary(StaffAccount|User|null $user, mixed $patient): array
+    {
+        $service = app(SystemNotificationService::class);
+
+        if ($patient instanceof Patient) {
+            app(AppointmentNotificationService::class)->createDueReminders($patient);
+
+            return $service->patientSummary($patient);
+        }
+
+        if ($user instanceof StaffAccount || $user instanceof User) {
+            return $service->staffSummary($user);
+        }
+
+        return ['unread_count' => 0, 'items' => []];
     }
 
     /** @return array<string, mixed>|null */

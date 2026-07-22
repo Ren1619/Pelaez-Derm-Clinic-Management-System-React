@@ -14,7 +14,7 @@ use App\Models\Service;
 use Inertia\Testing\AssertableInertia as Assert;
 
 test('patient portal modules require a patient session', function (string $routeName) {
-    $this->get(route($routeName))->assertRedirect(route('patient.login'));
+    $this->get(route($routeName))->assertRedirect(route('login'));
 })->with([
     'health record' => 'patient.health-record.index',
     'appointments' => 'patient.appointments.index',

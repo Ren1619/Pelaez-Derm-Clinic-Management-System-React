@@ -1,7 +1,7 @@
 <?php
 
-use App\Models\StaffAccount;
 use App\Models\Patient;
+use App\Models\StaffAccount;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\RateLimiter;
 use Laravel\Fortify\Features;
@@ -87,7 +87,7 @@ test('verified patients authenticate from the shared login screen', function () 
     ]);
 
     $this->assertAuthenticatedAs($patient, 'patient');
-    $response->assertRedirect(route('patient.feedback.index'));
+    $response->assertRedirect(route('patient.health-record.index'));
 });
 
 test('account lookup uses no more than two indexed account queries', function () {
@@ -103,7 +103,7 @@ test('account lookup uses no more than two indexed account queries', function ()
     $this->post(route('account.login.store'), [
         'email' => $patient->email,
         'password' => 'password',
-    ])->assertRedirect(route('patient.feedback.index'));
+    ])->assertRedirect(route('patient.health-record.index'));
 
     expect($accountQueries)->toHaveCount(2)
         ->each->toContain('email');

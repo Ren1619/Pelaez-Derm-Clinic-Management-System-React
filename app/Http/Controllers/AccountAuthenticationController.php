@@ -43,7 +43,7 @@ class AccountAuthenticationController extends Controller
     private function landingUrl(StaffAccount|Patient $account, AccountType $accountType): string
     {
         if ($accountType === AccountType::Patient) {
-            return route('patient.feedback.index');
+            return route('patient.health-record.index');
         }
 
         /** @var StaffAccount $account */
