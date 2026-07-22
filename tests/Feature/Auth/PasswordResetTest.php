@@ -1,77 +1,119 @@
 <?php
 
+use App\Enums\AccountType;
+use App\Models\Patient;
 use App\Models\StaffAccount;
 use Illuminate\Auth\Notifications\ResetPassword;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
-use Laravel\Fortify\Features;
 
-beforeEach(function () {
-    $this->skipUnlessFortifyHas(Features::resetPasswords());
+test('shared reset password link screen can be rendered', function () {
+    $this->get(route('password.request'))->assertOk();
 });
 
-test('reset password link screen can be rendered', function () {
-    $response = $this->get(route('password.request'));
-
-    $response->assertOk();
-});
-
-test('reset password link can be requested', function () {
+test('password reset links are sent through the matching account broker', function (string $modelClass) {
     Notification::fake();
 
-    $user = StaffAccount::factory()->staff()->create();
+    $account = $modelClass::factory()->create();
 
-    $this->post(route('password.email'), ['email' => $user->email]);
+    $this->post(route('password.email'), ['email' => $account->email])
+        ->assertSessionHasNoErrors()
+        ->assertSessionHas('status');
 
-    Notification::assertSentTo($user, ResetPassword::class);
-});
+    Notification::assertSentTo($account, ResetPassword::class);
+})->with([
+    'staff' => StaffAccount::class,
+    'patient' => Patient::class,
+]);
 
-test('reset password screen can be rendered', function () {
+test('unknown emails receive the same generic response without a notification', function () {
     Notification::fake();
 
-    $user = StaffAccount::factory()->staff()->create();
+    $response = $this->post(route('password.email'), ['email' => 'unknown@example.test']);
 
-    $this->post(route('password.email'), ['email' => $user->email]);
+    $response
+        ->assertSessionHasNoErrors()
+        ->assertSessionHas(
+            'status',
+            'If an account exists for that email address, a password reset link has been sent.',
+        );
 
-    Notification::assertSentTo($user, ResetPassword::class, function ($notification) {
-        $response = $this->get(route('password.reset', $notification->token));
-
-        $response->assertOk();
-
-        return true;
-    });
+    Notification::assertNothingSent();
 });
 
-test('password can be reset with valid token', function () {
+test('password reset links identify the correct account type', function (
+    string $modelClass,
+    AccountType $accountType,
+) {
     Notification::fake();
 
-    $user = StaffAccount::factory()->staff()->create();
+    $account = $modelClass::factory()->create();
+    $this->post(route('password.email'), ['email' => $account->email]);
 
-    $this->post(route('password.email'), ['email' => $user->email]);
+    Notification::assertSentTo(
+        $account,
+        ResetPassword::class,
+        function (ResetPassword $notification) use ($account, $accountType): bool {
+            $response = $this->get(route('password.reset', [
+                'accountType' => $accountType->value,
+                'token' => $notification->token,
+                'email' => $account->email,
+            ]));
 
-    Notification::assertSentTo($user, ResetPassword::class, function ($notification) use ($user) {
-        $response = $this->post(route('password.update'), [
-            'token' => $notification->token,
-            'email' => $user->email,
-            'password' => 'password',
-            'password_confirmation' => 'password',
-        ]);
+            $response->assertOk();
 
-        $response
-            ->assertSessionHasNoErrors()
-            ->assertRedirect(route('login'));
+            return true;
+        },
+    );
+})->with([
+    'staff' => [StaffAccount::class, AccountType::Staff],
+    'patient' => [Patient::class, AccountType::Patient],
+]);
 
-        return true;
-    });
-});
+test('passwords can be reset through the matching account broker', function (
+    string $modelClass,
+    AccountType $accountType,
+) {
+    Notification::fake();
 
-test('password cannot be reset with invalid token', function () {
-    $user = StaffAccount::factory()->staff()->create();
+    $account = $modelClass::factory()->create(['password' => 'old-password']);
+    $this->post(route('password.email'), ['email' => $account->email]);
+
+    Notification::assertSentTo(
+        $account,
+        ResetPassword::class,
+        function (ResetPassword $notification) use ($account, $accountType): bool {
+            $response = $this->post(route('password.update'), [
+                'account_type' => $accountType->value,
+                'token' => $notification->token,
+                'email' => $account->email,
+                'password' => 'new-password',
+                'password_confirmation' => 'new-password',
+            ]);
+
+            $response
+                ->assertSessionHasNoErrors()
+                ->assertRedirect(route('login'));
+
+            expect(Hash::check('new-password', $account->refresh()->password))->toBeTrue();
+
+            return true;
+        },
+    );
+})->with([
+    'staff' => [StaffAccount::class, AccountType::Staff],
+    'patient' => [Patient::class, AccountType::Patient],
+]);
+
+test('password cannot be reset through the wrong account broker', function () {
+    $patient = Patient::factory()->create();
 
     $response = $this->post(route('password.update'), [
+        'account_type' => AccountType::Staff->value,
         'token' => 'invalid-token',
-        'email' => $user->email,
-        'password' => 'newpassword123',
-        'password_confirmation' => 'newpassword123',
+        'email' => $patient->email,
+        'password' => 'new-password',
+        'password_confirmation' => 'new-password',
     ]);
 
     $response->assertSessionHasErrors('email');

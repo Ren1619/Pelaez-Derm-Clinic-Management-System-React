@@ -8,19 +8,30 @@ import { Spinner } from '@/components/ui/spinner';
 import { update } from '@/routes/password';
 
 type Props = {
+    accountType: 'staff' | 'patient';
     token: string;
     email: string;
     passwordRules: string;
 };
 
-export default function ResetPassword({ token, email, passwordRules }: Props) {
+export default function ResetPassword({
+    accountType,
+    token,
+    email,
+    passwordRules,
+}: Props) {
     return (
         <>
             <Head title="Reset password" />
 
             <Form
                 {...update.form()}
-                transform={(data) => ({ ...data, token, email })}
+                transform={(data) => ({
+                    ...data,
+                    account_type: accountType,
+                    token,
+                    email,
+                })}
                 resetOnSuccess={['password', 'password_confirmation']}
             >
                 {({ processing, errors }) => (

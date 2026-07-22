@@ -11,6 +11,8 @@ use Illuminate\Validation\ValidationException;
 
 class DistributionService
 {
+    public function __construct(private DistributionNotificationService $notifications) {}
+
     /**
      * @param array{
      *     from_branch_ID: int,
@@ -20,7 +22,7 @@ class DistributionService
      *     items: list<array{product_ID: int, quantity: int}>
      * } $attributes
      */
-    public function create(array $attributes, StaffAccount|null $creator): Distribution
+    public function create(array $attributes, ?StaffAccount $creator): Distribution
     {
         return DB::transaction(function () use ($attributes, $creator): Distribution {
             $productIds = collect($attributes['items'])->pluck('product_ID');
@@ -68,7 +70,10 @@ class DistributionService
                 ]);
             }
 
-            return $distribution->load(['fromBranch', 'toBranch', 'createdBy', 'items']);
+            $distribution->load(['fromBranch', 'toBranch', 'createdBy', 'items']);
+            $this->notifications->inboundCreated($distribution);
+
+            return $distribution;
         }, attempts: 3);
     }
 
@@ -121,6 +126,7 @@ class DistributionService
             }
 
             $lockedDistribution->update(['status' => Distribution::Delivered, 'received_date' => now()]);
+            $this->notifications->received($lockedDistribution);
 
             return $lockedDistribution->refresh();
         }, attempts: 3);

@@ -30,6 +30,7 @@ use App\Models\SaleReturnItem;
 use App\Models\SaleServiceItem;
 use App\Models\Service;
 use App\Models\StaffAccount;
+use App\Models\SystemNotification;
 use App\Models\SystemSetting;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
@@ -70,6 +71,7 @@ class ActivityLogRecorder
         Service::class => 'services',
         StaffAccount::class => 'staff',
         SystemSetting::class => 'system_settings',
+        SystemNotification::class => 'notifications',
         User::class => 'staff',
     ];
 
@@ -205,7 +207,7 @@ class ActivityLogRecorder
     }
 
     /**
-     * @param array<string, mixed> $values
+     * @param  array<string, mixed>  $values
      * @return array<string, mixed>
      */
     private function sanitizeSnapshot(array $values): array
@@ -238,7 +240,7 @@ class ActivityLogRecorder
             return Str::limit($model->full_name, 100);
         }
 
-        foreach (['branch_name', 'invoice_number', 'name', 'category_name', 'service_name', 'product_name', 'email'] as $attribute) {
+        foreach (['branch_name', 'invoice_number', 'name', 'title', 'category_name', 'service_name', 'product_name', 'email'] as $attribute) {
             $value = $model->getAttribute($attribute);
 
             if (is_string($value) && $value !== '') {

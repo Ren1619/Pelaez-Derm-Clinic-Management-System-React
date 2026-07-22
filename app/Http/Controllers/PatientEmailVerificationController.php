@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\AccountType;
 use App\Models\Patient;
 use Illuminate\Auth\Events\Verified;
 use Illuminate\Http\RedirectResponse;
@@ -20,7 +21,17 @@ class PatientEmailVerificationController extends Controller
             event(new Verified($patient));
         }
 
-        return redirect()->route('home')->with(
+        $passwordResetToken = $request->string('password_reset_token')->toString();
+
+        if ($passwordResetToken !== '') {
+            return redirect()->route('password.reset', [
+                'accountType' => AccountType::Patient->value,
+                'token' => $passwordResetToken,
+                'email' => $patient->email,
+            ]);
+        }
+
+        return redirect()->route('login')->with(
             'status',
             'Your patient email address has been verified.',
         );

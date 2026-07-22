@@ -39,10 +39,10 @@ class SavePatientMedicalConditionRequest extends FormRequest
 
     private function patient(): Patient
     {
-        $patient = $this->route('patient');
+        $patient = $this->route('patient') ?? $this->user('patient');
 
         if (! $patient instanceof Patient) {
-            throw new \LogicException('A route-bound patient is required.');
+            throw new \LogicException('An authenticated or route-bound patient is required.');
         }
 
         return $patient;

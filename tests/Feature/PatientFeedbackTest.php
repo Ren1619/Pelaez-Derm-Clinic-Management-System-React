@@ -9,11 +9,11 @@ use Inertia\Testing\AssertableInertia as Assert;
 
 test('patient feedback requires a verified patient session', function () {
     $this->get(route('patient.feedback.index'))
-        ->assertRedirect(route('patient.login'));
+        ->assertRedirect(route('login'));
 
     $this->actingAs(User::factory()->create())
         ->get(route('patient.feedback.index'))
-        ->assertRedirect(route('patient.login'));
+        ->assertRedirect(route('login'));
 });
 
 test('verified patients can log in to their portal', function () {
@@ -22,11 +22,11 @@ test('verified patients can log in to their portal', function () {
         'password' => 'password',
     ]);
 
-    $this->post(route('patient.login.store'), [
+    $this->post(route('account.login.store'), [
         'email' => $patient->email,
         'password' => 'password',
         'remember' => 'on',
-    ])->assertRedirect(route('patient.feedback.index'));
+    ])->assertRedirect(route('patient.health-record.index'));
 
     $this->assertAuthenticatedAs($patient, 'patient');
 });
@@ -37,7 +37,7 @@ test('unverified patients cannot enter the patient portal', function () {
         'password' => 'password',
     ]);
 
-    $this->post(route('patient.login.store'), [
+    $this->post(route('account.login.store'), [
         'email' => $patient->email,
         'password' => 'password',
     ])->assertSessionHasErrors('email');
@@ -176,7 +176,7 @@ test('patients can log out of their portal', function () {
 
     $this->actingAs($patient, 'patient')
         ->post(route('patient.logout'))
-        ->assertRedirect(route('patient.login'));
+        ->assertRedirect(route('login'));
 
     $this->assertGuest('patient');
 });

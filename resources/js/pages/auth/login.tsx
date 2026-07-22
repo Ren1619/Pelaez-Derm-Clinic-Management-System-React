@@ -7,7 +7,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
-import { store } from '@/routes/login';
+import { store } from '@/routes/account/login';
 import { request } from '@/routes/password';
 
 type Props = {
@@ -89,7 +89,8 @@ export default function Login({ status, canResetPassword }: Props) {
                         </div>
 
                         <p className="text-center text-sm text-muted-foreground">
-                            Staff accounts are issued by a clinic administrator.
+                            Staff, administrators, and patients use this secure
+                            login.
                         </p>
                     </>
                 )}

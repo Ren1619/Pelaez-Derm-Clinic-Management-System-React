@@ -7,6 +7,7 @@ use App\Notifications\StaffAccountInvitation;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
@@ -29,16 +30,17 @@ class StaffAccountService
     /** @param array<string, mixed> $attributes */
     public function create(array $attributes): StaffAccount
     {
-        $temporaryPassword = Str::password(16, true, true, true, false);
+        $initialPassword = Str::password(40, true, true, true, false);
 
         $staffAccount = DB::transaction(fn (): StaffAccount => StaffAccount::create([
             ...$attributes,
-            'password' => $temporaryPassword,
+            'password' => $initialPassword,
             'email_verified_at' => null,
             'is_active' => true,
         ]));
 
-        $staffAccount->notify(new StaffAccountInvitation($temporaryPassword));
+        $passwordResetToken = Password::broker('staff_accounts')->createToken($staffAccount);
+        $staffAccount->notify(new StaffAccountInvitation($passwordResetToken));
 
         return $staffAccount;
     }

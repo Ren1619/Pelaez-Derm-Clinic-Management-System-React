@@ -14,7 +14,7 @@ class PatientAccountInvitation extends Notification implements ShouldQueue
 {
     use Queueable;
 
-    public function __construct(public readonly ?string $temporaryPassword = null)
+    public function __construct(public readonly ?string $passwordResetToken = null)
     {
         $this->afterCommit();
     }
@@ -39,13 +39,15 @@ class PatientAccountInvitation extends Notification implements ShouldQueue
             ->greeting('Welcome to Pelaez Dermatology Clinic')
             ->line('A patient account has been created for you. Please verify its email address.');
 
-        if ($this->temporaryPassword !== null) {
-            $message->line("Your temporary password is: {$this->temporaryPassword}")
-                ->line('Keep this password secure. Patient sign-in will be available through the patient portal.');
+        if ($this->passwordResetToken !== null) {
+            $message->line('Use the secure link below to verify your email and choose your password.');
         }
 
         return $message
-            ->action('Verify email address', $this->verificationUrl($notifiable))
+            ->action(
+                $this->passwordResetToken === null ? 'Verify email address' : 'Verify email and set password',
+                $this->verificationUrl($notifiable),
+            )
             ->line('This verification link expires in 60 minutes.');
     }
 
@@ -64,6 +66,7 @@ class PatientAccountInvitation extends Notification implements ShouldQueue
             [
                 'patient' => $notifiable->getKey(),
                 'hash' => sha1($notifiable->getEmailForVerification()),
+                'password_reset_token' => $this->passwordResetToken,
             ],
         );
     }
