@@ -2,18 +2,18 @@
 
 namespace App\Providers;
 
-use App\Enums\AccountType;
-use App\Models\Patient;
+use App\Mail\BrevoTransport;
 use App\Models\Product;
-use App\Models\StaffAccount;
 use App\Observers\ProductObserver;
 use App\Services\ActivityLogRecorder;
 use Carbon\CarbonImmutable;
-use Illuminate\Auth\Notifications\ResetPassword;
+use Illuminate\Http\Client\Factory as HttpFactory;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
+use InvalidArgumentException;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -30,10 +30,39 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        $this->registerBrevoMailTransport();
         $this->configureDefaults();
-        $this->configurePasswordResetUrls();
         Product::observe(ProductObserver::class);
         $this->app->make(ActivityLogRecorder::class)->listen();
+    }
+
+    /**
+     * Register the Brevo API mail transport.
+     */
+    private function registerBrevoMailTransport(): void
+    {
+        Mail::extend('brevo', function (): BrevoTransport {
+            $apiKey = (string) config('services.brevo.key');
+            $senderEmail = (string) config('services.brevo.sender_email');
+
+            if ($apiKey === '') {
+                throw new InvalidArgumentException('The BREVO_API_KEY environment value is required.');
+            }
+
+            if ($senderEmail === '') {
+                throw new InvalidArgumentException('The BREVO_SENDER_EMAIL environment value is required.');
+            }
+
+            return new BrevoTransport(
+                $this->app->make(HttpFactory::class),
+                $apiKey,
+                (string) config('services.brevo.api_url', 'https://api.brevo.com/v3'),
+                $senderEmail,
+                (string) config('services.brevo.sender_name'),
+                (int) config('services.brevo.timeout', 10),
+                (int) config('services.brevo.connect_timeout', 3),
+            );
+        });
     }
 
     /**
@@ -47,29 +76,17 @@ class AppServiceProvider extends ServiceProvider
             app()->isProduction(),
         );
 
-        Password::defaults(fn (): ?Password => app()->isProduction()
-            ? Password::min(12)
+        Password::defaults(function (): Password {
+            $passwordRule = Password::min(8)
                 ->mixedCase()
                 ->letters()
                 ->numbers()
-                ->symbols()
-                ->uncompromised()
-            : null,
-        );
-    }
+                ->symbols();
 
-    private function configurePasswordResetUrls(): void
-    {
-        ResetPassword::createUrlUsing(function (StaffAccount|Patient $notifiable, string $token): string {
-            $accountType = $notifiable instanceof Patient
-                ? AccountType::Patient
-                : AccountType::Staff;
-
-            return route('password.reset', [
-                'accountType' => $accountType->value,
-                'token' => $token,
-                'email' => $notifiable->getEmailForPasswordReset(),
-            ]);
+            // Avoid the external compromised-password lookup during local development and tests.
+            return app()->isProduction()
+                ? $passwordRule->uncompromised()
+                : $passwordRule;
         });
     }
 }

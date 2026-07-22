@@ -6,12 +6,12 @@ use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
 /**
- * Validates an email submitted to the forgot-password form.
+ * Validates an email submitted to the resend-verification form.
  */
-class SendAccountPasswordResetLinkRequest extends FormRequest
+class ResendAccountVerificationRequest extends FormRequest
 {
     /**
-     * Determine if the user is authorized to make this request.
+     * Allow guests to request another verification email.
      */
     public function authorize(): bool
     {
@@ -19,7 +19,7 @@ class SendAccountPasswordResetLinkRequest extends FormRequest
     }
 
     /**
-     * Get the validation rules that apply to the request.
+     * Validate the email used to locate the account.
      *
      * @return array<string, ValidationRule|array<mixed>|string>
      */
