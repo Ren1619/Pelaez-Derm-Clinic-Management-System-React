@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use App\Models\Appointment;
 use App\Models\Patient;
+use App\Services\Appointments\AppointmentScheduleService;
 use Carbon\CarbonImmutable;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
@@ -29,12 +30,12 @@ class SavePatientAppointmentRequest extends FormRequest
      *
      * @return array<string, ValidationRule|array<mixed>|string>
      */
-    public function rules(): array
+    public function rules(AppointmentScheduleService $scheduleService): array
     {
         return [
             'branch_ID' => ['required', 'integer', Rule::exists('branches', 'branch_ID')],
             'scheduled_date' => ['required', 'date_format:Y-m-d', 'after_or_equal:today'],
-            'scheduled_time' => ['required', Rule::in(Appointment::TIME_SLOTS)],
+            'scheduled_time' => ['required', Rule::in($scheduleService->slotValues())],
             'appointment_type' => ['required', Rule::in(Appointment::TYPES)],
             'concern' => ['nullable', 'required_if:appointment_type,consultation', 'string', 'max:1000'],
             'service_ids' => ['nullable', 'required_if:appointment_type,service', 'array', 'min:1'],

@@ -10,14 +10,17 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
 
-class StoreAppointmentRequest extends FormRequest
+class RescheduleAppointmentRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
      */
     public function authorize(): bool
     {
-        return $this->user()?->can('createForBranch', [Appointment::class, $this->integer('branch_ID')]) ?? false;
+        $appointment = $this->route('appointment');
+
+        return $appointment instanceof Appointment
+            && ($this->user()?->can('update', $appointment) ?? false);
     }
 
     /**
@@ -28,16 +31,9 @@ class StoreAppointmentRequest extends FormRequest
     public function rules(AppointmentScheduleService $scheduleService): array
     {
         return [
-            'branch_ID' => ['required', 'integer', Rule::exists('branches', 'branch_ID')],
-            'PID' => ['required', 'integer', Rule::exists('patients', 'PID')],
-            'doctor_account_ID' => ['nullable', 'integer', Rule::exists('staff_accounts', 'account_ID')],
             'scheduled_date' => ['required', 'date_format:Y-m-d', 'after_or_equal:today'],
             'scheduled_time' => ['required', Rule::in($scheduleService->slotValues())],
-            'appointment_type' => ['required', Rule::in(Appointment::TYPES)],
-            'concern' => ['nullable', 'required_if:appointment_type,consultation', 'string', 'max:1000'],
-            'service_ids' => ['nullable', 'required_if:appointment_type,service', 'array', 'min:1'],
-            'service_ids.*' => ['integer', 'distinct', Rule::exists('services', 'service_ID')],
-            'remarks' => ['nullable', 'string', 'max:1000'],
+            'reschedule_reason' => ['required', 'string', 'max:1000'],
         ];
     }
 
@@ -45,8 +41,26 @@ class StoreAppointmentRequest extends FormRequest
     public function after(): array
     {
         return [function (Validator $validator): void {
-            if ($this->filled('scheduled_date') && CarbonImmutable::parse($this->string('scheduled_date'))->isSunday()) {
+            if (
+                $validator->errors()->hasAny(['scheduled_date', 'scheduled_time'])
+                || ! $this->filled(['scheduled_date', 'scheduled_time'])
+            ) {
+                return;
+            }
+
+            $scheduledAt = CarbonImmutable::createFromFormat(
+                'Y-m-d H:i',
+                $this->string('scheduled_date').' '.$this->string('scheduled_time'),
+            );
+
+            if ($scheduledAt->isSunday()) {
                 $validator->errors()->add('scheduled_date', 'Appointments are available Monday through Saturday only.');
+            }
+
+            $appointment = $this->route('appointment');
+
+            if ($appointment instanceof Appointment && $appointment->scheduled_at->equalTo($scheduledAt)) {
+                $validator->errors()->add('scheduled_time', 'Select a different date or time for the reschedule.');
             }
         }];
     }
@@ -55,9 +69,8 @@ class StoreAppointmentRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'concern.required_if' => 'Describe the concern for a consultation appointment.',
-            'service_ids.required_if' => 'Select at least one service.',
-            'scheduled_date.after_or_equal' => 'The appointment date must be today or later.',
+            'reschedule_reason.required' => 'Explain why this appointment needs to be rescheduled.',
+            'scheduled_date.after_or_equal' => 'The proposed date must be today or later.',
         ];
     }
 }

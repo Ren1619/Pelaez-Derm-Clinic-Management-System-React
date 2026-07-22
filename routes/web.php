@@ -3,6 +3,7 @@
 use App\Http\Controllers\AccountAuthenticationController;
 use App\Http\Controllers\AccountPasswordResetController;
 use App\Http\Controllers\ActivityLogController;
+use App\Http\Controllers\AppointmentAvailabilityController;
 use App\Http\Controllers\AppointmentController;
 use App\Http\Controllers\AppointmentStatusController;
 use App\Http\Controllers\BranchController;
@@ -95,8 +96,10 @@ Route::prefix('patient')->name('patient.')->group(function () {
         Route::delete('health-record/medications/{medication}', [PatientHealthRecordController::class, 'destroyMedication'])->name('health-record.medications.destroy');
 
         Route::get('appointments', [PatientAppointmentController::class, 'index'])->name('appointments.index');
+        Route::get('appointments/availability', AppointmentAvailabilityController::class)->name('appointments.availability');
         Route::post('appointments', [PatientAppointmentController::class, 'store'])->name('appointments.store');
         Route::patch('appointments/{appointment}', [PatientAppointmentController::class, 'update'])->name('appointments.update');
+        Route::patch('appointments/{appointment}/accept-reschedule', [PatientAppointmentController::class, 'acceptReschedule'])->name('appointments.accept-reschedule');
         Route::post('appointments/{appointment}/cancel', [PatientAppointmentController::class, 'cancel'])->name('appointments.cancel');
         Route::delete('appointments/{appointment}', [PatientAppointmentController::class, 'destroy'])->name('appointments.destroy');
 
@@ -118,6 +121,7 @@ Route::middleware(['auth', 'verified', RecordReadActivity::class])->group(functi
         ->name('dashboard');
 
     Route::middleware('staff.module:appointments')->group(function () {
+        Route::get('appointments/availability', AppointmentAvailabilityController::class)->name('appointments.availability');
         Route::resource('appointments', AppointmentController::class)->only(['index', 'store', 'update', 'destroy']);
         Route::patch('appointments/{appointment}/status', [AppointmentStatusController::class, 'update'])->name('appointments.status');
         Route::post('appointments/{appointment}/cancel', [AppointmentStatusController::class, 'cancel'])->name('appointments.cancel');
