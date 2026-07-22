@@ -101,16 +101,24 @@ export function ServiceDialog({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+            <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
                         <Sparkles className="size-5" />
                         {title}
                     </DialogTitle>
                     <DialogDescription>
-                        {isView
-                            ? 'Review the service information and category.'
-                            : 'Provide the clinic service information below.'}
+                        {isView ? (
+                            'Review the service information and category.'
+                        ) : isEdit ? (
+                            'Update the clinic service information below.'
+                        ) : (
+                            <>
+                                All fields with{' '}
+                                <span className="text-pink-600">*</span> are
+                                required.
+                            </>
+                        )}
                     </DialogDescription>
                 </DialogHeader>
 
@@ -163,6 +171,13 @@ export function ServiceDialog({
                                         <div className="flex items-center justify-between gap-3">
                                             <Label htmlFor="category_ID">
                                                 Service category
+                                                <span
+                                                    className="text-pink-600"
+                                                    aria-hidden="true"
+                                                >
+                                                    {' '}
+                                                    *
+                                                </span>
                                             </Label>
                                             <Button
                                                 type="button"
@@ -221,6 +236,13 @@ export function ServiceDialog({
                                     <div className="grid gap-2">
                                         <Label htmlFor="name">
                                             Service name
+                                            <span
+                                                className="text-pink-600"
+                                                aria-hidden="true"
+                                            >
+                                                {' '}
+                                                *
+                                            </span>
                                         </Label>
                                         <Input
                                             id="name"
@@ -237,6 +259,13 @@ export function ServiceDialog({
                                     <div className="grid gap-2">
                                         <Label htmlFor="description">
                                             Description
+                                            <span
+                                                className="text-pink-600"
+                                                aria-hidden="true"
+                                            >
+                                                {' '}
+                                                *
+                                            </span>
                                         </Label>
                                         <textarea
                                             id="description"
@@ -262,9 +291,9 @@ export function ServiceDialog({
                                 <DialogFooter>
                                     <Button
                                         type="button"
-                                        variant="outline"
                                         onClick={() => onOpenChange(false)}
                                         disabled={processing}
+                                        className="w-full bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90"
                                     >
                                         Cancel
                                     </Button>
@@ -274,6 +303,7 @@ export function ServiceDialog({
                                             processing ||
                                             categories.length === 0
                                         }
+                                        className="w-full bg-pink-600 text-white hover:bg-pink-700"
                                     >
                                         {processing
                                             ? isEdit

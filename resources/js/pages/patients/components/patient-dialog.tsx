@@ -1,4 +1,6 @@
 import { Form } from '@inertiajs/react';
+import { CalendarIcon, UserRound } from 'lucide-react';
+import { useState } from 'react';
 import {
     store,
     update,
@@ -6,6 +8,7 @@ import {
 import InputError from '@/components/input-error';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Calendar } from '@/components/ui/calendar';
 import {
     Dialog,
     DialogContent,
@@ -16,6 +19,11 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from '@/components/ui/popover';
 import type { Patient, PatientDialogMode } from '@/types';
 
 type PatientDialogProps = {
@@ -24,6 +32,114 @@ type PatientDialogProps = {
     open: boolean;
     onOpenChange: (open: boolean) => void;
 };
+
+/** Parses a stored ISO date without applying a timezone offset. */
+function parseIsoDate(date: string): Date | undefined {
+    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date);
+
+    if (!match) {
+        return undefined;
+    }
+
+    return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+}
+
+/** Formats a selected date for the visible patient form field. */
+function formatDateForDisplay(date: Date | undefined): string {
+    if (!date) {
+        return '';
+    }
+
+    return new Intl.DateTimeFormat('en-US', {
+        month: 'long',
+        day: 'numeric',
+        year: 'numeric',
+    }).format(date);
+}
+
+/** Converts a selected date to the ISO format expected by Laravel. */
+function formatDateForSubmission(date: Date | undefined): string {
+    if (!date) {
+        return '';
+    }
+
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+
+    return `${year}-${month}-${day}`;
+}
+
+/** Displays the Shadcn date picker used for the patient's date of birth. */
+function DateOfBirthInput({
+    defaultValue,
+    invalid,
+}: {
+    defaultValue: string;
+    invalid: boolean;
+}) {
+    const initialDate = parseIsoDate(defaultValue);
+    const [open, setOpen] = useState(false);
+    const [date, setDate] = useState<Date | undefined>(initialDate);
+    const [month, setMonth] = useState<Date | undefined>(initialDate);
+    const today = new Date();
+    const latestDateOfBirth = new Date(
+        today.getFullYear(),
+        today.getMonth(),
+        today.getDate() - 1,
+    );
+
+    return (
+        <>
+            <input
+                type="hidden"
+                name="date_of_birth"
+                value={formatDateForSubmission(date)}
+            />
+            <Popover open={open} onOpenChange={setOpen}>
+                <PopoverTrigger asChild>
+                    <Button
+                        id="date_of_birth"
+                        type="button"
+                        variant="outline"
+                        aria-required="true"
+                        aria-invalid={invalid}
+                        aria-label="Select date of birth"
+                        className="w-full justify-between font-normal aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20"
+                    >
+                        <span className={date ? '' : 'text-muted-foreground'}>
+                            {date
+                                ? formatDateForDisplay(date)
+                                : 'July 10, 2026'}
+                        </span>
+                        <CalendarIcon className="size-4 text-muted-foreground" />
+                    </Button>
+                </PopoverTrigger>
+                <PopoverContent
+                    className="w-auto max-w-[calc(100vw-2rem)] overflow-auto p-0"
+                    align="end"
+                >
+                    <Calendar
+                        mode="single"
+                        selected={date}
+                        month={month}
+                        onMonthChange={setMonth}
+                        onSelect={(selectedDate) => {
+                            setDate(selectedDate);
+                            setMonth(selectedDate);
+                            setOpen(false);
+                        }}
+                        captionLayout="dropdown"
+                        startMonth={new Date(1900, 0)}
+                        endMonth={latestDateOfBirth}
+                        disabled={{ after: latestDateOfBirth }}
+                        autoFocus
+                    />
+                </PopoverContent>
+            </Popover>
+        </>
+    );
+}
 
 /** Displays a label and value in the patient details view. */
 function Detail({ label, value }: { label: string; value: string }) {
@@ -109,28 +225,33 @@ export function PatientDialog({
 }: PatientDialogProps) {
     const isView = mode === 'view';
     const isEdit = mode === 'edit';
-    const title = isView ? 'Patient details' : 'Edit patient';
+    const title = isView
+        ? 'Patient details'
+        : isEdit
+          ? 'Edit patient'
+          : 'Add patient';
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="max-h-[calc(100dvh-1rem)] grid-rows-[auto_minmax(0,1fr)] gap-0 overflow-hidden p-0 sm:max-h-[90vh] sm:max-w-xl">
                 <DialogHeader className="border-b px-5 py-5 pr-12 text-left sm:px-6">
-                    <DialogTitle className="text-xl">
-                        {mode === 'create' ? (
-                            <>
-                                <span className="text-pink-600">Add</span>{' '}
-                                Patient
-                            </>
-                        ) : (
-                            title
-                        )}
+                    <DialogTitle className="flex items-center gap-2">
+                        <UserRound className="size-5" />
+                        {title}
                     </DialogTitle>
                     <DialogDescription>
-                        {isView
-                            ? "Review this patient's identity and contact information."
-                            : isEdit
-                              ? 'Update the patient record. Changing the email requires verification again.'
-                              : 'All fields with * are required. An account setup link will be emailed to the patient.'}
+                        {isView ? (
+                            "Review this patient's identity and contact information."
+                        ) : isEdit ? (
+                            'Update the patient record. Changing the email requires verification again.'
+                        ) : (
+                            <>
+                                All fields with{' '}
+                                <span className="text-pink-600">*</span> are
+                                required. An account setup link will be emailed
+                                to the patient.
+                            </>
+                        )}
                     </DialogDescription>
                 </DialogHeader>
 
@@ -307,15 +428,12 @@ export function PatientDialog({
                                             >
                                                 Date of birth
                                             </FieldLabel>
-                                            <Input
-                                                id="date_of_birth"
-                                                name="date_of_birth"
-                                                type="date"
+                                            <DateOfBirthInput
+                                                key={`${open}-${patient?.date_of_birth ?? 'new'}`}
                                                 defaultValue={
                                                     patient?.date_of_birth ?? ''
                                                 }
-                                                required
-                                                aria-invalid={Boolean(
+                                                invalid={Boolean(
                                                     errors.date_of_birth,
                                                 )}
                                             />
