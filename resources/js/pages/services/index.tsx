@@ -234,7 +234,16 @@ export default function ServicesIndex({
                                             </div>
                                         </td>
                                         <td className="px-4 py-3 whitespace-nowrap text-muted-foreground">
-                                            {service.category.category_name}
+                                            <span className="block font-medium text-foreground">
+                                                {
+                                                    service.category
+                                                        .major_service_category
+                                                        .name
+                                                }
+                                            </span>
+                                            <span className="block text-xs">
+                                                {service.category.category_name}
+                                            </span>
                                         </td>
                                         <td className="max-w-md px-4 py-3 text-muted-foreground">
                                             <p className="line-clamp-2">

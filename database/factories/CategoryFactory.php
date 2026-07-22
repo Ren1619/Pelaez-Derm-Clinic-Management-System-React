@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Models\Category;
+use App\Models\MajorServiceCategory;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -19,18 +20,25 @@ class CategoryFactory extends Factory
     {
         return [
             'category_name' => fake()->unique()->words(2, true),
-            'category_type' => fake()->randomElement(['Product', 'Service']),
+            'category_type' => 'Product',
+            'major_service_category_ID' => null,
             'description' => fake()->sentence(),
         ];
     }
 
     public function product(): static
     {
-        return $this->state(fn (): array => ['category_type' => 'Product']);
+        return $this->state(fn (): array => [
+            'category_type' => 'Product',
+            'major_service_category_ID' => null,
+        ]);
     }
 
     public function service(): static
     {
-        return $this->state(fn (): array => ['category_type' => 'Service']);
+        return $this->state(fn (): array => [
+            'category_type' => 'Service',
+            'major_service_category_ID' => MajorServiceCategory::factory(),
+        ]);
     }
 }

@@ -42,6 +42,7 @@ export type PublicService = {
     name: string;
     description: string;
     category: string | null;
+    major_category: string | null;
     image_url: string | null;
 };
 

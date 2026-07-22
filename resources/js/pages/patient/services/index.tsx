@@ -7,7 +7,9 @@ import { Input } from '@/components/ui/input';
 import {
     Select,
     SelectContent,
+    SelectGroup,
     SelectItem,
+    SelectLabel,
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
@@ -19,12 +21,17 @@ type ServiceCard = {
     name: string;
     description: string;
     category: string | null;
+    major_category: string | null;
     image_url: string | null;
 };
 type Props = {
     patient: { PID: number; name: string; email: string };
     services: ServiceCard[];
-    categories: Array<{ category_ID: number; category_name: string }>;
+    categories: Array<{
+        category_ID: number;
+        category_name: string;
+        major_category_name: string;
+    }>;
     filters: { search: string; category_ID: number | null };
 };
 
@@ -34,6 +41,10 @@ export default function PatientServices({
     filters,
 }: Props) {
     const [search, setSearch] = useState(filters.search);
+    const categoriesByMajorCategory = Object.groupBy(
+        categories,
+        (category) => category.major_category_name,
+    );
     const apply = (changes: Record<string, string | number | null>) =>
         router.get(
             index.url(),
@@ -95,14 +106,29 @@ export default function PatientServices({
                                 <SelectItem value="all">
                                     All categories
                                 </SelectItem>
-                                {categories.map((category) => (
-                                    <SelectItem
-                                        key={category.category_ID}
-                                        value={String(category.category_ID)}
-                                    >
-                                        {category.category_name}
-                                    </SelectItem>
-                                ))}
+                                {Object.entries(categoriesByMajorCategory).map(
+                                    ([majorCategoryName, childCategories]) => (
+                                        <SelectGroup key={majorCategoryName}>
+                                            <SelectLabel>
+                                                {majorCategoryName}
+                                            </SelectLabel>
+                                            {childCategories?.map(
+                                                (category) => (
+                                                    <SelectItem
+                                                        key={
+                                                            category.category_ID
+                                                        }
+                                                        value={String(
+                                                            category.category_ID,
+                                                        )}
+                                                    >
+                                                        {category.category_name}
+                                                    </SelectItem>
+                                                ),
+                                            )}
+                                        </SelectGroup>
+                                    ),
+                                )}
                             </SelectContent>
                         </Select>
                     </label>
@@ -130,6 +156,9 @@ export default function PatientServices({
                             )}
                             <div className="flex min-w-0 flex-1 flex-col p-5">
                                 <p className="text-xs font-medium tracking-wide text-primary uppercase">
+                                    {service.major_category}
+                                </p>
+                                <p className="mt-1 text-xs text-muted-foreground">
                                     {service.category}
                                 </p>
                                 <h3 className="mt-1 text-lg font-semibold">

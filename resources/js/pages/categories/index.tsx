@@ -29,21 +29,27 @@ import type {
     CategoryPaginator,
     CategorySummary,
     CategoryType,
+    MajorServiceCategory,
 } from '@/types';
 import { CategoryDeleteDialog } from './components/category-delete-dialog';
 import { CategoryDialog } from './components/category-dialog';
 import { CategoryPagination } from './components/category-pagination';
+import { MajorServiceCategoryManager } from './components/major-service-category-manager';
 
 type CategoriesIndexProps = {
     categories: CategoryPaginator;
     filters: CategoryFilters;
     summary: CategorySummary;
+    majorServiceCategories: MajorServiceCategory[];
+    can: { manage_major_service_categories: boolean };
 };
 
 export default function CategoriesIndex({
     categories,
     filters,
     summary,
+    majorServiceCategories,
+    can,
 }: CategoriesIndexProps) {
     const [search, setSearch] = useState(filters.search);
     const [dialogOpen, setDialogOpen] = useState(false);
@@ -138,6 +144,13 @@ export default function CategoriesIndex({
                     />
                 </div>
 
+                {filters.tab === 'services' &&
+                    can.manage_major_service_categories && (
+                        <MajorServiceCategoryManager
+                            categories={majorServiceCategories}
+                        />
+                    )}
+
                 <Card className="gap-0 overflow-hidden py-0">
                     <div className="flex flex-col gap-3 border-b p-4 lg:flex-row lg:items-center lg:justify-between">
                         <div
@@ -219,6 +232,11 @@ export default function CategoriesIndex({
                                 <tr>
                                     <th className="w-20 px-4 py-3">#</th>
                                     <th className="px-4 py-3">Category name</th>
+                                    {filters.tab === 'services' && (
+                                        <th className="px-4 py-3">
+                                            Major category
+                                        </th>
+                                    )}
                                     <th className="px-4 py-3">Description</th>
                                     <th className="px-4 py-3 text-right">
                                         Actions
@@ -248,6 +266,12 @@ export default function CategoriesIndex({
                                                 </Badge>
                                             </div>
                                         </td>
+                                        {filters.tab === 'services' && (
+                                            <td className="px-4 py-3 whitespace-nowrap text-muted-foreground">
+                                                {category.major_service_category
+                                                    ?.name ?? 'Unassigned'}
+                                            </td>
+                                        )}
                                         <td className="max-w-xl px-4 py-3 text-muted-foreground">
                                             <p className="line-clamp-2">
                                                 {category.description}
@@ -314,6 +338,7 @@ export default function CategoriesIndex({
                 key={`${selectedCategory?.category_ID ?? 'new'}-${categoryType}`}
                 category={selectedCategory}
                 categoryType={categoryType}
+                majorServiceCategories={majorServiceCategories}
                 open={dialogOpen}
                 onOpenChange={setDialogOpen}
             />

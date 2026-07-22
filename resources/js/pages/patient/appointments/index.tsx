@@ -59,6 +59,7 @@ type Props = {
         service_ID: number;
         name: string;
         category_name: string;
+        major_category_name: string;
     }>;
     timeSlots: AppointmentTimeSlot[];
     filters: {
@@ -439,9 +440,9 @@ function AppointmentDialog({
             .map((service) => service.service_ID)
             .filter((id): id is number => id !== null) ??
         (initialServiceId ? [initialServiceId] : []);
-    const servicesByCategory = Object.groupBy(
+    const servicesByMajorCategory = Object.groupBy(
         services,
-        (service) => service.category_name,
+        (service) => service.major_category_name,
     );
 
     const selectedTime = availableTimeSlots.some(
@@ -620,44 +621,74 @@ function AppointmentDialog({
                                     error={errors.service_ids}
                                 >
                                     <div className="grid max-h-64 min-h-24 gap-4 overflow-y-auto rounded-md border p-3">
-                                        {Object.entries(servicesByCategory).map(
+                                        {Object.entries(
+                                            servicesByMajorCategory,
+                                        ).map(
                                             ([
-                                                categoryName,
-                                                categoryServices,
+                                                majorCategoryName,
+                                                majorCategoryServices,
                                             ]) => (
-                                                <fieldset
-                                                    key={categoryName}
-                                                    className="grid gap-2"
+                                                <section
+                                                    key={majorCategoryName}
+                                                    className="grid gap-3"
                                                 >
-                                                    <legend className="text-sm font-semibold">
-                                                        {categoryName}
-                                                    </legend>
-                                                    <div className="grid gap-2 sm:grid-cols-2">
-                                                        {categoryServices?.map(
-                                                            (service) => (
-                                                                <label
-                                                                    key={
-                                                                        service.service_ID
-                                                                    }
-                                                                    className="flex items-center gap-2 text-sm"
-                                                                >
-                                                                    <Checkbox
-                                                                        name="service_ids[]"
-                                                                        value={String(
-                                                                            service.service_ID,
-                                                                        )}
-                                                                        defaultChecked={selectedServices.includes(
-                                                                            service.service_ID,
-                                                                        )}
-                                                                    />
+                                                    <h4 className="text-sm font-semibold">
+                                                        {majorCategoryName}
+                                                    </h4>
+                                                    {Object.entries(
+                                                        Object.groupBy(
+                                                            majorCategoryServices ??
+                                                                [],
+                                                            (service) =>
+                                                                service.category_name,
+                                                        ),
+                                                    ).map(
+                                                        ([
+                                                            categoryName,
+                                                            categoryServices,
+                                                        ]) => (
+                                                            <fieldset
+                                                                key={
+                                                                    categoryName
+                                                                }
+                                                                className="grid gap-2 border-l pl-3"
+                                                            >
+                                                                <legend className="text-xs font-medium text-muted-foreground">
                                                                     {
-                                                                        service.name
+                                                                        categoryName
                                                                     }
-                                                                </label>
-                                                            ),
-                                                        )}
-                                                    </div>
-                                                </fieldset>
+                                                                </legend>
+                                                                <div className="grid gap-2 sm:grid-cols-2">
+                                                                    {categoryServices?.map(
+                                                                        (
+                                                                            service,
+                                                                        ) => (
+                                                                            <label
+                                                                                key={
+                                                                                    service.service_ID
+                                                                                }
+                                                                                className="flex items-center gap-2 text-sm"
+                                                                            >
+                                                                                <Checkbox
+                                                                                    name="service_ids[]"
+                                                                                    value={String(
+                                                                                        service.service_ID,
+                                                                                    )}
+                                                                                    defaultChecked={selectedServices.includes(
+                                                                                        service.service_ID,
+                                                                                    )}
+                                                                                />
+                                                                                {
+                                                                                    service.name
+                                                                                }
+                                                                            </label>
+                                                                        ),
+                                                                    )}
+                                                                </div>
+                                                            </fieldset>
+                                                        ),
+                                                    )}
+                                                </section>
                                             ),
                                         )}
                                     </div>

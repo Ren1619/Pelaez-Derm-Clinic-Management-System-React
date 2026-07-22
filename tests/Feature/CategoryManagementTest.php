@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Category;
+use App\Models\MajorServiceCategory;
 use App\Models\User;
 use Database\Seeders\CategorySeeder;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -101,12 +102,14 @@ test('category names are case insensitive unique within their type', function ()
 
 test('the same category name can be used by different types', function () {
     $user = User::factory()->create();
+    $majorCategory = MajorServiceCategory::factory()->create();
     Category::factory()->product()->create(['category_name' => 'Consultations']);
 
     $this->actingAs($user)
         ->post(route('categories.store'), [
             'category_name' => 'Consultations',
             'category_type' => 'Service',
+            'major_service_category_ID' => $majorCategory->major_service_category_ID,
             'description' => 'Medical and cosmetic consultations.',
         ])
         ->assertSessionHasNoErrors();
@@ -153,5 +156,13 @@ test('the source categories seed with runtime compatible type values', function 
 
     expect(Category::query()->where('category_type', 'Product')->count())->toBe(3)
         ->and(Category::query()->where('category_type', 'Service')->count())->toBe(3)
+        ->and(MajorServiceCategory::query()->pluck('name')->sort()->values()->all())->toBe([
+            'Aesthetic',
+            'Cosmetic',
+            'Pathological',
+        ])
+        ->and(Category::query()->where('category_name', 'Consultations')->value('major_service_category_ID'))->toBe(1)
+        ->and(Category::query()->where('category_name', 'Laser Procedures')->value('major_service_category_ID'))->toBe(2)
+        ->and(Category::query()->where('category_name', 'Facial Treatments')->value('major_service_category_ID'))->toBe(3)
         ->and(Category::query()->whereIn('category_type', ['product', 'service'])->count())->toBe(0);
 });

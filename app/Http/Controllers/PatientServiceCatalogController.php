@@ -25,7 +25,10 @@ class PatientServiceCatalogController extends Controller
 
         $services = Service::query()
             ->select(['service_ID', 'category_ID', 'name', 'description', 'service_img'])
-            ->with('category:category_ID,category_name')
+            ->with([
+                'category:category_ID,category_name,major_service_category_ID',
+                'category.majorServiceCategory:major_service_category_ID,name',
+            ])
             ->whereHas('category', fn ($query) => $query->where('category_type', 'Service'))
             ->when($validated['category_ID'] ?? null, fn ($query, int $categoryId) => $query->where('category_ID', $categoryId))
             ->when($validated['search'] ?? null, function ($query, string $search): void {
@@ -41,6 +44,7 @@ class PatientServiceCatalogController extends Controller
                 'name' => $service->name,
                 'description' => $service->description,
                 'category' => $service->category?->category_name,
+                'major_category' => $service->category?->majorServiceCategory?->name,
                 'image_url' => $service->service_img === null ? null : Storage::disk('public')->url($service->service_img),
             ])
             ->all();
@@ -50,8 +54,15 @@ class PatientServiceCatalogController extends Controller
             'services' => $services,
             'categories' => Category::query()
                 ->where('category_type', 'Service')
+                ->with('majorServiceCategory:major_service_category_ID,name')
+                ->orderBy('major_service_category_ID')
                 ->orderBy('category_name')
-                ->get(['category_ID', 'category_name']),
+                ->get(['category_ID', 'category_name', 'major_service_category_ID'])
+                ->map(fn (Category $category): array => [
+                    'category_ID' => $category->category_ID,
+                    'category_name' => $category->category_name,
+                    'major_category_name' => $category->majorServiceCategory->name,
+                ]),
             'filters' => [
                 'search' => $validated['search'] ?? '',
                 'category_ID' => isset($validated['category_ID']) ? (int) $validated['category_ID'] : null,
