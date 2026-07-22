@@ -8,7 +8,7 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import type { PosProduct } from '@/types';
-import { formatInventoryDate } from '../../Inventory/components/expiration-badge';
+import { formatInventoryDate } from '../../inventory/components/expiration-badge';
 
 type ProductDetailsDialogProps = {
     product: PosProduct | null;
