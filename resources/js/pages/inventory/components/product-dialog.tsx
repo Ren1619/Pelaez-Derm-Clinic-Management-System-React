@@ -262,6 +262,16 @@ export function ProductDialog({
                     >
                         {({ errors, processing, progress }) => (
                             <>
+                                <p className="text-sm text-foreground">
+                                    All fields with{' '}
+                                    <span
+                                        className="text-primary"
+                                        aria-hidden="true"
+                                    >
+                                        *
+                                    </span>{' '}
+                                    are required.
+                                </p>
                                 <ImageUploadField
                                     key={`${open}-${product?.product_ID ?? 'new'}`}
                                     id="product-new-image"

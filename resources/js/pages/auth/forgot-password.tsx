@@ -27,8 +27,26 @@ export default function ForgotPassword({ status }: { status?: string }) {
                 <Form {...email.form()}>
                     {({ processing, errors }) => (
                         <>
+                            <p className="mb-5 text-sm text-foreground">
+                                All fields with{' '}
+                                <span
+                                    className="text-primary"
+                                    aria-hidden="true"
+                                >
+                                    *
+                                </span>{' '}
+                                are required.
+                            </p>
                             <div className="grid gap-2">
-                                <Label htmlFor="email">Email address</Label>
+                                <Label htmlFor="email">
+                                    Email address
+                                    <span
+                                        className="text-primary"
+                                        aria-hidden="true"
+                                    >
+                                        *
+                                    </span>
+                                </Label>
                                 <Input
                                     id="email"
                                     type="email"

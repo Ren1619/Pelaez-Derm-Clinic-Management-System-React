@@ -1,8 +1,7 @@
-import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
+import { Head, router, useForm, usePage } from '@inertiajs/react';
 import {
     ArrowDownToLine,
     ArrowUpFromLine,
-    Eye,
     PackageCheck,
     Plus,
     Search,
@@ -11,7 +10,12 @@ import {
     XCircle,
 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
+import { ClickableTableRow } from '@/components/clickable-table-row';
+import { DataTableEmptyState } from '@/components/data-table-empty-state';
+import { DataTableLayout } from '@/components/data-table-layout';
+import { DataTablePagination } from '@/components/data-table-pagination';
 import Heading from '@/components/heading';
+import { TooltipIconButton } from '@/components/tooltip-icon-button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -34,6 +38,14 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/components/ui/table';
 import {
     cancel,
     destroy,
@@ -354,7 +366,7 @@ export default function DistributionIndex({
                     </Card>
                 </div>
 
-                <Card className="gap-0 overflow-hidden py-0">
+                <DataTableLayout>
                     <div className="flex flex-col gap-3 border-b p-4 lg:flex-row lg:items-center lg:justify-between">
                         <div className="flex gap-1 rounded-lg bg-muted p-1">
                             {(['outbound', 'inbound'] as const).map((tab) => (
@@ -436,153 +448,113 @@ export default function DistributionIndex({
                         </div>
                     </div>
 
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-sm">
-                            <thead className="border-b bg-muted/40 text-left">
-                                <tr>
-                                    <th className="px-4 py-3 font-medium">
-                                        ID
-                                    </th>
-                                    <th className="px-4 py-3 font-medium">
-                                        {filters.tab === 'outbound'
-                                            ? 'Destination'
-                                            : 'Source'}
-                                    </th>
-                                    <th className="px-4 py-3 font-medium">
-                                        Items
-                                    </th>
-                                    <th className="px-4 py-3 font-medium">
-                                        Scheduled
-                                    </th>
-                                    <th className="px-4 py-3 font-medium">
-                                        Status
-                                    </th>
-                                    <th className="px-4 py-3 text-right font-medium">
-                                        Actions
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y">
-                                {distributions.data.map((distribution) => (
-                                    <tr key={distribution.distribution_ID}>
-                                        <td className="px-4 py-4 font-medium">
-                                            #{distribution.distribution_ID}
-                                        </td>
-                                        <td className="px-4 py-4">
-                                            {filters.tab === 'outbound'
-                                                ? distribution.to_branch
-                                                      .branch_name
-                                                : distribution.from_branch
-                                                      .branch_name}
-                                        </td>
-                                        <td className="px-4 py-4">
-                                            {distribution.items.length} product
-                                            {distribution.items.length === 1
-                                                ? ''
-                                                : 's'}
-                                            <span className="block text-xs text-muted-foreground">
-                                                {distribution.total_quantity}{' '}
-                                                total units
-                                            </span>
-                                        </td>
-                                        <td className="px-4 py-4">
-                                            {formatDate(
-                                                distribution.scheduled_date ??
-                                                    distribution.created_at,
-                                                true,
-                                            )}
-                                        </td>
-                                        <td className="px-4 py-4">
-                                            <Badge
-                                                variant={
-                                                    statusVariants[
-                                                        distribution.status
-                                                    ]
-                                                }
-                                            >
-                                                {
-                                                    statusLabels[
-                                                        distribution.status
-                                                    ]
-                                                }
-                                            </Badge>
-                                        </td>
-                                        <td className="px-4 py-4">
-                                            <DistributionActions
-                                                distribution={distribution}
-                                                onDetails={() =>
-                                                    setDetails(distribution)
-                                                }
-                                                onSend={() =>
-                                                    setDistributionToSend(
-                                                        distribution,
-                                                    )
-                                                }
-                                                onCancel={() => {
-                                                    cancelForm.reset();
-                                                    setDistributionToCancel(
-                                                        distribution,
-                                                    );
-                                                }}
-                                            />
-                                        </td>
-                                    </tr>
-                                ))}
-                                {distributions.data.length === 0 && (
-                                    <tr>
-                                        <td
-                                            colSpan={6}
-                                            className="px-4 py-12 text-center text-muted-foreground"
-                                        >
-                                            No {filters.tab} distributions
-                                            found.
-                                        </td>
-                                    </tr>
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <div className="flex flex-col gap-3 border-t p-4 sm:flex-row sm:items-center sm:justify-between">
-                        <p className="text-sm text-muted-foreground">
-                            Showing {distributions.from ?? 0}–
-                            {distributions.to ?? 0} of {distributions.total}
-                        </p>
-                        <div className="flex flex-wrap gap-1">
-                            {distributions.links.map((link, linkIndex) => (
-                                <Button
-                                    key={`${link.label}-${linkIndex}`}
-                                    size="sm"
-                                    variant={
-                                        link.active ? 'default' : 'outline'
-                                    }
-                                    disabled={!link.url}
-                                    asChild={Boolean(link.url)}
+                    <Table className="min-w-4xl">
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>ID</TableHead>
+                                <TableHead>
+                                    {filters.tab === 'outbound'
+                                        ? 'Destination'
+                                        : 'Source'}
+                                </TableHead>
+                                <TableHead>Items</TableHead>
+                                <TableHead>Scheduled</TableHead>
+                                <TableHead>Status</TableHead>
+                                <TableHead className="text-right">
+                                    Actions
+                                </TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {distributions.data.map((distribution) => (
+                                <ClickableTableRow
+                                    key={distribution.distribution_ID}
+                                    accessibleLabel={`View distribution ${distribution.distribution_ID}`}
+                                    onActivate={() => setDetails(distribution)}
                                 >
-                                    {link.url ? (
-                                        <Link
-                                            href={link.url}
-                                            preserveScroll
-                                            preserveState
+                                    <TableCell className="font-medium">
+                                        #{distribution.distribution_ID}
+                                    </TableCell>
+                                    <TableCell>
+                                        {filters.tab === 'outbound'
+                                            ? distribution.to_branch.branch_name
+                                            : distribution.from_branch
+                                                  .branch_name}
+                                    </TableCell>
+                                    <TableCell>
+                                        {distribution.items.length} product
+                                        {distribution.items.length === 1
+                                            ? ''
+                                            : 's'}
+                                        <span className="block text-xs text-muted-foreground">
+                                            {distribution.total_quantity} total
+                                            units
+                                        </span>
+                                    </TableCell>
+                                    <TableCell>
+                                        {formatDate(
+                                            distribution.scheduled_date ??
+                                                distribution.created_at,
+                                            true,
+                                        )}
+                                    </TableCell>
+                                    <TableCell>
+                                        <Badge
+                                            variant={
+                                                statusVariants[
+                                                    distribution.status
+                                                ]
+                                            }
                                         >
-                                            <span
-                                                dangerouslySetInnerHTML={{
-                                                    __html: link.label,
-                                                }}
-                                            />
-                                        </Link>
-                                    ) : (
-                                        <span
-                                            dangerouslySetInnerHTML={{
-                                                __html: link.label,
+                                            {statusLabels[distribution.status]}
+                                        </Badge>
+                                    </TableCell>
+                                    <TableCell>
+                                        <DistributionActions
+                                            distribution={distribution}
+                                            onSend={() =>
+                                                setDistributionToSend(
+                                                    distribution,
+                                                )
+                                            }
+                                            onCancel={() => {
+                                                cancelForm.reset();
+                                                setDistributionToCancel(
+                                                    distribution,
+                                                );
                                             }}
                                         />
-                                    )}
-                                </Button>
+                                    </TableCell>
+                                </ClickableTableRow>
                             ))}
-                        </div>
-                    </div>
-                </Card>
+                            {distributions.data.length === 0 && (
+                                <DataTableEmptyState
+                                    colSpan={6}
+                                    title={`No ${filters.tab} distributions found`}
+                                    description="Try changing the current search or filters."
+                                />
+                            )}
+                        </TableBody>
+                    </Table>
+
+                    <DataTablePagination
+                        paginator={distributions}
+                        itemLabel="distributions"
+                        onPageChange={(page) =>
+                            router.get(
+                                index.url(),
+                                { ...filters, page },
+                                {
+                                    preserveState: true,
+                                    preserveScroll: true,
+                                },
+                            )
+                        }
+                        onPerPageChange={(perPage) =>
+                            visitDistributions({ per_page: perPage })
+                        }
+                    />
+                </DataTableLayout>
             </div>
 
             <Dialog open={createOpen} onOpenChange={setCreateOpen}>
@@ -597,10 +569,26 @@ export default function DistributionIndex({
                         </DialogHeader>
 
                         <div className="grid gap-5 py-5">
+                            <p className="text-sm text-foreground">
+                                All fields with{' '}
+                                <span
+                                    className="text-primary"
+                                    aria-hidden="true"
+                                >
+                                    *
+                                </span>{' '}
+                                are required.
+                            </p>
                             <div className="grid gap-4 sm:grid-cols-2">
                                 <div className="grid gap-2">
                                     <Label htmlFor="from-branch">
                                         Source branch
+                                        <span
+                                            className="text-primary"
+                                            aria-hidden="true"
+                                        >
+                                            *
+                                        </span>
                                     </Label>
                                     <Select
                                         value={createForm.data.from_branch_ID}
@@ -630,6 +618,12 @@ export default function DistributionIndex({
                                 <div className="grid gap-2">
                                     <Label htmlFor="to-branch">
                                         Destination branch
+                                        <span
+                                            className="text-primary"
+                                            aria-hidden="true"
+                                        >
+                                            *
+                                        </span>
                                     </Label>
                                     <Select
                                         value={createForm.data.to_branch_ID}
@@ -718,7 +712,15 @@ export default function DistributionIndex({
 
                             <div className="grid gap-2">
                                 <div>
-                                    <Label>Available product batches</Label>
+                                    <Label>
+                                        Available product batches
+                                        <span
+                                            className="text-primary"
+                                            aria-hidden="true"
+                                        >
+                                            *
+                                        </span>
+                                    </Label>
                                     <p className="text-xs text-muted-foreground">
                                         Stock is deducted only when the transfer
                                         is marked as sent.
@@ -915,7 +917,25 @@ export default function DistributionIndex({
                             </DialogDescription>
                         </DialogHeader>
                         <div className="grid gap-2 py-5">
-                            <Label htmlFor="cancellation-reason">Reason</Label>
+                            <p className="text-sm text-foreground">
+                                All fields with{' '}
+                                <span
+                                    className="text-primary"
+                                    aria-hidden="true"
+                                >
+                                    *
+                                </span>{' '}
+                                are required.
+                            </p>
+                            <Label htmlFor="cancellation-reason">
+                                Reason
+                                <span
+                                    className="text-primary"
+                                    aria-hidden="true"
+                                >
+                                    *
+                                </span>
+                            </Label>
                             <textarea
                                 id="cancellation-reason"
                                 required
@@ -958,29 +978,25 @@ export default function DistributionIndex({
 
 function DistributionActions({
     distribution,
-    onDetails,
     onSend,
     onCancel,
 }: {
     distribution: Distribution;
-    onDetails: () => void;
     onSend: () => void;
     onCancel: () => void;
 }) {
     return (
         <div className="flex justify-end gap-1">
-            <Button
-                size="icon"
-                variant="ghost"
-                onClick={onDetails}
-                title="View details"
-            >
-                <Eye />
-            </Button>
             {distribution.can.send && (
-                <Button size="sm" onClick={onSend}>
-                    <Send /> Send
-                </Button>
+                <TooltipIconButton
+                    size="icon"
+                    variant="ghost"
+                    tooltip="Send distribution"
+                    aria-label="Send distribution"
+                    onClick={onSend}
+                >
+                    <Send />
+                </TooltipIconButton>
             )}
             {distribution.can.receive && (
                 <Button
@@ -1003,17 +1019,17 @@ function DistributionActions({
                 </Button>
             )}
             {distribution.can.cancel && (
-                <Button
+                <TooltipIconButton
                     size="icon"
                     variant="ghost"
                     onClick={onCancel}
-                    title="Cancel distribution"
+                    tooltip="Cancel distribution"
                 >
                     <XCircle />
-                </Button>
+                </TooltipIconButton>
             )}
             {distribution.can.delete && (
-                <Button
+                <TooltipIconButton
                     size="icon"
                     variant="ghost"
                     onClick={() =>
@@ -1028,10 +1044,10 @@ function DistributionActions({
                             },
                         )
                     }
-                    title="Delete record"
+                    tooltip="Delete record"
                 >
                     <Trash2 />
-                </Button>
+                </TooltipIconButton>
             )}
         </div>
     );

@@ -8,7 +8,7 @@ import {
     Sparkles,
     UserPlus,
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { TooltipIconButton } from '@/components/tooltip-icon-button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
     Select,
@@ -275,25 +275,27 @@ export default function Dashboard({
                     <Card className="min-h-[480px] gap-0 py-0">
                         <CardHeader className="border-b py-5">
                             <div className="flex items-center justify-center gap-4">
-                                <Button
+                                <TooltipIconButton
                                     type="button"
                                     size="icon"
+                                    tooltip="Previous month"
                                     onClick={() => changeMonth(-1)}
                                     aria-label="Previous month"
                                 >
                                     <ChevronLeft />
-                                </Button>
+                                </TooltipIconButton>
                                 <CardTitle className="min-w-48 text-center text-xl">
                                     {calendar.month_name} {calendar.year}
                                 </CardTitle>
-                                <Button
+                                <TooltipIconButton
                                     type="button"
                                     size="icon"
+                                    tooltip="Next month"
                                     onClick={() => changeMonth(1)}
                                     aria-label="Next month"
                                 >
                                     <ChevronRight />
-                                </Button>
+                                </TooltipIconButton>
                             </div>
                         </CardHeader>
                         <CardContent className="p-3 sm:p-6">

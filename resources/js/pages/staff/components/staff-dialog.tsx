@@ -149,10 +149,26 @@ export function StaffDialog({
                     >
                         {({ errors, processing }) => (
                             <>
+                                <p className="text-sm text-foreground">
+                                    All fields with{' '}
+                                    <span
+                                        className="text-primary"
+                                        aria-hidden="true"
+                                    >
+                                        *
+                                    </span>{' '}
+                                    are required.
+                                </p>
                                 <div className="grid gap-4 sm:grid-cols-2">
                                     <div className="grid gap-2">
                                         <Label htmlFor="first_name">
                                             First name
+                                            <span
+                                                className="text-primary"
+                                                aria-hidden="true"
+                                            >
+                                                *
+                                            </span>
                                         </Label>
                                         <Input
                                             id="first_name"
@@ -194,6 +210,12 @@ export function StaffDialog({
                                     <div className="grid gap-2 sm:col-span-2">
                                         <Label htmlFor="last_name">
                                             Last name
+                                            <span
+                                                className="text-primary"
+                                                aria-hidden="true"
+                                            >
+                                                *
+                                            </span>
                                         </Label>
                                         <Input
                                             id="last_name"
@@ -213,7 +235,15 @@ export function StaffDialog({
                                     </div>
 
                                     <div className="grid gap-2">
-                                        <Label htmlFor="email">Email</Label>
+                                        <Label htmlFor="email">
+                                            Email
+                                            <span
+                                                className="text-primary"
+                                                aria-hidden="true"
+                                            >
+                                                *
+                                            </span>
+                                        </Label>
                                         <div className="relative">
                                             <Mail className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
                                             <Input
@@ -237,6 +267,12 @@ export function StaffDialog({
                                     <div className="grid gap-2">
                                         <Label htmlFor="contact_number">
                                             Contact number
+                                            <span
+                                                className="text-primary"
+                                                aria-hidden="true"
+                                            >
+                                                *
+                                            </span>
                                         </Label>
                                         <div className="relative">
                                             <Phone className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -264,7 +300,15 @@ export function StaffDialog({
                                     </div>
 
                                     <div className="grid gap-2">
-                                        <Label htmlFor="role_ID">Role</Label>
+                                        <Label htmlFor="role_ID">
+                                            Role
+                                            <span
+                                                className="text-primary"
+                                                aria-hidden="true"
+                                            >
+                                                *
+                                            </span>
+                                        </Label>
                                         <select
                                             id="role_ID"
                                             name="role_ID"
@@ -295,6 +339,14 @@ export function StaffDialog({
                                     <div className="grid gap-2">
                                         <Label htmlFor="branch_ID">
                                             Branch
+                                            {!isSuperAdmin && (
+                                                <span
+                                                    className="text-primary"
+                                                    aria-hidden="true"
+                                                >
+                                                    *
+                                                </span>
+                                            )}
                                         </Label>
                                         <select
                                             id="branch_ID"

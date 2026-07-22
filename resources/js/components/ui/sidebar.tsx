@@ -254,21 +254,26 @@ function SidebarTrigger({
   const { toggleSidebar, isMobile, state } = useSidebar()
 
   return (
-    <Button
-      data-sidebar="trigger"
-      data-slot="sidebar-trigger"
-      variant="ghost"
-      size="icon"
-      className={cn("h-7 w-7", className)}
-      onClick={(event) => {
-        onClick?.(event)
-        toggleSidebar()
-      }}
-      {...props}
-    >
-      {isMobile || state === "collapsed" ? <PanelLeftOpenIcon /> : <PanelLeftCloseIcon />}
-      <span className="sr-only">Toggle sidebar</span>
-    </Button>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          data-sidebar="trigger"
+          data-slot="sidebar-trigger"
+          variant="ghost"
+          size="icon"
+          className={cn("h-7 w-7", className)}
+          aria-label="Toggle sidebar"
+          onClick={(event) => {
+            onClick?.(event)
+            toggleSidebar()
+          }}
+          {...props}
+        >
+          {isMobile || state === "collapsed" ? <PanelLeftOpenIcon /> : <PanelLeftCloseIcon />}
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent>Toggle sidebar</TooltipContent>
+    </Tooltip>
   )
 }
 

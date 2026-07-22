@@ -140,6 +140,16 @@ export function BranchDialog({
                     >
                         {({ errors, processing, progress }) => (
                             <>
+                                <p className="text-sm text-foreground">
+                                    All fields with{' '}
+                                    <span
+                                        className="text-primary"
+                                        aria-hidden="true"
+                                    >
+                                        *
+                                    </span>{' '}
+                                    are required.
+                                </p>
                                 <BranchImage branch={branch} />
 
                                 <div className="grid gap-2">
@@ -174,6 +184,12 @@ export function BranchDialog({
                                     <div className="grid gap-2">
                                         <Label htmlFor="branch_name">
                                             Branch name
+                                            <span
+                                                className="text-primary"
+                                                aria-hidden="true"
+                                            >
+                                                *
+                                            </span>
                                         </Label>
                                         <Input
                                             id="branch_name"
@@ -195,6 +211,12 @@ export function BranchDialog({
                                     <div className="grid gap-2">
                                         <Label htmlFor="contact_number">
                                             Contact number
+                                            <span
+                                                className="text-primary"
+                                                aria-hidden="true"
+                                            >
+                                                *
+                                            </span>
                                         </Label>
                                         <Input
                                             id="contact_number"
@@ -219,6 +241,12 @@ export function BranchDialog({
                                     <div className="grid gap-2 sm:col-span-2">
                                         <Label htmlFor="branch_location">
                                             Branch location
+                                            <span
+                                                className="text-primary"
+                                                aria-hidden="true"
+                                            >
+                                                *
+                                            </span>
                                         </Label>
                                         <Input
                                             id="branch_location"
@@ -240,6 +268,12 @@ export function BranchDialog({
                                     <div className="grid gap-2">
                                         <Label htmlFor="map_link">
                                             Map link
+                                            <span
+                                                className="text-primary"
+                                                aria-hidden="true"
+                                            >
+                                                *
+                                            </span>
                                         </Label>
                                         <Input
                                             id="map_link"

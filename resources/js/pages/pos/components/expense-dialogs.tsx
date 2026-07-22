@@ -212,9 +212,25 @@ export function ExpenseCategoryDialog({
                 >
                     {({ processing, errors }) => (
                         <div className="space-y-4">
+                            <p className="text-sm text-foreground">
+                                All fields with{' '}
+                                <span
+                                    className="text-primary"
+                                    aria-hidden="true"
+                                >
+                                    *
+                                </span>{' '}
+                                are required.
+                            </p>
                             <div className="space-y-2">
                                 <Label htmlFor="category-name">
                                     Category name
+                                    <span
+                                        className="text-primary"
+                                        aria-hidden="true"
+                                    >
+                                        *
+                                    </span>
                                 </Label>
                                 <Input
                                     id="category-name"

@@ -11,6 +11,9 @@ import {
     TriangleAlert,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { DataTableEmptyState } from '@/components/data-table-empty-state';
+import { DataTableLayout } from '@/components/data-table-layout';
+import { DataTablePagination } from '@/components/data-table-pagination';
 import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
@@ -38,7 +41,6 @@ import type {
 } from '@/types';
 import { DetailedInventoryTable } from './components/detailed-inventory-table';
 import { GroupedInventoryTable } from './components/grouped-inventory-table';
-import { InventoryPagination } from './components/inventory-pagination';
 import { ProductDeleteDialog } from './components/product-delete-dialog';
 import { ProductDialog } from './components/product-dialog';
 
@@ -188,7 +190,7 @@ export default function InventoryIndex({
 
                 <InventoryStatisticCards statistics={statistics} />
 
-                <Card className="gap-0 overflow-hidden py-0">
+                <DataTableLayout>
                     <div className="flex flex-col gap-3 border-b p-4 xl:flex-row xl:items-center xl:justify-between">
                         <div className="relative w-full xl:max-w-sm">
                             <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -249,30 +251,6 @@ export default function InventoryIndex({
                                     ? 'Detailed view'
                                     : 'Grouped view'}
                             </Button>
-
-                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                <span>Rows</span>
-                                <Select
-                                    value={String(filters.per_page)}
-                                    onValueChange={(value) =>
-                                        visitInventory({
-                                            per_page: Number(value),
-                                        })
-                                    }
-                                >
-                                    <SelectTrigger
-                                        className="w-20"
-                                        aria-label="Rows per page"
-                                    >
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="10">10</SelectItem>
-                                        <SelectItem value="25">25</SelectItem>
-                                        <SelectItem value="50">50</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
                         </div>
                     </div>
 
@@ -300,59 +278,85 @@ export default function InventoryIndex({
                         </nav>
                     </div>
 
-                    <div className="overflow-x-auto">
-                        {filters.view === 'grouped' ? (
-                            <GroupedInventoryTable
-                                groups={groupedProducts as ProductGroup[]}
-                                onView={(product) =>
-                                    openProductDialog('view', product)
-                                }
-                                onEdit={(product) =>
-                                    openProductDialog('edit', product)
-                                }
-                                onRestock={(product) =>
-                                    openProductDialog('restock', product)
-                                }
-                                onDelete={openDeleteDialog}
-                            />
-                        ) : (
-                            <DetailedInventoryTable
-                                products={detailedProducts}
-                                onView={(product) =>
-                                    openProductDialog('view', product)
-                                }
-                                onEdit={(product) =>
-                                    openProductDialog('edit', product)
-                                }
-                                onRestock={(product) =>
-                                    openProductDialog('restock', product)
-                                }
-                                onDelete={openDeleteDialog}
-                            />
-                        )}
-
-                        {inventory.data.length === 0 && (
-                            <div className="flex flex-col items-center gap-3 px-4 py-16 text-center">
-                                <Boxes className="size-10 text-muted-foreground" />
-                                <div>
-                                    <p className="font-medium">
-                                        No inventory found
-                                    </p>
-                                    <p className="text-sm text-muted-foreground">
-                                        {filters.search
+                    {filters.view === 'grouped' ? (
+                        <GroupedInventoryTable
+                            groups={groupedProducts as ProductGroup[]}
+                            emptyState={
+                                <DataTableEmptyState
+                                    colSpan={10}
+                                    icon={
+                                        <Boxes className="size-10 text-muted-foreground" />
+                                    }
+                                    title="No inventory found"
+                                    description={
+                                        filters.search
                                             ? 'Try a different search term or stock filter.'
-                                            : 'There are no products in this stock status.'}
-                                    </p>
-                                </div>
-                            </div>
-                        )}
-                    </div>
+                                            : 'There are no products in this stock status.'
+                                    }
+                                />
+                            }
+                            onView={(product) =>
+                                openProductDialog('view', product)
+                            }
+                            onEdit={(product) =>
+                                openProductDialog('edit', product)
+                            }
+                            onRestock={(product) =>
+                                openProductDialog('restock', product)
+                            }
+                            onDelete={openDeleteDialog}
+                        />
+                    ) : (
+                        <DetailedInventoryTable
+                            products={detailedProducts}
+                            emptyState={
+                                <DataTableEmptyState
+                                    colSpan={9}
+                                    icon={
+                                        <Boxes className="size-10 text-muted-foreground" />
+                                    }
+                                    title="No inventory found"
+                                    description={
+                                        filters.search
+                                            ? 'Try a different search term or stock filter.'
+                                            : 'There are no products in this stock status.'
+                                    }
+                                />
+                            }
+                            onView={(product) =>
+                                openProductDialog('view', product)
+                            }
+                            onEdit={(product) =>
+                                openProductDialog('edit', product)
+                            }
+                            onRestock={(product) =>
+                                openProductDialog('restock', product)
+                            }
+                            onDelete={openDeleteDialog}
+                        />
+                    )}
 
-                    <InventoryPagination
-                        inventory={inventory}
-                        filters={filters}
+                    <DataTablePagination
+                        paginator={inventory}
+                        itemLabel={
+                            filters.view === 'grouped' ? 'products' : 'batches'
+                        }
+                        onPageChange={(page) =>
+                            router.get(
+                                index.url(),
+                                { ...filters, page },
+                                {
+                                    only: ['inventory', 'filters'],
+                                    preserveState: true,
+                                    preserveScroll: true,
+                                },
+                            )
+                        }
+                        onPerPageChange={(perPage) =>
+                            visitInventory({ per_page: perPage })
+                        }
                     />
-                </Card>
+                </DataTableLayout>
             </div>
 
             <ProductDialog

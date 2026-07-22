@@ -1,4 +1,4 @@
-import { Form, Link } from '@inertiajs/react';
+ import { Form, Link } from '@inertiajs/react';
 import { ImageIcon, Sparkles, Tags } from 'lucide-react';
 import {
     store,
@@ -116,8 +116,13 @@ export function ServiceDialog({
                         ) : (
                             <>
                                 All fields with{' '}
-                                <span className="text-pink-600">*</span> are
-                                required.
+                                <span
+                                    className="text-primary"
+                                    aria-hidden="true"
+                                >
+                                    *
+                                </span>{' '}
+                                are required.
                             </>
                         )}
                     </DialogDescription>

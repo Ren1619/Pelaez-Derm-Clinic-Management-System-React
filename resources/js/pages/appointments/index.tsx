@@ -13,11 +13,13 @@ import {
 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { ClickableTableRow } from '@/components/clickable-table-row';
+import { DataTableEmptyState } from '@/components/data-table-empty-state';
+import { DataTableLayout } from '@/components/data-table-layout';
+import { DataTablePagination } from '@/components/data-table-pagination';
 import Heading from '@/components/heading';
 import { TooltipIconButton } from '@/components/tooltip-icon-button';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import {
     Select,
@@ -26,6 +28,14 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/components/ui/table';
 import { destroy, index } from '@/routes/appointments';
 import type {
     Appointment,
@@ -163,7 +173,7 @@ export default function AppointmentsIndex(props: Props) {
                     ))}
                 </div>
 
-                <Card className="gap-0 overflow-hidden py-0">
+                <DataTableLayout>
                     <div className="flex flex-col gap-3 border-b p-4 lg:flex-row lg:items-center lg:justify-between">
                         <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
                             <div className="relative w-full sm:w-72">
@@ -310,26 +320,28 @@ export default function AppointmentsIndex(props: Props) {
                             </div>
                             <div className="p-4 md:p-6">
                                 <div className="mb-4 flex items-center justify-between">
-                                    <Button
+                                    <TooltipIconButton
                                         size="icon"
                                         variant="outline"
+                                        tooltip="Previous month"
                                         onClick={() => changeMonth(-1)}
                                     >
                                         <ChevronLeft />
-                                    </Button>
+                                    </TooltipIconButton>
                                     <h3 className="text-lg font-semibold">
                                         {monthDate.toLocaleDateString([], {
                                             month: 'long',
                                             year: 'numeric',
                                         })}
                                     </h3>
-                                    <Button
+                                    <TooltipIconButton
                                         size="icon"
                                         variant="outline"
+                                        tooltip="Next month"
                                         onClick={() => changeMonth(1)}
                                     >
                                         <ChevronRight />
-                                    </Button>
+                                    </TooltipIconButton>
                                 </div>
                                 <div className="grid grid-cols-7 border-t border-l text-center text-xs text-muted-foreground">
                                     {[
@@ -389,13 +401,26 @@ export default function AppointmentsIndex(props: Props) {
                     )}
 
                     {view === 'list' && (
-                        <Pagination
+                        <DataTablePagination
                             paginator={appointments}
-                            filters={filters}
-                            visit={visit}
+                            itemLabel="appointments"
+                            onPageChange={(page) =>
+                                router.get(
+                                    index.url(),
+                                    { ...filters, page },
+                                    {
+                                        only: ['appointments', 'filters'],
+                                        preserveState: true,
+                                        preserveScroll: true,
+                                    },
+                                )
+                            }
+                            onPerPageChange={(perPage) =>
+                                visit({ per_page: perPage })
+                            }
                         />
                     )}
-                </Card>
+                </DataTableLayout>
             </div>
 
             <AppointmentDialog
@@ -425,202 +450,127 @@ function AppointmentTable({
     onEdit: (appointment: Appointment) => void;
 }) {
     return (
-        <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-                <thead className="bg-muted/50 text-left">
-                    <tr>
-                        <th className="px-4 py-3">Patient</th>
-                        <th className="px-4 py-3">Booking</th>
-                        <th className="px-4 py-3">Schedule</th>
-                        <th className="px-4 py-3">Clinic / doctor</th>
-                        <th className="px-4 py-3">Status</th>
-                        <th className="px-4 py-3 text-right">Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {appointments.map((appointment) => (
-                        <ClickableTableRow
-                            key={appointment.appointment_ID}
-                            className="border-t"
-                            accessibleLabel={`View ${appointment.patient_name}'s appointment`}
-                            onActivate={() => onView(appointment)}
-                        >
-                            <td className="px-4 py-4">
-                                <span className="font-medium">
-                                    {appointment.patient_name}
-                                </span>
-                                <p className="text-xs text-muted-foreground">
-                                    {appointment.patient_contact}
+        <Table className="min-w-5xl">
+            <TableHeader>
+                <TableRow>
+                    <TableHead>Patient</TableHead>
+                    <TableHead>Booking</TableHead>
+                    <TableHead>Schedule</TableHead>
+                    <TableHead>Clinic / doctor</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+            </TableHeader>
+            <TableBody>
+                {appointments.map((appointment) => (
+                    <ClickableTableRow
+                        key={appointment.appointment_ID}
+                        accessibleLabel={`View ${appointment.patient_name}'s appointment`}
+                        onActivate={() => onView(appointment)}
+                    >
+                        <TableCell>
+                            <span className="font-medium">
+                                {appointment.patient_name}
+                            </span>
+                            <p className="text-xs text-muted-foreground">
+                                {appointment.patient_contact}
+                            </p>
+                        </TableCell>
+                        <TableCell className="max-w-xs">
+                            <span className="capitalize">
+                                {appointment.appointment_type}
+                            </span>
+                            <p className="truncate text-xs text-muted-foreground">
+                                {appointment.appointment_type === 'consultation'
+                                    ? appointment.concern
+                                    : appointment.services
+                                          .map((item) => item.service_name)
+                                          .join(', ')}
+                            </p>
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap">
+                            <div>
+                                {new Date(
+                                    appointment.scheduled_at,
+                                ).toLocaleDateString([], {
+                                    dateStyle: 'medium',
+                                })}
+                            </div>
+                            <p className="flex items-center gap-1 text-xs text-muted-foreground">
+                                <Clock3 className="size-3" />
+                                {formatTime(appointment.scheduled_at)}
+                            </p>
+                        </TableCell>
+                        <TableCell>
+                            <div>{appointment.branch_name}</div>
+                            <p className="text-xs text-muted-foreground">
+                                {appointment.doctor_name ?? 'Doctor unassigned'}
+                            </p>
+                        </TableCell>
+                        <TableCell>
+                            <Badge variant="outline" className="capitalize">
+                                {appointment.status}
+                            </Badge>
+                            {appointment.visit_ID && (
+                                <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
+                                    <Stethoscope className="size-3" /> Visit #
+                                    {appointment.visit_ID}
                                 </p>
-                            </td>
-                            <td className="max-w-xs px-4 py-4">
-                                <span className="capitalize">
-                                    {appointment.appointment_type}
-                                </span>
-                                <p className="truncate text-xs text-muted-foreground">
-                                    {appointment.appointment_type ===
-                                    'consultation'
-                                        ? appointment.concern
-                                        : appointment.services
-                                              .map((item) => item.service_name)
-                                              .join(', ')}
-                                </p>
-                            </td>
-                            <td className="px-4 py-4 whitespace-nowrap">
-                                <div>
-                                    {new Date(
-                                        appointment.scheduled_at,
-                                    ).toLocaleDateString([], {
-                                        dateStyle: 'medium',
-                                    })}
-                                </div>
-                                <p className="flex items-center gap-1 text-xs text-muted-foreground">
-                                    <Clock3 className="size-3" />
-                                    {formatTime(appointment.scheduled_at)}
-                                </p>
-                            </td>
-                            <td className="px-4 py-4">
-                                <div>{appointment.branch_name}</div>
-                                <p className="text-xs text-muted-foreground">
-                                    {appointment.doctor_name ??
-                                        'Doctor unassigned'}
-                                </p>
-                            </td>
-                            <td className="px-4 py-4">
-                                <Badge variant="outline" className="capitalize">
-                                    {appointment.status}
-                                </Badge>
-                                {appointment.visit_ID && (
-                                    <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
-                                        <Stethoscope className="size-3" /> Visit
-                                        #{appointment.visit_ID}
-                                    </p>
+                            )}
+                        </TableCell>
+                        <TableCell>
+                            <div className="flex justify-end gap-1">
+                                {appointment.can_edit && (
+                                    <TooltipIconButton
+                                        variant="ghost"
+                                        size="icon"
+                                        tooltip={`Edit ${appointment.patient_name}'s appointment`}
+                                        onClick={() => onEdit(appointment)}
+                                    >
+                                        <Pencil />
+                                    </TooltipIconButton>
                                 )}
-                            </td>
-                            <td className="px-4 py-4">
-                                <div className="flex justify-end gap-1">
-                                    {appointment.can_edit && (
+                                {appointment.visit_ID === null &&
+                                    ['pending', 'cancelled'].includes(
+                                        appointment.status,
+                                    ) && (
                                         <TooltipIconButton
                                             variant="ghost"
                                             size="icon"
-                                            tooltip={`Edit ${appointment.patient_name}'s appointment`}
-                                            onClick={() => onEdit(appointment)}
+                                            tooltip={`Delete ${appointment.patient_name}'s appointment`}
+                                            onClick={() => {
+                                                if (
+                                                    window.confirm(
+                                                        `Delete ${appointment.patient_name}'s appointment?`,
+                                                    )
+                                                ) {
+                                                    router.delete(
+                                                        destroy.url(
+                                                            appointment,
+                                                        ),
+                                                        {
+                                                            preserveScroll: true,
+                                                        },
+                                                    );
+                                                }
+                                            }}
                                         >
-                                            <Pencil />
+                                            <Trash2 />
                                         </TooltipIconButton>
                                     )}
-                                    {appointment.visit_ID === null &&
-                                        ['pending', 'cancelled'].includes(
-                                            appointment.status,
-                                        ) && (
-                                            <TooltipIconButton
-                                                variant="ghost"
-                                                size="icon"
-                                                tooltip={`Delete ${appointment.patient_name}'s appointment`}
-                                                onClick={() => {
-                                                    if (
-                                                        window.confirm(
-                                                            `Delete ${appointment.patient_name}'s appointment?`,
-                                                        )
-                                                    ) {
-                                                        router.delete(
-                                                            destroy.url(
-                                                                appointment,
-                                                            ),
-                                                            {
-                                                                preserveScroll: true,
-                                                            },
-                                                        );
-                                                    }
-                                                }}
-                                            >
-                                                <Trash2 />
-                                            </TooltipIconButton>
-                                        )}
-                                </div>
-                            </td>
-                        </ClickableTableRow>
-                    ))}
-                    {appointments.length === 0 && (
-                        <tr>
-                            <td
-                                colSpan={6}
-                                className="p-12 text-center text-muted-foreground"
-                            >
-                                No appointments match these filters.
-                            </td>
-                        </tr>
-                    )}
-                </tbody>
-            </table>
-        </div>
-    );
-}
-
-function Pagination({
-    paginator,
-    filters,
-    visit,
-}: {
-    paginator: AppointmentPaginator;
-    filters: AppointmentFilters;
-    visit: (changes: Partial<AppointmentFilters>, only?: string[]) => void;
-}) {
-    return (
-        <div className="flex flex-col gap-3 border-t p-4 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-sm text-muted-foreground">
-                Showing {paginator.from ?? 0}–{paginator.to ?? 0} of{' '}
-                {paginator.total}
-            </p>
-            <div className="flex items-center gap-2">
-                <Select
-                    value={String(filters.per_page)}
-                    onValueChange={(value) =>
-                        visit({ per_page: Number(value) })
-                    }
-                >
-                    <SelectTrigger className="w-20">
-                        <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="10">10</SelectItem>
-                        <SelectItem value="25">25</SelectItem>
-                        <SelectItem value="50">50</SelectItem>
-                    </SelectContent>
-                </Select>
-                <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={paginator.current_page <= 1}
-                    onClick={() =>
-                        router.get(
-                            index.url(),
-                            { ...filters, page: paginator.current_page - 1 },
-                            { preserveState: true },
-                        )
-                    }
-                >
-                    Previous
-                </Button>
-                <span className="text-sm">
-                    {paginator.current_page} / {paginator.last_page}
-                </span>
-                <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={paginator.current_page >= paginator.last_page}
-                    onClick={() =>
-                        router.get(
-                            index.url(),
-                            { ...filters, page: paginator.current_page + 1 },
-                            { preserveState: true },
-                        )
-                    }
-                >
-                    Next
-                </Button>
-            </div>
-        </div>
+                            </div>
+                        </TableCell>
+                    </ClickableTableRow>
+                ))}
+                {appointments.length === 0 && (
+                    <DataTableEmptyState
+                        colSpan={6}
+                        title="No appointments found"
+                        description="No appointments match these filters."
+                    />
+                )}
+            </TableBody>
+        </Table>
     );
 }
 

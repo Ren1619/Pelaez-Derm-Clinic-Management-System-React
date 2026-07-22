@@ -2,10 +2,12 @@ import { Head, router } from '@inertiajs/react';
 import { Download, Search, ScrollText } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { ClickableTableRow } from '@/components/clickable-table-row';
+import { DataTableEmptyState } from '@/components/data-table-empty-state';
+import { DataTableLayout } from '@/components/data-table-layout';
+import { DataTablePagination } from '@/components/data-table-pagination';
 import Heading from '@/components/heading';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
 import {
     Dialog,
     DialogContent,
@@ -22,6 +24,14 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/components/ui/table';
 import { exportMethod, index } from '@/routes/logs';
 import type {
     ActivityLog,
@@ -87,7 +97,7 @@ export default function LogsIndex({
                     </Button>
                 </div>
 
-                <Card className="gap-0 overflow-hidden py-0">
+                <DataTableLayout>
                     <div className="grid gap-4 border-b p-4 sm:grid-cols-2 xl:grid-cols-[minmax(14rem,1.5fr)_repeat(4,minmax(8.5rem,1fr))] xl:items-end">
                         <FilterField label="Search logs">
                             <div className="relative">
@@ -288,107 +298,96 @@ export default function LogsIndex({
                         </div>
                     )}
 
-                    <div className="hidden overflow-x-auto lg:block">
-                        <table className="w-full min-w-5xl text-sm">
-                            <thead className="border-b bg-muted/40 text-left text-xs font-medium tracking-wide text-muted-foreground uppercase">
-                                <tr>
-                                    <th className="w-20 px-4 py-3">#</th>
-                                    <th className="px-4 py-3">Timestamp</th>
-                                    <th className="px-4 py-3">Performed by</th>
-                                    <th className="px-4 py-3">Category</th>
-                                    <th className="px-4 py-3">Action</th>
-                                    <th className="px-4 py-3">Details</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y">
-                                {logs.data.map((log, position) => (
-                                    <ClickableTableRow
-                                        key={log.activity_log_ID}
-                                        accessibleLabel={`View log ${log.activity_log_ID}`}
-                                        onActivate={() => setSelectedLog(log)}
-                                    >
-                                        <td className="px-4 py-4 text-muted-foreground">
-                                            {(logs.current_page - 1) *
-                                                logs.per_page +
-                                                position +
-                                                1}
-                                        </td>
-                                        <td className="px-4 py-4 whitespace-nowrap">
-                                            <Timestamp value={log.created_at} />
-                                        </td>
-                                        <td className="px-4 py-4">
-                                            <Actor log={log} />
-                                        </td>
-                                        <td className="px-4 py-4">
-                                            <Badge variant="outline">
-                                                {contexts[log.context] ??
-                                                    titleCase(log.context)}
-                                            </Badge>
-                                        </td>
-                                        <td className="px-4 py-4">
-                                            <ActionBadge action={log.action} />
-                                        </td>
-                                        <td className="max-w-md px-4 py-4">
-                                            <p className="line-clamp-2">
-                                                {log.description}
-                                            </p>
-                                            <p className="mt-1 text-xs text-muted-foreground">
-                                                {log.subject.type}
-                                                {log.subject.id
-                                                    ? ` #${log.subject.id}`
-                                                    : ''}
-                                            </p>
-                                        </td>
-                                    </ClickableTableRow>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <div className="grid gap-3 p-4 lg:hidden">
-                        {logs.data.map((log) => (
-                            <button
-                                key={log.activity_log_ID}
-                                type="button"
-                                onClick={() => setSelectedLog(log)}
-                                className="grid gap-3 rounded-lg border p-4 text-left transition-colors hover:bg-muted/30"
-                            >
-                                <div className="flex items-start justify-between gap-3">
-                                    <div>
-                                        <p className="font-medium">
-                                            Log #
-                                            {String(
-                                                log.activity_log_ID,
-                                            ).padStart(6, '0')}
-                                        </p>
+                    <Table className="min-w-5xl">
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead className="w-20">#</TableHead>
+                                <TableHead>Timestamp</TableHead>
+                                <TableHead>Performed by</TableHead>
+                                <TableHead>Category</TableHead>
+                                <TableHead>Action</TableHead>
+                                <TableHead>Details</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {logs.data.map((log, position) => (
+                                <ClickableTableRow
+                                    key={log.activity_log_ID}
+                                    accessibleLabel={`View log ${log.activity_log_ID}`}
+                                    onActivate={() => setSelectedLog(log)}
+                                >
+                                    <TableCell className="text-muted-foreground">
+                                        {(logs.current_page - 1) *
+                                            logs.per_page +
+                                            position +
+                                            1}
+                                    </TableCell>
+                                    <TableCell className="whitespace-nowrap">
                                         <Timestamp value={log.created_at} />
-                                    </div>
-                                    <ActionBadge action={log.action} />
-                                </div>
-                                <Actor log={log} />
-                                <p className="text-sm">{log.description}</p>
-                                <Badge variant="outline">
-                                    {contexts[log.context] ??
-                                        titleCase(log.context)}
-                                </Badge>
-                            </button>
-                        ))}
-                    </div>
+                                    </TableCell>
+                                    <TableCell>
+                                        <Actor log={log} />
+                                    </TableCell>
+                                    <TableCell>
+                                        <Badge variant="outline">
+                                            {contexts[log.context] ??
+                                                titleCase(log.context)}
+                                        </Badge>
+                                    </TableCell>
+                                    <TableCell>
+                                        <ActionBadge action={log.action} />
+                                    </TableCell>
+                                    <TableCell className="max-w-md">
+                                        <p className="line-clamp-2">
+                                            {log.description}
+                                        </p>
+                                        <p className="mt-1 text-xs text-muted-foreground">
+                                            {log.subject.type}
+                                            {log.subject.id
+                                                ? ` #${log.subject.id}`
+                                                : ''}
+                                        </p>
+                                    </TableCell>
+                                </ClickableTableRow>
+                            ))}
+                            {logs.data.length === 0 && (
+                                <DataTableEmptyState
+                                    colSpan={6}
+                                    icon={
+                                        <ScrollText className="size-10 text-muted-foreground" />
+                                    }
+                                    title="No logs found"
+                                    description="Try changing the current search or filters."
+                                />
+                            )}
+                        </TableBody>
+                    </Table>
 
-                    {logs.data.length === 0 && (
-                        <div className="flex flex-col items-center gap-3 px-4 py-16 text-center">
-                            <ScrollText className="size-10 text-muted-foreground" />
-                            <div>
-                                <p className="font-medium">No logs found</p>
-                                <p className="text-sm text-muted-foreground">
-                                    Try changing the current search or filters.
-                                </p>
-                            </div>
-                        </div>
-                    )}
-
-                    <Pagination logs={logs} filters={filters} />
-                </Card>
+                    <DataTablePagination
+                        paginator={logs}
+                        itemLabel="logs"
+                        onPageChange={(page) =>
+                            router.get(
+                                index.url(),
+                                { ...logQuery(filters), page },
+                                {
+                                    preserveState: true,
+                                    preserveScroll: true,
+                                },
+                            )
+                        }
+                        onPerPageChange={(perPage) =>
+                            router.get(
+                                index.url(),
+                                { ...logQuery(filters), per_page: perPage },
+                                {
+                                    preserveState: true,
+                                    preserveScroll: true,
+                                },
+                            )
+                        }
+                    />
+                </DataTableLayout>
             </div>
 
             <LogDetailsDialog
@@ -477,74 +476,6 @@ function ActionBadge({ action }: { action: ActivityLog['action'] }) {
         >
             {titleCase(action)}
         </Badge>
-    );
-}
-
-function Pagination({
-    logs,
-    filters,
-}: {
-    logs: ActivityLogPaginator;
-    filters: ActivityLogFilters;
-}) {
-    const goToPage = (page: number) => {
-        router.get(
-            index.url(),
-            { ...logQuery(filters), page },
-            { preserveState: true, preserveScroll: true },
-        );
-    };
-
-    return (
-        <div className="flex flex-col gap-3 border-t p-4 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-sm text-muted-foreground">
-                Showing {logs.from ?? 0}–{logs.to ?? 0} of {logs.total}
-            </p>
-            <div className="flex flex-wrap items-center gap-2">
-                <Label htmlFor="logs-per-page">Rows</Label>
-                <Select
-                    value={String(filters.per_page)}
-                    onValueChange={(value) =>
-                        router.get(
-                            index.url(),
-                            {
-                                ...logQuery(filters),
-                                per_page: Number(value),
-                            },
-                            { preserveState: true, preserveScroll: true },
-                        )
-                    }
-                >
-                    <SelectTrigger id="logs-per-page" className="w-20">
-                        <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="10">10</SelectItem>
-                        <SelectItem value="25">25</SelectItem>
-                        <SelectItem value="50">50</SelectItem>
-                    </SelectContent>
-                </Select>
-                <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={logs.current_page <= 1}
-                    onClick={() => goToPage(logs.current_page - 1)}
-                >
-                    Previous
-                </Button>
-                <span className="text-sm">
-                    {logs.current_page} / {logs.last_page}
-                </span>
-                <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={logs.current_page >= logs.last_page}
-                    onClick={() => goToPage(logs.current_page + 1)}
-                >
-                    Next
-                </Button>
-            </div>
-        </div>
     );
 }
 
