@@ -122,10 +122,26 @@ export function PatientDialog({
                     >
                         {({ errors, processing }) => (
                             <>
+                                <p className="text-sm text-foreground">
+                                    All fields with{' '}
+                                    <span
+                                        className="text-primary"
+                                        aria-hidden="true"
+                                    >
+                                        *
+                                    </span>{' '}
+                                    are required.
+                                </p>
                                 <div className="grid gap-4 sm:grid-cols-3">
                                     <div className="grid gap-2">
                                         <Label htmlFor="first_name">
                                             First name
+                                            <span
+                                                className="text-primary"
+                                                aria-hidden="true"
+                                            >
+                                                *
+                                            </span>
                                         </Label>
                                         <Input
                                             id="first_name"
@@ -165,6 +181,12 @@ export function PatientDialog({
                                     <div className="grid gap-2">
                                         <Label htmlFor="last_name">
                                             Last name
+                                            <span
+                                                className="text-primary"
+                                                aria-hidden="true"
+                                            >
+                                                *
+                                            </span>
                                         </Label>
                                         <Input
                                             id="last_name"
@@ -185,7 +207,15 @@ export function PatientDialog({
 
                                 <div className="grid gap-4 sm:grid-cols-2">
                                     <div className="grid gap-2">
-                                        <Label htmlFor="email">Email</Label>
+                                        <Label htmlFor="email">
+                                            Email
+                                            <span
+                                                className="text-primary"
+                                                aria-hidden="true"
+                                            >
+                                                *
+                                            </span>
+                                        </Label>
                                         <Input
                                             id="email"
                                             name="email"
@@ -200,6 +230,12 @@ export function PatientDialog({
                                     <div className="grid gap-2">
                                         <Label htmlFor="contact_number">
                                             Contact number
+                                            <span
+                                                className="text-primary"
+                                                aria-hidden="true"
+                                            >
+                                                *
+                                            </span>
                                         </Label>
                                         <Input
                                             id="contact_number"
@@ -222,7 +258,15 @@ export function PatientDialog({
                                     </div>
 
                                     <div className="grid gap-2">
-                                        <Label htmlFor="sex">Sex</Label>
+                                        <Label htmlFor="sex">
+                                            Sex
+                                            <span
+                                                className="text-primary"
+                                                aria-hidden="true"
+                                            >
+                                                *
+                                            </span>
+                                        </Label>
                                         <select
                                             id="sex"
                                             name="sex"
@@ -245,6 +289,12 @@ export function PatientDialog({
                                     <div className="grid gap-2">
                                         <Label htmlFor="date_of_birth">
                                             Date of birth
+                                            <span
+                                                className="text-primary"
+                                                aria-hidden="true"
+                                            >
+                                                *
+                                            </span>
                                         </Label>
                                         <Input
                                             id="date_of_birth"
@@ -266,6 +316,12 @@ export function PatientDialog({
                                     <div className="grid gap-2">
                                         <Label htmlFor="civil_status">
                                             Civil status
+                                            <span
+                                                className="text-primary"
+                                                aria-hidden="true"
+                                            >
+                                                *
+                                            </span>
                                         </Label>
                                         <select
                                             id="civil_status"
@@ -301,7 +357,15 @@ export function PatientDialog({
                                     </div>
 
                                     <div className="grid gap-2 sm:col-span-2">
-                                        <Label htmlFor="address">Address</Label>
+                                        <Label htmlFor="address">
+                                            Address
+                                            <span
+                                                className="text-primary"
+                                                aria-hidden="true"
+                                            >
+                                                *
+                                            </span>
+                                        </Label>
                                         <textarea
                                             id="address"
                                             name="address"

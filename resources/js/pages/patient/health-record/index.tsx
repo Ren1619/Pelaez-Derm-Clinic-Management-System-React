@@ -648,10 +648,21 @@ function SummaryDialog({
                 >
                     {({ errors, processing }) => (
                         <>
+                            <p className="text-sm text-foreground">
+                                All fields with{' '}
+                                <span
+                                    className="text-primary"
+                                    aria-hidden="true"
+                                >
+                                    *
+                                </span>{' '}
+                                are required.
+                            </p>
                             {state.kind === 'medical-condition' && (
                                 <Field
                                     label="Medical condition"
                                     error={errors.condition}
+                                    required
                                 >
                                     <Input
                                         name="condition"
@@ -663,7 +674,11 @@ function SummaryDialog({
                                 </Field>
                             )}
                             {state.kind === 'allergy' && (
-                                <Field label="Allergy" error={errors.allergy}>
+                                <Field
+                                    label="Allergy"
+                                    error={errors.allergy}
+                                    required
+                                >
                                     <Input
                                         name="allergy"
                                         defaultValue={allergy?.allergy ?? ''}
@@ -676,6 +691,7 @@ function SummaryDialog({
                                     <Field
                                         label="Medication"
                                         error={errors.medication}
+                                        required
                                     >
                                         <Input
                                             name="medication"
@@ -928,15 +944,24 @@ function DateField({
 function Field({
     label,
     error,
+    required = false,
     children,
 }: {
     label: string;
     error?: string;
+    required?: boolean;
     children: React.ReactNode;
 }) {
     return (
         <div className="grid gap-2">
-            <Label>{label}</Label>
+            <Label>
+                {label}
+                {required && (
+                    <span className="text-primary" aria-hidden="true">
+                        *
+                    </span>
+                )}
+            </Label>
             {children}
             <InputError message={error} />
         </div>

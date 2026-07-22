@@ -504,9 +504,24 @@ export default function PosIndex({
                             original POS workflow.
                         </DialogDescription>
                     </DialogHeader>
+                    <p className="text-sm text-foreground">
+                        All fields with{' '}
+                        <span className="text-primary" aria-hidden="true">
+                            *
+                        </span>{' '}
+                        are required.
+                    </p>
                     <div className="grid gap-4 sm:grid-cols-2">
                         <div className="space-y-2">
-                            <Label htmlFor="service-price">Price</Label>
+                            <Label htmlFor="service-price">
+                                Price
+                                <span
+                                    className="text-primary"
+                                    aria-hidden="true"
+                                >
+                                    *
+                                </span>
+                            </Label>
                             <Input
                                 id="service-price"
                                 type="number"
@@ -522,7 +537,15 @@ export default function PosIndex({
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="service-quantity">Quantity</Label>
+                            <Label htmlFor="service-quantity">
+                                Quantity
+                                <span
+                                    className="text-primary"
+                                    aria-hidden="true"
+                                >
+                                    *
+                                </span>
+                            </Label>
                             <Input
                                 id="service-quantity"
                                 type="number"

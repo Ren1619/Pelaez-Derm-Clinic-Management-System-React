@@ -227,6 +227,16 @@ function CreateFeedbackDialog({
                 >
                     {({ errors, processing }) => (
                         <>
+                            <p className="text-sm text-foreground">
+                                All fields with{' '}
+                                <span
+                                    className="text-primary"
+                                    aria-hidden="true"
+                                >
+                                    *
+                                </span>{' '}
+                                are required.
+                            </p>
                             <input
                                 type="hidden"
                                 name="appointment_ID"
@@ -236,7 +246,15 @@ function CreateFeedbackDialog({
                             <AppointmentSummary appointment={appointment} />
 
                             <div className="grid gap-2">
-                                <Label>Rating</Label>
+                                <Label>
+                                    Rating
+                                    <span
+                                        className="text-primary"
+                                        aria-hidden="true"
+                                    >
+                                        *
+                                    </span>
+                                </Label>
                                 <div
                                     className="flex items-center gap-1"
                                     onMouseLeave={() => setHoveredRating(0)}

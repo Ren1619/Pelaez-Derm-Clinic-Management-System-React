@@ -569,10 +569,26 @@ export default function DistributionIndex({
                         </DialogHeader>
 
                         <div className="grid gap-5 py-5">
+                            <p className="text-sm text-foreground">
+                                All fields with{' '}
+                                <span
+                                    className="text-primary"
+                                    aria-hidden="true"
+                                >
+                                    *
+                                </span>{' '}
+                                are required.
+                            </p>
                             <div className="grid gap-4 sm:grid-cols-2">
                                 <div className="grid gap-2">
                                     <Label htmlFor="from-branch">
                                         Source branch
+                                        <span
+                                            className="text-primary"
+                                            aria-hidden="true"
+                                        >
+                                            *
+                                        </span>
                                     </Label>
                                     <Select
                                         value={createForm.data.from_branch_ID}
@@ -602,6 +618,12 @@ export default function DistributionIndex({
                                 <div className="grid gap-2">
                                     <Label htmlFor="to-branch">
                                         Destination branch
+                                        <span
+                                            className="text-primary"
+                                            aria-hidden="true"
+                                        >
+                                            *
+                                        </span>
                                     </Label>
                                     <Select
                                         value={createForm.data.to_branch_ID}
@@ -690,7 +712,15 @@ export default function DistributionIndex({
 
                             <div className="grid gap-2">
                                 <div>
-                                    <Label>Available product batches</Label>
+                                    <Label>
+                                        Available product batches
+                                        <span
+                                            className="text-primary"
+                                            aria-hidden="true"
+                                        >
+                                            *
+                                        </span>
+                                    </Label>
                                     <p className="text-xs text-muted-foreground">
                                         Stock is deducted only when the transfer
                                         is marked as sent.
@@ -887,7 +917,25 @@ export default function DistributionIndex({
                             </DialogDescription>
                         </DialogHeader>
                         <div className="grid gap-2 py-5">
-                            <Label htmlFor="cancellation-reason">Reason</Label>
+                            <p className="text-sm text-foreground">
+                                All fields with{' '}
+                                <span
+                                    className="text-primary"
+                                    aria-hidden="true"
+                                >
+                                    *
+                                </span>{' '}
+                                are required.
+                            </p>
+                            <Label htmlFor="cancellation-reason">
+                                Reason
+                                <span
+                                    className="text-primary"
+                                    aria-hidden="true"
+                                >
+                                    *
+                                </span>
+                            </Label>
                             <textarea
                                 id="cancellation-reason"
                                 required

@@ -129,10 +129,21 @@ export function PatientVisitRecordDialog({
                 >
                     {({ errors, processing }) => (
                         <>
+                            <p className="text-sm text-foreground">
+                                All fields with{' '}
+                                <span
+                                    className="text-primary"
+                                    aria-hidden="true"
+                                >
+                                    *
+                                </span>{' '}
+                                are required.
+                            </p>
                             {kind === 'diagnosis' && (
                                 <Field
                                     label="Diagnosis"
                                     error={errors.diagnosis}
+                                    required
                                 >
                                     <Input
                                         name="diagnosis"
@@ -150,6 +161,7 @@ export function PatientVisitRecordDialog({
                                     <Field
                                         label="Prescription"
                                         error={errors.prescription}
+                                        required
                                     >
                                         <Input
                                             name="prescription"
@@ -204,6 +216,7 @@ export function PatientVisitRecordDialog({
                                     <Field
                                         label="Service"
                                         error={errors.service_ID}
+                                        required
                                     >
                                         <select
                                             name="service_ID"
@@ -229,6 +242,7 @@ export function PatientVisitRecordDialog({
                                     <Field
                                         label="Quantity"
                                         error={errors.quantity}
+                                        required
                                     >
                                         <Input
                                             type="number"
@@ -249,6 +263,7 @@ export function PatientVisitRecordDialog({
                                     <Field
                                         label="Product / medicine"
                                         error={errors.product_ID}
+                                        required
                                     >
                                         <select
                                             name="product_ID"
@@ -285,6 +300,7 @@ export function PatientVisitRecordDialog({
                                     <Field
                                         label="Quantity"
                                         error={errors.quantity}
+                                        required
                                     >
                                         <Input
                                             type="number"
@@ -345,15 +361,24 @@ const selectClassName =
 function Field({
     label,
     error,
+    required = false,
     children,
 }: {
     label: string;
     error?: string;
+    required?: boolean;
     children: React.ReactNode;
 }) {
     return (
         <div className="grid gap-2">
-            <Label>{label}</Label>
+            <Label>
+                {label}
+                {required && (
+                    <span className="text-primary" aria-hidden="true">
+                        *
+                    </span>
+                )}
+            </Label>
             {children}
             <InputError message={error} />
         </div>

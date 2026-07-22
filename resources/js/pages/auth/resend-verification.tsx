@@ -34,8 +34,23 @@ export default function ResendVerification({
             <Form {...send.form()} className="mt-6 space-y-6">
                 {({ processing, errors }) => (
                     <>
+                        <p className="text-sm text-foreground">
+                            All fields with{' '}
+                            <span className="text-primary" aria-hidden="true">
+                                *
+                            </span>{' '}
+                            are required.
+                        </p>
                         <div className="grid gap-2">
-                            <Label htmlFor="email">Email address</Label>
+                            <Label htmlFor="email">
+                                Email address
+                                <span
+                                    className="text-primary"
+                                    aria-hidden="true"
+                                >
+                                    *
+                                </span>
+                            </Label>
                             <Input
                                 id="email"
                                 type="email"

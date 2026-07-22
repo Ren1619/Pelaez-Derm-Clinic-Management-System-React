@@ -169,6 +169,16 @@ export function ProductDialog({
                     >
                         {({ errors, processing, progress }) => (
                             <>
+                                <p className="text-sm text-foreground">
+                                    All fields with{' '}
+                                    <span
+                                        className="text-primary"
+                                        aria-hidden="true"
+                                    >
+                                        *
+                                    </span>{' '}
+                                    are required.
+                                </p>
                                 <ProductImage product={product} />
 
                                 <div className="grid gap-2">
@@ -236,6 +246,12 @@ export function ProductDialog({
                                         <div className="grid gap-2">
                                             <Label htmlFor="name">
                                                 Product name
+                                                <span
+                                                    className="text-primary"
+                                                    aria-hidden="true"
+                                                >
+                                                    *
+                                                </span>
                                             </Label>
                                             <Input
                                                 id="name"
@@ -258,6 +274,12 @@ export function ProductDialog({
                                                 <div className="flex items-center justify-between gap-3">
                                                     <Label htmlFor="category_ID">
                                                         Product category
+                                                        <span
+                                                            className="text-primary"
+                                                            aria-hidden="true"
+                                                        >
+                                                            *
+                                                        </span>
                                                     </Label>
                                                     <Button
                                                         type="button"
@@ -324,6 +346,12 @@ export function ProductDialog({
                                             <div className="grid gap-2">
                                                 <Label htmlFor="measurement_unit">
                                                     Measurement unit
+                                                    <span
+                                                        className="text-primary"
+                                                        aria-hidden="true"
+                                                    >
+                                                        *
+                                                    </span>
                                                 </Label>
                                                 <Input
                                                     id="measurement_unit"
@@ -383,6 +411,12 @@ export function ProductDialog({
                                             {isRestock
                                                 ? 'Quantity to add'
                                                 : 'Quantity'}
+                                            <span
+                                                className="text-primary"
+                                                aria-hidden="true"
+                                            >
+                                                *
+                                            </span>
                                         </Label>
                                         <Input
                                             id="quantity"
@@ -404,7 +438,15 @@ export function ProductDialog({
                                     </div>
 
                                     <div className="grid gap-2">
-                                        <Label htmlFor="price">Price</Label>
+                                        <Label htmlFor="price">
+                                            Price
+                                            <span
+                                                className="text-primary"
+                                                aria-hidden="true"
+                                            >
+                                                *
+                                            </span>
+                                        </Label>
                                         <Input
                                             id="price"
                                             name="price"
@@ -425,6 +467,12 @@ export function ProductDialog({
                                     <div className="grid gap-2">
                                         <Label htmlFor="expiration_date">
                                             Expiration date
+                                            <span
+                                                className="text-primary"
+                                                aria-hidden="true"
+                                            >
+                                                *
+                                            </span>
                                         </Label>
                                         <Input
                                             id="expiration_date"

@@ -53,9 +53,25 @@ export function ExpenseDialog({
                 >
                     {({ processing, errors }) => (
                         <div className="space-y-4">
+                            <p className="text-sm text-foreground">
+                                All fields with{' '}
+                                <span
+                                    className="text-primary"
+                                    aria-hidden="true"
+                                >
+                                    *
+                                </span>{' '}
+                                are required.
+                            </p>
                             <div className="space-y-2">
                                 <Label htmlFor="expense-description">
                                     Description
+                                    <span
+                                        className="text-primary"
+                                        aria-hidden="true"
+                                    >
+                                        *
+                                    </span>
                                 </Label>
                                 <Input
                                     id="expense-description"
@@ -67,7 +83,15 @@ export function ExpenseDialog({
                             </div>
                             <div className="grid gap-4 sm:grid-cols-2">
                                 <div className="space-y-2">
-                                    <Label>Branch</Label>
+                                    <Label>
+                                        Branch
+                                        <span
+                                            className="text-primary"
+                                            aria-hidden="true"
+                                        >
+                                            *
+                                        </span>
+                                    </Label>
                                     <Select
                                         name="branch_ID"
                                         defaultValue={String(selectedBranchId)}
@@ -92,7 +116,15 @@ export function ExpenseDialog({
                                     <InputError message={errors.branch_ID} />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label>Category</Label>
+                                    <Label>
+                                        Category
+                                        <span
+                                            className="text-primary"
+                                            aria-hidden="true"
+                                        >
+                                            *
+                                        </span>
+                                    </Label>
                                     <Select name="category_ID" required>
                                         <SelectTrigger>
                                             <SelectValue placeholder="Select category" />
@@ -115,6 +147,12 @@ export function ExpenseDialog({
                                 <div className="space-y-2">
                                     <Label htmlFor="expense-amount">
                                         Amount
+                                        <span
+                                            className="text-primary"
+                                            aria-hidden="true"
+                                        >
+                                            *
+                                        </span>
                                     </Label>
                                     <Input
                                         id="expense-amount"
@@ -127,7 +165,15 @@ export function ExpenseDialog({
                                     <InputError message={errors.amount} />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="expense-date">Date</Label>
+                                    <Label htmlFor="expense-date">
+                                        Date
+                                        <span
+                                            className="text-primary"
+                                            aria-hidden="true"
+                                        >
+                                            *
+                                        </span>
+                                    </Label>
                                     <Input
                                         id="expense-date"
                                         name="expense_date"
@@ -192,9 +238,25 @@ export function ExpenseCategoryDialog({
                 >
                     {({ processing, errors }) => (
                         <div className="space-y-4">
+                            <p className="text-sm text-foreground">
+                                All fields with{' '}
+                                <span
+                                    className="text-primary"
+                                    aria-hidden="true"
+                                >
+                                    *
+                                </span>{' '}
+                                are required.
+                            </p>
                             <div className="space-y-2">
                                 <Label htmlFor="category-name">
                                     Category name
+                                    <span
+                                        className="text-primary"
+                                        aria-hidden="true"
+                                    >
+                                        *
+                                    </span>
                                 </Label>
                                 <Input
                                     id="category-name"

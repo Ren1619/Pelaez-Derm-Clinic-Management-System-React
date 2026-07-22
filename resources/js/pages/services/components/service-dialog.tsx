@@ -128,6 +128,16 @@ export function ServiceDialog({
                     >
                         {({ errors, processing, progress }) => (
                             <>
+                                <p className="text-sm text-foreground">
+                                    All fields with{' '}
+                                    <span
+                                        className="text-primary"
+                                        aria-hidden="true"
+                                    >
+                                        *
+                                    </span>{' '}
+                                    are required.
+                                </p>
                                 <ServiceImage service={service} />
 
                                 <div className="grid gap-2">
@@ -163,6 +173,12 @@ export function ServiceDialog({
                                         <div className="flex items-center justify-between gap-3">
                                             <Label htmlFor="category_ID">
                                                 Service category
+                                                <span
+                                                    className="text-primary"
+                                                    aria-hidden="true"
+                                                >
+                                                    *
+                                                </span>
                                             </Label>
                                             <Button
                                                 type="button"
@@ -221,6 +237,12 @@ export function ServiceDialog({
                                     <div className="grid gap-2">
                                         <Label htmlFor="name">
                                             Service name
+                                            <span
+                                                className="text-primary"
+                                                aria-hidden="true"
+                                            >
+                                                *
+                                            </span>
                                         </Label>
                                         <Input
                                             id="name"
@@ -237,6 +259,12 @@ export function ServiceDialog({
                                     <div className="grid gap-2">
                                         <Label htmlFor="description">
                                             Description
+                                            <span
+                                                className="text-primary"
+                                                aria-hidden="true"
+                                            >
+                                                *
+                                            </span>
                                         </Label>
                                         <textarea
                                             id="description"

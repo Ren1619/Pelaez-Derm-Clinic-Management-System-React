@@ -14,8 +14,23 @@ export default function ConfirmPassword() {
             <Form {...store.form()} resetOnSuccess={['password']}>
                 {({ processing, errors }) => (
                     <div className="space-y-6">
+                        <p className="text-sm text-foreground">
+                            All fields with{' '}
+                            <span className="text-primary" aria-hidden="true">
+                                *
+                            </span>{' '}
+                            are required.
+                        </p>
                         <div className="grid gap-2">
-                            <Label htmlFor="password">Password</Label>
+                            <Label htmlFor="password">
+                                Password
+                                <span
+                                    className="text-primary"
+                                    aria-hidden="true"
+                                >
+                                    *
+                                </span>
+                            </Label>
                             <PasswordInput
                                 id="password"
                                 name="password"

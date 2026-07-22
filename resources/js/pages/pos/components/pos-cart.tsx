@@ -86,6 +86,13 @@ export function PosCart({
     return (
         <aside className="flex min-h-[34rem] w-full shrink-0 flex-col overflow-hidden rounded-xl border bg-card shadow-sm lg:w-96">
             <div className="grid grid-cols-2 gap-3 border-b p-3 text-xs">
+                <p className="col-span-2 text-left text-sm text-foreground">
+                    All fields with{' '}
+                    <span className="text-primary" aria-hidden="true">
+                        *
+                    </span>{' '}
+                    are required.
+                </p>
                 <div>
                     <p className="text-muted-foreground">Invoice No.</p>
                     <p className="mt-1 font-semibold">{invoiceNumber}</p>
@@ -96,7 +103,17 @@ export function PosCart({
                             dateStyle: 'medium',
                         }).format(new Date())}
                     </p>
+                    <Label
+                        htmlFor="customer-name"
+                        className="mt-2 justify-end text-xs"
+                    >
+                        Customer name
+                        <span className="text-primary" aria-hidden="true">
+                            *
+                        </span>
+                    </Label>
                     <Input
+                        id="customer-name"
                         value={customerName}
                         onChange={(event) => {
                             onCustomerNameChange(event.target.value);
@@ -105,7 +122,7 @@ export function PosCart({
                         }}
                         onFocus={() => setShowPatients(true)}
                         placeholder="Customer name"
-                        className="mt-2 h-8 text-xs"
+                        className="mt-1 h-8 text-xs"
                         aria-label="Customer name"
                     />
                     {selectedPatientId !== null && (
@@ -233,6 +250,9 @@ export function PosCart({
                             className="text-xs font-normal"
                         >
                             Discount
+                            <span className="text-primary" aria-hidden="true">
+                                *
+                            </span>
                         </Label>
                         <div className="flex items-center gap-1">
                             <Input
@@ -272,7 +292,12 @@ export function PosCart({
 
                 <div className="space-y-2 rounded-lg border bg-card p-3">
                     <div className="flex items-center justify-between gap-3">
-                        <Label className="text-xs">Payment</Label>
+                        <Label className="text-xs">
+                            Payment
+                            <span className="text-primary" aria-hidden="true">
+                                *
+                            </span>
+                        </Label>
                         <Select
                             value={paymentMethod}
                             onValueChange={(value) =>
