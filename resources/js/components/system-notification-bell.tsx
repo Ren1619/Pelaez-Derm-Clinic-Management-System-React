@@ -24,6 +24,11 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { index as appointmentsIndex } from '@/routes/appointments';
 import { index as distributionsIndex } from '@/routes/distributions';
 import { index as feedbackIndex } from '@/routes/feedback';
@@ -163,23 +168,28 @@ export function SystemNotificationBell({ audience }: { audience: Audience }) {
 
     return (
         <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-                <Button
-                    variant="ghost"
-                    size="icon"
-                    className="relative"
-                    aria-label={`Notifications${notificationSummary.unread_count > 0 ? `, ${notificationSummary.unread_count} unseen` : ''}`}
-                >
-                    <Bell className="size-5" />
-                    {notificationSummary.unread_count > 0 && (
-                        <span className="absolute top-0 right-0 flex min-w-5 translate-x-1/4 -translate-y-1/4 items-center justify-center rounded-full bg-linear-to-br from-brand-bright via-brand-mid to-brand-deep px-1 text-[10px] font-bold text-white">
-                            {notificationSummary.unread_count > 99
-                                ? '99+'
-                                : notificationSummary.unread_count}
-                        </span>
-                    )}
-                </Button>
-            </DropdownMenuTrigger>
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <DropdownMenuTrigger asChild>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="relative"
+                            aria-label={`Notifications${notificationSummary.unread_count > 0 ? `, ${notificationSummary.unread_count} unseen` : ''}`}
+                        >
+                            <Bell className="size-5" />
+                            {notificationSummary.unread_count > 0 && (
+                                <span className="absolute top-0 right-0 flex min-w-5 translate-x-1/4 -translate-y-1/4 items-center justify-center rounded-full bg-linear-to-br from-brand-bright via-brand-mid to-brand-deep px-1 text-[10px] font-bold text-white">
+                                    {notificationSummary.unread_count > 99
+                                        ? '99+'
+                                        : notificationSummary.unread_count}
+                                </span>
+                            )}
+                        </Button>
+                    </DropdownMenuTrigger>
+                </TooltipTrigger>
+                <TooltipContent>Notifications</TooltipContent>
+            </Tooltip>
             <DropdownMenuContent
                 align="end"
                 className="w-[min(24rem,calc(100vw-2rem))] p-0"

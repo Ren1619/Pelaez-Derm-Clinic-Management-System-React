@@ -15,6 +15,7 @@ import { useMemo, useState } from 'react';
 import { ClickableTableRow } from '@/components/clickable-table-row';
 import { DataTableEmptyState } from '@/components/data-table-empty-state';
 import { DataTableLayout } from '@/components/data-table-layout';
+import { TooltipIconButton } from '@/components/tooltip-icon-button';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import {
@@ -42,6 +43,11 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { checkout, index } from '@/routes/pos';
 import { destroy as destroyExpense } from '@/routes/pos/expenses';
 import type {
@@ -672,7 +678,7 @@ function CatalogGrid({
                         >
                             <button
                                 type="button"
-                                className="absolute inset-0 block h-full w-full bg-card text-left focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none focus-visible:ring-inset"
+                                className="absolute inset-0 block h-full w-full cursor-pointer bg-card text-left focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none focus-visible:ring-inset"
                                 onClick={() =>
                                     (onAdd as (item: PosProduct) => void)(
                                         product,
@@ -719,15 +725,21 @@ function CatalogGrid({
                                     </span>
                                 </span>
                             </button>
-                            <button
-                                type="button"
-                                className="absolute top-2 right-2 z-10 flex size-8 items-center justify-center rounded-full border bg-background/90 text-foreground shadow-sm backdrop-blur-sm transition-colors hover:bg-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
-                                onClick={() => onViewProduct?.(product)}
-                                aria-label={`View information for ${product.name}`}
-                                title={`View information for ${product.name}`}
-                            >
-                                <Info className="size-4" />
-                            </button>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <button
+                                        type="button"
+                                        className="absolute top-2 right-2 z-10 flex size-8 cursor-pointer items-center justify-center rounded-full border bg-background/90 text-foreground shadow-sm backdrop-blur-sm transition-colors hover:bg-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
+                                        onClick={() => onViewProduct?.(product)}
+                                        aria-label={`View information for ${product.name}`}
+                                    >
+                                        <Info className="size-4" />
+                                    </button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    View information for {product.name}
+                                </TooltipContent>
+                            </Tooltip>
                         </article>
                     );
                 }
@@ -741,7 +753,7 @@ function CatalogGrid({
                     >
                         <button
                             type="button"
-                            className="absolute inset-0 block h-full w-full bg-card text-left focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none focus-visible:ring-inset"
+                            className="absolute inset-0 block h-full w-full cursor-pointer bg-card text-left focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none focus-visible:ring-inset"
                             onClick={() =>
                                 (onAdd as (item: PosService) => void)(service)
                             }
@@ -784,15 +796,21 @@ function CatalogGrid({
                                 </span>
                             </span>
                         </button>
-                        <button
-                            type="button"
-                            className="absolute top-2 right-2 z-10 flex size-8 items-center justify-center rounded-full border bg-background/90 text-foreground shadow-sm backdrop-blur-sm transition-colors hover:bg-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
-                            onClick={() => onViewService?.(service)}
-                            aria-label={`View information for ${service.name}`}
-                            title={`View information for ${service.name}`}
-                        >
-                            <Info className="size-4" />
-                        </button>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <button
+                                    type="button"
+                                    className="absolute top-2 right-2 z-10 flex size-8 cursor-pointer items-center justify-center rounded-full border bg-background/90 text-foreground shadow-sm backdrop-blur-sm transition-colors hover:bg-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
+                                    onClick={() => onViewService?.(service)}
+                                    aria-label={`View information for ${service.name}`}
+                                >
+                                    <Info className="size-4" />
+                                </button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                View information for {service.name}
+                            </TooltipContent>
+                        </Tooltip>
                     </article>
                 );
             })}
@@ -1002,10 +1020,11 @@ function Expenses({
                                     {currency.format(Number(expense.amount))}
                                 </TableCell>
                                 <TableCell className="text-right">
-                                    <Button
+                                    <TooltipIconButton
                                         size="icon"
                                         variant="ghost"
                                         className="text-destructive"
+                                        tooltip={`Delete ${expense.description}`}
                                         onClick={() => {
                                             if (
                                                 window.confirm(
@@ -1022,10 +1041,7 @@ function Expenses({
                                         }}
                                     >
                                         <Trash2 />
-                                        <span className="sr-only">
-                                            Delete expense
-                                        </span>
-                                    </Button>
+                                    </TooltipIconButton>
                                 </TableCell>
                             </TableRow>
                         ))}

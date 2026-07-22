@@ -2,7 +2,6 @@ import { Head, router, useForm, usePage } from '@inertiajs/react';
 import {
     ArrowDownToLine,
     ArrowUpFromLine,
-    Eye,
     PackageCheck,
     Plus,
     Search,
@@ -11,10 +10,12 @@ import {
     XCircle,
 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
+import { ClickableTableRow } from '@/components/clickable-table-row';
 import { DataTableEmptyState } from '@/components/data-table-empty-state';
 import { DataTableLayout } from '@/components/data-table-layout';
 import { DataTablePagination } from '@/components/data-table-pagination';
 import Heading from '@/components/heading';
+import { TooltipIconButton } from '@/components/tooltip-icon-button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -466,7 +467,11 @@ export default function DistributionIndex({
                         </TableHeader>
                         <TableBody>
                             {distributions.data.map((distribution) => (
-                                <TableRow key={distribution.distribution_ID}>
+                                <ClickableTableRow
+                                    key={distribution.distribution_ID}
+                                    accessibleLabel={`View distribution ${distribution.distribution_ID}`}
+                                    onActivate={() => setDetails(distribution)}
+                                >
                                     <TableCell className="font-medium">
                                         #{distribution.distribution_ID}
                                     </TableCell>
@@ -507,9 +512,6 @@ export default function DistributionIndex({
                                     <TableCell>
                                         <DistributionActions
                                             distribution={distribution}
-                                            onDetails={() =>
-                                                setDetails(distribution)
-                                            }
                                             onSend={() =>
                                                 setDistributionToSend(
                                                     distribution,
@@ -523,7 +525,7 @@ export default function DistributionIndex({
                                             }}
                                         />
                                     </TableCell>
-                                </TableRow>
+                                </ClickableTableRow>
                             ))}
                             {distributions.data.length === 0 && (
                                 <DataTableEmptyState
@@ -928,29 +930,25 @@ export default function DistributionIndex({
 
 function DistributionActions({
     distribution,
-    onDetails,
     onSend,
     onCancel,
 }: {
     distribution: Distribution;
-    onDetails: () => void;
     onSend: () => void;
     onCancel: () => void;
 }) {
     return (
         <div className="flex justify-end gap-1">
-            <Button
-                size="icon"
-                variant="ghost"
-                onClick={onDetails}
-                title="View details"
-            >
-                <Eye />
-            </Button>
             {distribution.can.send && (
-                <Button size="sm" onClick={onSend}>
-                    <Send /> Send
-                </Button>
+                <TooltipIconButton
+                    size="icon"
+                    variant="ghost"
+                    tooltip="Send distribution"
+                    aria-label="Send distribution"
+                    onClick={onSend}
+                >
+                    <Send />
+                </TooltipIconButton>
             )}
             {distribution.can.receive && (
                 <Button
@@ -973,17 +971,17 @@ function DistributionActions({
                 </Button>
             )}
             {distribution.can.cancel && (
-                <Button
+                <TooltipIconButton
                     size="icon"
                     variant="ghost"
                     onClick={onCancel}
-                    title="Cancel distribution"
+                    tooltip="Cancel distribution"
                 >
                     <XCircle />
-                </Button>
+                </TooltipIconButton>
             )}
             {distribution.can.delete && (
-                <Button
+                <TooltipIconButton
                     size="icon"
                     variant="ghost"
                     onClick={() =>
@@ -998,10 +996,10 @@ function DistributionActions({
                             },
                         )
                     }
-                    title="Delete record"
+                    tooltip="Delete record"
                 >
                     <Trash2 />
-                </Button>
+                </TooltipIconButton>
             )}
         </div>
     );

@@ -309,26 +309,28 @@ export default function AppointmentsIndex(props: Props) {
                             </div>
                             <div className="p-4 md:p-6">
                                 <div className="mb-4 flex items-center justify-between">
-                                    <Button
+                                    <TooltipIconButton
                                         size="icon"
                                         variant="outline"
+                                        tooltip="Previous month"
                                         onClick={() => changeMonth(-1)}
                                     >
                                         <ChevronLeft />
-                                    </Button>
+                                    </TooltipIconButton>
                                     <h3 className="text-lg font-semibold">
                                         {monthDate.toLocaleDateString([], {
                                             month: 'long',
                                             year: 'numeric',
                                         })}
                                     </h3>
-                                    <Button
+                                    <TooltipIconButton
                                         size="icon"
                                         variant="outline"
+                                        tooltip="Next month"
                                         onClick={() => changeMonth(1)}
                                     >
                                         <ChevronRight />
-                                    </Button>
+                                    </TooltipIconButton>
                                 </div>
                                 <div className="grid grid-cols-7 border-t border-l text-center text-xs text-muted-foreground">
                                     {[

@@ -5,6 +5,7 @@ import { DataTableEmptyState } from '@/components/data-table-empty-state';
 import { DataTableLayout } from '@/components/data-table-layout';
 import { DataTablePagination } from '@/components/data-table-pagination';
 import Heading from '@/components/heading';
+import { TooltipIconButton } from '@/components/tooltip-icon-button';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -355,14 +356,15 @@ function FeedbackTable({
                                 })}
                             </TableCell>
                             <TableCell className="text-right">
-                                <Button
+                                <TooltipIconButton
                                     variant="ghost"
                                     size="icon"
+                                    tooltip="View feedback"
                                     onClick={() => onView(feedback)}
                                     aria-label="View feedback"
                                 >
                                     <Eye />
-                                </Button>
+                                </TooltipIconButton>
                             </TableCell>
                         </TableRow>
                     );

@@ -17,6 +17,7 @@ import {
 } from '@/components/data-table-layout';
 import { DataTablePagination } from '@/components/data-table-pagination';
 import Heading from '@/components/heading';
+import { TooltipIconButton } from '@/components/tooltip-icon-button';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
@@ -255,27 +256,29 @@ export default function CategoriesIndex({
                                     </TableCell>
                                     <TableCell>
                                         <div className="flex justify-end gap-1">
-                                            <Button
+                                            <TooltipIconButton
                                                 variant="ghost"
                                                 size="icon"
+                                                tooltip={`Edit ${category.category_name}`}
                                                 onClick={() =>
                                                     openEditDialog(category)
                                                 }
                                                 aria-label={`Edit ${category.category_name}`}
                                             >
                                                 <Pencil />
-                                            </Button>
-                                            <Button
+                                            </TooltipIconButton>
+                                            <TooltipIconButton
                                                 variant="ghost"
                                                 size="icon"
                                                 className="text-destructive hover:text-destructive"
+                                                tooltip={`Delete ${category.category_name}`}
                                                 onClick={() =>
                                                     openDeleteDialog(category)
                                                 }
                                                 aria-label={`Delete ${category.category_name}`}
                                             >
                                                 <Trash2 />
-                                            </Button>
+                                            </TooltipIconButton>
                                         </div>
                                     </TableCell>
                                 </TableRow>

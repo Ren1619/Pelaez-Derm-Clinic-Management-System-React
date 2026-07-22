@@ -23,6 +23,7 @@ import {
     updateMedication,
 } from '@/actions/App/Http/Controllers/PatientHealthRecordController';
 import InputError from '@/components/input-error';
+import { TooltipIconButton } from '@/components/tooltip-icon-button';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -413,13 +414,14 @@ function SummaryAccordion({
                                 placeholder={`Search ${title.toLowerCase()}`}
                             />
                         </div>
-                        <Button
+                        <TooltipIconButton
                             size="icon"
+                            tooltip={`Add ${kind}`}
                             onClick={onAdd}
                             aria-label={`Add ${kind}`}
                         >
                             <Plus />
-                        </Button>
+                        </TooltipIconButton>
                     </div>
                     {filtered.map((item) => (
                         <div
@@ -429,22 +431,24 @@ function SummaryAccordion({
                             <div className="flex items-start justify-between gap-2">
                                 <b>{recordTitle(item)}</b>
                                 <div className="flex">
-                                    <Button
+                                    <TooltipIconButton
                                         variant="ghost"
                                         size="icon"
                                         className="size-8"
+                                        tooltip={`Edit ${recordTitle(item)}`}
                                         onClick={() => onEdit(item)}
                                     >
                                         <Pencil className="size-4" />
-                                    </Button>
-                                    <Button
+                                    </TooltipIconButton>
+                                    <TooltipIconButton
                                         variant="ghost"
                                         size="icon"
                                         className="size-8 text-destructive"
+                                        tooltip={`Delete ${recordTitle(item)}`}
                                         onClick={() => onDelete(item)}
                                     >
                                         <Trash2 className="size-4" />
-                                    </Button>
+                                    </TooltipIconButton>
                                 </div>
                             </div>
                             <p className="mt-1 text-muted-foreground">

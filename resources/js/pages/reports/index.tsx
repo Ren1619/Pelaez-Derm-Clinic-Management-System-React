@@ -16,6 +16,7 @@ import { DataTableEmptyState } from '@/components/data-table-empty-state';
 import { DataTableLayout } from '@/components/data-table-layout';
 import { DataTablePagination } from '@/components/data-table-pagination';
 import Heading from '@/components/heading';
+import { TooltipIconButton } from '@/components/tooltip-icon-button';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -710,22 +711,22 @@ function SeriesCard({
                             series.reduce((sum, point) => sum + point.total, 0),
                         )}
                     </span>
-                    <Button
+                    <TooltipIconButton
                         variant="ghost"
                         size="icon"
                         asChild
                         className="print:hidden"
+                        tooltip={`Print ${title}`}
                     >
                         <a
                             href={printUrl}
                             target="_blank"
                             rel="noreferrer"
                             aria-label={`Print ${title}`}
-                            title={`Print ${title}`}
                         >
                             <Printer />
                         </a>
-                    </Button>
+                    </TooltipIconButton>
                 </div>
             </CardHeader>
             <CardContent>

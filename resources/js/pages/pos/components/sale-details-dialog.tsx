@@ -2,6 +2,7 @@ import { Form, Link } from '@inertiajs/react';
 import { ArrowLeft, Printer, RotateCcw, Undo2 } from 'lucide-react';
 import { useState } from 'react';
 import InputError from '@/components/input-error';
+import { TooltipIconButton } from '@/components/tooltip-icon-button';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -65,15 +66,16 @@ export function SaleDetailsDialog({
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
                         {mode !== 'details' && (
-                            <Button
+                            <TooltipIconButton
                                 type="button"
                                 variant="ghost"
                                 size="icon"
                                 className="size-7"
+                                tooltip="Back to sale details"
                                 onClick={() => setMode('details')}
                             >
                                 <ArrowLeft />
-                            </Button>
+                            </TooltipIconButton>
                         )}
                         {mode === 'details'
                             ? `Sale ${sale.invoice_number}`

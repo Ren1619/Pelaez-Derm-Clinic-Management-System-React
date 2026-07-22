@@ -1,5 +1,6 @@
 import { Minus, Plus, ShoppingCart, WalletCards, X } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import { TooltipIconButton } from '@/components/tooltip-icon-button';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -168,36 +169,39 @@ export function PosCart({
                             </div>
                         </div>
                         <div className="flex shrink-0 items-center gap-1">
-                            <Button
+                            <TooltipIconButton
                                 type="button"
                                 variant="outline"
                                 size="icon"
                                 className="size-7"
+                                tooltip={`Decrease ${item.name}`}
                                 onClick={() => onDecrement(item.key)}
                                 aria-label={`Decrease ${item.name}`}
                             >
                                 <Minus className="size-3" />
-                            </Button>
-                            <Button
+                            </TooltipIconButton>
+                            <TooltipIconButton
                                 type="button"
                                 variant="outline"
                                 size="icon"
                                 className="size-7"
+                                tooltip={`Increase ${item.name}`}
                                 onClick={() => onIncrement(item.key)}
                                 aria-label={`Increase ${item.name}`}
                             >
                                 <Plus className="size-3" />
-                            </Button>
-                            <Button
+                            </TooltipIconButton>
+                            <TooltipIconButton
                                 type="button"
                                 variant="outline"
                                 size="icon"
                                 className="size-7 text-destructive"
+                                tooltip={`Remove ${item.name}`}
                                 onClick={() => onRemove(item.key)}
                                 aria-label={`Remove ${item.name}`}
                             >
                                 <X className="size-3" />
-                            </Button>
+                            </TooltipIconButton>
                         </div>
                     </div>
                 ))}

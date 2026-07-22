@@ -14,6 +14,11 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { StarRating } from '@/pages/feedback/components/feedback-dialogs';
 import { index, store } from '@/routes/patient/feedback';
 import type { Feedback, FeedbackAppointment, FeedbackPaginator } from '@/types';
@@ -242,20 +247,31 @@ function CreateFeedbackDialog({
                                             value <= (hoveredRating || rating);
 
                                         return (
-                                            <button
-                                                key={value}
-                                                type="button"
-                                                onClick={() => setRating(value)}
-                                                onMouseEnter={() =>
-                                                    setHoveredRating(value)
-                                                }
-                                                className="rounded-md p-1 transition-transform hover:scale-110 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-                                                aria-label={`${value} star${value === 1 ? '' : 's'}`}
-                                            >
-                                                <Star
-                                                    className={`size-9 ${active ? 'fill-current text-foreground' : 'text-muted-foreground/35'}`}
-                                                />
-                                            </button>
+                                            <Tooltip key={value}>
+                                                <TooltipTrigger asChild>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() =>
+                                                            setRating(value)
+                                                        }
+                                                        onMouseEnter={() =>
+                                                            setHoveredRating(
+                                                                value,
+                                                            )
+                                                        }
+                                                        className="rounded-md p-1 transition-transform hover:scale-110 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                                                        aria-label={`${value} star${value === 1 ? '' : 's'}`}
+                                                    >
+                                                        <Star
+                                                            className={`size-9 ${active ? 'fill-current text-foreground' : 'text-muted-foreground/35'}`}
+                                                        />
+                                                    </button>
+                                                </TooltipTrigger>
+                                                <TooltipContent>
+                                                    {value} star
+                                                    {value === 1 ? '' : 's'}
+                                                </TooltipContent>
+                                            </Tooltip>
                                         );
                                     })}
                                     <span className="ml-2 font-medium">
