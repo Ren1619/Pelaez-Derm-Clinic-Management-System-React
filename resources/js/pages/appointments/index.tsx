@@ -173,7 +173,7 @@ export default function AppointmentsIndex(props: Props) {
                     ))}
                 </div>
 
-                <Card className="gap-0 overflow-hidden py-0">
+                <DataTableLayout>
                     <div className="flex flex-col gap-3 border-b p-4 lg:flex-row lg:items-center lg:justify-between">
                         <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
                             <div className="relative w-full sm:w-72">
