@@ -103,8 +103,9 @@ function GroupRows({
     return (
         <>
             <ClickableTableRow
-                accessibleLabel={`View ${group.name}`}
-                onActivate={() => onView(group.primary_batch)}
+                accessibleLabel={`${expanded ? 'Collapse' : 'Expand'} ${group.name} batches`}
+                onActivate={onToggle}
+                aria-expanded={expanded}
             >
                 <td className="px-4 py-3">
                     <TooltipIconButton
