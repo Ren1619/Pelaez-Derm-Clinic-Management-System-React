@@ -34,7 +34,7 @@ abstract class ServiceRequest extends FormRequest
             'description' => ['required', 'string', 'max:1000'],
             'new_image' => [
                 'nullable',
-                File::types(['jpg', 'jpeg', 'png', 'webp', 'heic', 'heif'])->max(20 * 1024),
+                File::types(['jpg', 'jpeg', 'png', 'webp'])->max(20 * 1024),
             ],
         ];
     }
@@ -75,7 +75,7 @@ abstract class ServiceRequest extends FormRequest
             'name.regex' => "The service name may only contain letters, numbers, spaces, and / - & ' ( ) [ ] % symbols.",
             'name.unique' => 'A service with this name already exists in the selected category.',
             'description.required' => 'The description cannot be empty or contain only whitespace.',
-            'new_image.mimes' => 'The image must be a JPEG, PNG, WebP, HEIC, or HEIF file.',
+            'new_image.mimes' => 'The image must be a JPEG, PNG, or WebP file.',
             'new_image.max' => 'The image must not be larger than 20 MB.',
         ];
     }

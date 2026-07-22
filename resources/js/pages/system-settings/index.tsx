@@ -1,6 +1,7 @@
 import { Head, useForm } from '@inertiajs/react';
 import { ImageIcon, Save, X } from 'lucide-react';
-import { type FormEvent, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import type { FormEvent } from 'react';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
@@ -86,7 +87,12 @@ function Field({
     return (
         <div className="space-y-2">
             <Label>
-                {label} {required && <span className="text-destructive">*</span>}
+                {label}
+                {required && (
+                    <span className="text-primary" aria-hidden="true">
+                        *
+                    </span>
+                )}
             </Label>
             {children}
             <InputError message={error} />
@@ -118,7 +124,9 @@ function ImageField({
 
     useEffect(
         () => () => {
-            if (file && previewUrl) URL.revokeObjectURL(previewUrl);
+            if (file && previewUrl) {
+                URL.revokeObjectURL(previewUrl);
+            }
         },
         [file, previewUrl],
     );
@@ -128,7 +136,11 @@ function ImageField({
             <div className="overflow-hidden rounded-lg border bg-muted/30">
                 <div className="flex min-h-44 items-center justify-center p-4">
                     {previewUrl ? (
-                        <img src={previewUrl} alt={`${label} preview`} className="max-h-64 w-full rounded-md object-contain" />
+                        <img
+                            src={previewUrl}
+                            alt={`${label} preview`}
+                            className="max-h-64 w-full rounded-md object-contain"
+                        />
                     ) : (
                         <div className="flex flex-col items-center gap-2 text-muted-foreground">
                             <ImageIcon className="size-10" />
@@ -143,24 +155,37 @@ function ImageField({
                             type="file"
                             accept=".jpg,.jpeg,.png,.webp,.svg"
                             className="sr-only"
-                            onChange={(event) => onFile(event.target.files?.[0] ?? null)}
+                            onChange={(event) =>
+                                onFile(event.target.files?.[0] ?? null)
+                            }
                         />
                     </Label>
                     {(previewUrl || existingUrl) && (
-                        <Button type="button" variant="outline" onClick={onRemove}>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={onRemove}
+                        >
                             <X /> Remove
                         </Button>
                     )}
                 </div>
             </div>
-            <p className="text-xs text-muted-foreground">JPG, PNG, WebP, or SVG. Maximum 5 MB.</p>
+            <p className="text-xs text-muted-foreground">
+                JPG, PNG, WebP, or SVG. Maximum 5 MB.
+            </p>
         </Field>
     );
 }
 
-export default function SystemSettingsIndex({ settings }: { settings: SystemSettings }) {
+export default function SystemSettingsIndex({
+    settings,
+}: {
+    settings: SystemSettings;
+}) {
     const [activeTab, setActiveTab] = useState<SettingsTab>('landing');
-    const { data, setData, post, processing, errors, clearErrors } = useForm<SettingsForm>(formValues(settings));
+    const { data, setData, post, processing, errors, clearErrors } =
+        useForm<SettingsForm>(formValues(settings));
 
     useEffect(() => {
         setData(formValues(settings));
@@ -189,10 +214,16 @@ export default function SystemSettingsIndex({ settings }: { settings: SystemSett
         <>
             <Head title="System Settings" />
             <div className="p-4 md:p-6">
-                <Heading title="System Settings" description="Manage the clinic's public website, branding, and business information." />
+                <Heading
+                    title="System Settings"
+                    description="Manage the clinic's public website, branding, and business information."
+                />
 
                 <div className="mx-auto max-w-4xl">
-                    <div className="mb-6 flex gap-1 overflow-x-auto border-b" role="tablist">
+                    <div
+                        className="mb-6 flex gap-1 overflow-x-auto border-b"
+                        role="tablist"
+                    >
                         {tabs.map((tab) => (
                             <button
                                 key={tab.id}
@@ -200,7 +231,10 @@ export default function SystemSettingsIndex({ settings }: { settings: SystemSett
                                 role="tab"
                                 aria-selected={activeTab === tab.id}
                                 className={`shrink-0 border-b-2 px-4 py-3 text-sm font-medium transition-colors ${activeTab === tab.id ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'}`}
-                                onClick={() => { setActiveTab(tab.id); clearErrors(); }}
+                                onClick={() => {
+                                    setActiveTab(tab.id);
+                                    clearErrors();
+                                }}
                             >
                                 {tab.label}
                             </button>
@@ -208,64 +242,447 @@ export default function SystemSettingsIndex({ settings }: { settings: SystemSett
                     </div>
 
                     <form onSubmit={submit} className="space-y-6">
+                        <p className="text-sm text-foreground">
+                            All fields with{' '}
+                            <span className="text-primary" aria-hidden="true">
+                                *
+                            </span>{' '}
+                            are required.
+                        </p>
                         {activeTab === 'landing' && (
                             <>
-                                <SettingsCard title="Hero Section" description="The first content visitors see on the landing page.">
-                                    <ImageField label="Hero image" existingUrl={settings.landing_hero_image_url} file={data.landing_hero_image_file} removed={data.remove_landing_hero_image} error={errors.landing_hero_image_file} onFile={(file) => { setData('landing_hero_image_file', file); setData('remove_landing_hero_image', false); }} onRemove={() => { setData('landing_hero_image_file', null); setData('remove_landing_hero_image', true); }} />
+                                <SettingsCard
+                                    title="Hero Section"
+                                    description="The first content visitors see on the landing page."
+                                >
+                                    <ImageField
+                                        label="Hero image"
+                                        existingUrl={
+                                            settings.landing_hero_image_url
+                                        }
+                                        file={data.landing_hero_image_file}
+                                        removed={data.remove_landing_hero_image}
+                                        error={errors.landing_hero_image_file}
+                                        onFile={(file) => {
+                                            setData(
+                                                'landing_hero_image_file',
+                                                file,
+                                            );
+                                            setData(
+                                                'remove_landing_hero_image',
+                                                false,
+                                            );
+                                        }}
+                                        onRemove={() => {
+                                            setData(
+                                                'landing_hero_image_file',
+                                                null,
+                                            );
+                                            setData(
+                                                'remove_landing_hero_image',
+                                                true,
+                                            );
+                                        }}
+                                    />
                                     <div className="grid gap-4 md:grid-cols-2">
-                                        <Field label="Primary tagline" required error={errors.landing_primary_tagline}><Input value={data.landing_primary_tagline} onChange={(e) => setData('landing_primary_tagline', e.target.value)} /></Field>
-                                        <Field label="Secondary tagline" required error={errors.landing_secondary_tagline}><Input value={data.landing_secondary_tagline} onChange={(e) => setData('landing_secondary_tagline', e.target.value)} /></Field>
+                                        <Field
+                                            label="Primary tagline"
+                                            required
+                                            error={
+                                                errors.landing_primary_tagline
+                                            }
+                                        >
+                                            <Input
+                                                value={
+                                                    data.landing_primary_tagline
+                                                }
+                                                onChange={(e) =>
+                                                    setData(
+                                                        'landing_primary_tagline',
+                                                        e.target.value,
+                                                    )
+                                                }
+                                            />
+                                        </Field>
+                                        <Field
+                                            label="Secondary tagline"
+                                            required
+                                            error={
+                                                errors.landing_secondary_tagline
+                                            }
+                                        >
+                                            <Input
+                                                value={
+                                                    data.landing_secondary_tagline
+                                                }
+                                                onChange={(e) =>
+                                                    setData(
+                                                        'landing_secondary_tagline',
+                                                        e.target.value,
+                                                    )
+                                                }
+                                            />
+                                        </Field>
                                     </div>
-                                    <Field label="Year established" required error={errors.landing_year_started}><Input type="number" min="1900" max={new Date().getFullYear()} value={data.landing_year_started} onChange={(e) => setData('landing_year_started', e.target.value)} /></Field>
+                                    <Field
+                                        label="Year established"
+                                        required
+                                        error={errors.landing_year_started}
+                                    >
+                                        <Input
+                                            type="number"
+                                            min="1900"
+                                            max={new Date().getFullYear()}
+                                            value={data.landing_year_started}
+                                            onChange={(e) =>
+                                                setData(
+                                                    'landing_year_started',
+                                                    e.target.value,
+                                                )
+                                            }
+                                        />
+                                    </Field>
                                 </SettingsCard>
 
                                 <SettingsCard title="About Section">
-                                    <ImageField label="About image" existingUrl={settings.landing_about_image_url} file={data.landing_about_image_file} removed={data.remove_landing_about_image} error={errors.landing_about_image_file} onFile={(file) => { setData('landing_about_image_file', file); setData('remove_landing_about_image', false); }} onRemove={() => { setData('landing_about_image_file', null); setData('remove_landing_about_image', true); }} />
-                                    <Field label="Description" required error={errors.landing_about_description}><textarea className={textareaClass} value={data.landing_about_description} onChange={(e) => setData('landing_about_description', e.target.value)} /></Field>
+                                    <ImageField
+                                        label="About image"
+                                        existingUrl={
+                                            settings.landing_about_image_url
+                                        }
+                                        file={data.landing_about_image_file}
+                                        removed={
+                                            data.remove_landing_about_image
+                                        }
+                                        error={errors.landing_about_image_file}
+                                        onFile={(file) => {
+                                            setData(
+                                                'landing_about_image_file',
+                                                file,
+                                            );
+                                            setData(
+                                                'remove_landing_about_image',
+                                                false,
+                                            );
+                                        }}
+                                        onRemove={() => {
+                                            setData(
+                                                'landing_about_image_file',
+                                                null,
+                                            );
+                                            setData(
+                                                'remove_landing_about_image',
+                                                true,
+                                            );
+                                        }}
+                                    />
+                                    <Field
+                                        label="Description"
+                                        required
+                                        error={errors.landing_about_description}
+                                    >
+                                        <textarea
+                                            className={textareaClass}
+                                            value={
+                                                data.landing_about_description
+                                            }
+                                            onChange={(e) =>
+                                                setData(
+                                                    'landing_about_description',
+                                                    e.target.value,
+                                                )
+                                            }
+                                        />
+                                    </Field>
                                     <div className="space-y-3">
-                                        <Label>Specializations <span className="text-destructive">*</span></Label>
+                                        <Label>
+                                            Specializations
+                                            <span
+                                                className="text-primary"
+                                                aria-hidden="true"
+                                            >
+                                                *
+                                            </span>
+                                        </Label>
                                         {[0, 1, 2].map((position) => (
                                             <div key={position}>
-                                                <Input placeholder={`Specialization ${position + 1}${position ? ' (optional)' : ''}`} value={data.landing_specializations[position] ?? ''} onChange={(e) => setSpecialization(position, e.target.value)} />
-                                                <InputError message={errors[`landing_specializations.${position}`]} />
+                                                <Input
+                                                    placeholder={`Specialization ${position + 1}${position ? ' (optional)' : ''}`}
+                                                    value={
+                                                        data
+                                                            .landing_specializations[
+                                                            position
+                                                        ] ?? ''
+                                                    }
+                                                    onChange={(e) =>
+                                                        setSpecialization(
+                                                            position,
+                                                            e.target.value,
+                                                        )
+                                                    }
+                                                />
+                                                <InputError
+                                                    message={
+                                                        errors[
+                                                            `landing_specializations.${position}`
+                                                        ]
+                                                    }
+                                                />
                                             </div>
                                         ))}
                                     </div>
                                 </SettingsCard>
 
-                                <SettingsCard title="Homepage Summaries" description="Short descriptions shown in the landing page sections.">
-                                    <Field label="Services summary" required error={errors.landing_services_description}><textarea className={textareaClass} value={data.landing_services_description} onChange={(e) => setData('landing_services_description', e.target.value)} /></Field>
-                                    <Field label="Branches summary" required error={errors.landing_branches_description}><textarea className={textareaClass} value={data.landing_branches_description} onChange={(e) => setData('landing_branches_description', e.target.value)} /></Field>
-                                    <Field label="Contact summary" required error={errors.landing_contact_description}><textarea className={textareaClass} value={data.landing_contact_description} onChange={(e) => setData('landing_contact_description', e.target.value)} /></Field>
-                                    <Field label="Business email" required error={errors.business_email}><Input type="email" value={data.business_email} onChange={(e) => setData('business_email', e.target.value)} /></Field>
+                                <SettingsCard
+                                    title="Homepage Summaries"
+                                    description="Short descriptions shown in the landing page sections."
+                                >
+                                    <Field
+                                        label="Services summary"
+                                        required
+                                        error={
+                                            errors.landing_services_description
+                                        }
+                                    >
+                                        <textarea
+                                            className={textareaClass}
+                                            value={
+                                                data.landing_services_description
+                                            }
+                                            onChange={(e) =>
+                                                setData(
+                                                    'landing_services_description',
+                                                    e.target.value,
+                                                )
+                                            }
+                                        />
+                                    </Field>
+                                    <Field
+                                        label="Branches summary"
+                                        required
+                                        error={
+                                            errors.landing_branches_description
+                                        }
+                                    >
+                                        <textarea
+                                            className={textareaClass}
+                                            value={
+                                                data.landing_branches_description
+                                            }
+                                            onChange={(e) =>
+                                                setData(
+                                                    'landing_branches_description',
+                                                    e.target.value,
+                                                )
+                                            }
+                                        />
+                                    </Field>
+                                    <Field
+                                        label="Contact summary"
+                                        required
+                                        error={
+                                            errors.landing_contact_description
+                                        }
+                                    >
+                                        <textarea
+                                            className={textareaClass}
+                                            value={
+                                                data.landing_contact_description
+                                            }
+                                            onChange={(e) =>
+                                                setData(
+                                                    'landing_contact_description',
+                                                    e.target.value,
+                                                )
+                                            }
+                                        />
+                                    </Field>
+                                    <Field
+                                        label="Business email"
+                                        required
+                                        error={errors.business_email}
+                                    >
+                                        <Input
+                                            type="email"
+                                            value={data.business_email}
+                                            onChange={(e) =>
+                                                setData(
+                                                    'business_email',
+                                                    e.target.value,
+                                                )
+                                            }
+                                        />
+                                    </Field>
                                 </SettingsCard>
 
                                 <SettingsCard title="Call to Action and Footer">
-                                    <Field label="Call-to-action title" required error={errors.landing_cta_title}><Input value={data.landing_cta_title} onChange={(e) => setData('landing_cta_title', e.target.value)} /></Field>
-                                    <Field label="Call-to-action description" required error={errors.landing_cta_description}><textarea className={textareaClass} value={data.landing_cta_description} onChange={(e) => setData('landing_cta_description', e.target.value)} /></Field>
-                                    <Field label="Operating days" required error={errors.footer_days}><Input value={data.footer_days} onChange={(e) => setData('footer_days', e.target.value)} /></Field>
+                                    <Field
+                                        label="Call-to-action title"
+                                        required
+                                        error={errors.landing_cta_title}
+                                    >
+                                        <Input
+                                            value={data.landing_cta_title}
+                                            onChange={(e) =>
+                                                setData(
+                                                    'landing_cta_title',
+                                                    e.target.value,
+                                                )
+                                            }
+                                        />
+                                    </Field>
+                                    <Field
+                                        label="Call-to-action description"
+                                        required
+                                        error={errors.landing_cta_description}
+                                    >
+                                        <textarea
+                                            className={textareaClass}
+                                            value={data.landing_cta_description}
+                                            onChange={(e) =>
+                                                setData(
+                                                    'landing_cta_description',
+                                                    e.target.value,
+                                                )
+                                            }
+                                        />
+                                    </Field>
+                                    <Field
+                                        label="Operating days"
+                                        required
+                                        error={errors.footer_days}
+                                    >
+                                        <Input
+                                            value={data.footer_days}
+                                            onChange={(e) =>
+                                                setData(
+                                                    'footer_days',
+                                                    e.target.value,
+                                                )
+                                            }
+                                        />
+                                    </Field>
                                     <div className="grid gap-4 sm:grid-cols-2">
-                                        <Field label="Opening time" required error={errors.footer_opens_at}><Input type="time" value={data.footer_opens_at} onChange={(e) => setData('footer_opens_at', e.target.value)} /></Field>
-                                        <Field label="Closing time" required error={errors.footer_closes_at}><Input type="time" value={data.footer_closes_at} onChange={(e) => setData('footer_closes_at', e.target.value)} /></Field>
+                                        <Field
+                                            label="Opening time"
+                                            required
+                                            error={errors.footer_opens_at}
+                                        >
+                                            <Input
+                                                type="time"
+                                                value={data.footer_opens_at}
+                                                onChange={(e) =>
+                                                    setData(
+                                                        'footer_opens_at',
+                                                        e.target.value,
+                                                    )
+                                                }
+                                            />
+                                        </Field>
+                                        <Field
+                                            label="Closing time"
+                                            required
+                                            error={errors.footer_closes_at}
+                                        >
+                                            <Input
+                                                type="time"
+                                                value={data.footer_closes_at}
+                                                onChange={(e) =>
+                                                    setData(
+                                                        'footer_closes_at',
+                                                        e.target.value,
+                                                    )
+                                                }
+                                            />
+                                        </Field>
                                     </div>
                                 </SettingsCard>
                             </>
                         )}
 
-                        {activeTab === 'services' && <PageSettingsCard prefix="services" title="Services Page" settings={settings} data={data} setData={setData} errors={errors} />}
-                        {activeTab === 'branches' && <PageSettingsCard prefix="branches" title="Branch Page" settings={settings} data={data} setData={setData} errors={errors} />}
-                        {activeTab === 'privacy' && <PageSettingsCard prefix="privacy" title="Privacy Notice Page" settings={settings} data={data} setData={setData} errors={errors} descriptionRequired />}
+                        {activeTab === 'services' && (
+                            <PageSettingsCard
+                                prefix="services"
+                                title="Services Page"
+                                settings={settings}
+                                data={data}
+                                setData={setData}
+                                errors={errors}
+                            />
+                        )}
+                        {activeTab === 'branches' && (
+                            <PageSettingsCard
+                                prefix="branches"
+                                title="Branch Page"
+                                settings={settings}
+                                data={data}
+                                setData={setData}
+                                errors={errors}
+                            />
+                        )}
+                        {activeTab === 'privacy' && (
+                            <PageSettingsCard
+                                prefix="privacy"
+                                title="Privacy Notice Page"
+                                settings={settings}
+                                data={data}
+                                setData={setData}
+                                errors={errors}
+                                descriptionRequired
+                            />
+                        )}
 
                         {activeTab === 'business' && (
-                            <SettingsCard title="Business Details" description="Used throughout the public website and clinic branding.">
-                                <ImageField label="Business logo" existingUrl={settings.business_logo_url} file={data.business_logo_file} removed={data.remove_business_logo} error={errors.business_logo_file} onFile={(file) => { setData('business_logo_file', file); setData('remove_business_logo', false); }} onRemove={() => { setData('business_logo_file', null); setData('remove_business_logo', true); }} />
-                                <Field label="Business name" required error={errors.business_name}><Input value={data.business_name} onChange={(e) => setData('business_name', e.target.value)} /></Field>
+                            <SettingsCard
+                                title="Business Details"
+                                description="Used throughout the public website and clinic branding."
+                            >
+                                <ImageField
+                                    label="Business logo"
+                                    existingUrl={settings.business_logo_url}
+                                    file={data.business_logo_file}
+                                    removed={data.remove_business_logo}
+                                    error={errors.business_logo_file}
+                                    onFile={(file) => {
+                                        setData('business_logo_file', file);
+                                        setData('remove_business_logo', false);
+                                    }}
+                                    onRemove={() => {
+                                        setData('business_logo_file', null);
+                                        setData('remove_business_logo', true);
+                                    }}
+                                />
+                                <Field
+                                    label="Business name"
+                                    required
+                                    error={errors.business_name}
+                                >
+                                    <Input
+                                        value={data.business_name}
+                                        onChange={(e) =>
+                                            setData(
+                                                'business_name',
+                                                e.target.value,
+                                            )
+                                        }
+                                    />
+                                </Field>
                             </SettingsCard>
                         )}
 
                         <div className="flex justify-end gap-3 border-t pt-4">
-                            <Button type="button" variant="outline" disabled={processing} onClick={cancelChanges}>Cancel</Button>
-                            <Button type="submit" disabled={processing}><Save />{processing ? 'Saving...' : 'Save changes'}</Button>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                disabled={processing}
+                                onClick={cancelChanges}
+                            >
+                                Cancel
+                            </Button>
+                            <Button type="submit" disabled={processing}>
+                                <Save />
+                                {processing ? 'Saving...' : 'Save changes'}
+                            </Button>
                         </div>
                     </form>
                 </div>
@@ -274,16 +691,37 @@ export default function SystemSettingsIndex({ settings }: { settings: SystemSett
     );
 }
 
-function SettingsCard({ title, description, children }: { title: string; description?: string; children: React.ReactNode }) {
+function SettingsCard({
+    title,
+    description,
+    children,
+}: {
+    title: string;
+    description?: string;
+    children: React.ReactNode;
+}) {
     return (
         <Card>
-            <CardHeader><CardTitle>{title}</CardTitle>{description && <CardDescription>{description}</CardDescription>}</CardHeader>
+            <CardHeader>
+                <CardTitle>{title}</CardTitle>
+                {description && (
+                    <CardDescription>{description}</CardDescription>
+                )}
+            </CardHeader>
             <CardContent className="space-y-5">{children}</CardContent>
         </Card>
     );
 }
 
-function PageSettingsCard({ prefix, title, settings, data, setData, errors, descriptionRequired = false }: {
+function PageSettingsCard({
+    prefix,
+    title,
+    settings,
+    data,
+    setData,
+    errors,
+    descriptionRequired = false,
+}: {
     prefix: 'services' | 'branches' | 'privacy';
     title: string;
     settings: SystemSettings;
@@ -300,11 +738,55 @@ function PageSettingsCard({ prefix, title, settings, data, setData, errors, desc
     const imageUrl = settings[`${prefix}_hero_image_url`];
 
     return (
-        <SettingsCard title={title} description="Changes are saved when you click Save changes.">
-            <ImageField label="Hero image" existingUrl={imageUrl} file={data[fileKey]} removed={data[removeKey]} error={errors[fileKey]} onFile={(file) => { setData(fileKey, file); setData(removeKey, false); }} onRemove={() => { setData(fileKey, null); setData(removeKey, true); }} />
-            <Field label="Hero description" error={errors[heroDescriptionKey]}><textarea className={textareaClass} value={data[heroDescriptionKey]} onChange={(e) => setData(heroDescriptionKey, e.target.value)} /></Field>
-            <Field label={`${title.replace(' Page', '')} title`} required error={errors[titleKey]}><Input value={data[titleKey]} onChange={(e) => setData(titleKey, e.target.value)} /></Field>
-            <Field label={`${title.replace(' Page', '')} description`} required={descriptionRequired} error={errors[descriptionKey]}><textarea className={textareaClass} value={data[descriptionKey]} onChange={(e) => setData(descriptionKey, e.target.value)} /></Field>
+        <SettingsCard
+            title={title}
+            description="Changes are saved when you click Save changes."
+        >
+            <ImageField
+                label="Hero image"
+                existingUrl={imageUrl}
+                file={data[fileKey]}
+                removed={data[removeKey]}
+                error={errors[fileKey]}
+                onFile={(file) => {
+                    setData(fileKey, file);
+                    setData(removeKey, false);
+                }}
+                onRemove={() => {
+                    setData(fileKey, null);
+                    setData(removeKey, true);
+                }}
+            />
+            <Field label="Hero description" error={errors[heroDescriptionKey]}>
+                <textarea
+                    className={textareaClass}
+                    value={data[heroDescriptionKey]}
+                    onChange={(e) =>
+                        setData(heroDescriptionKey, e.target.value)
+                    }
+                />
+            </Field>
+            <Field
+                label={`${title.replace(' Page', '')} title`}
+                required
+                error={errors[titleKey]}
+            >
+                <Input
+                    value={data[titleKey]}
+                    onChange={(e) => setData(titleKey, e.target.value)}
+                />
+            </Field>
+            <Field
+                label={`${title.replace(' Page', '')} description`}
+                required={descriptionRequired}
+                error={errors[descriptionKey]}
+            >
+                <textarea
+                    className={textareaClass}
+                    value={data[descriptionKey]}
+                    onChange={(e) => setData(descriptionKey, e.target.value)}
+                />
+            </Field>
         </SettingsCard>
     );
 }

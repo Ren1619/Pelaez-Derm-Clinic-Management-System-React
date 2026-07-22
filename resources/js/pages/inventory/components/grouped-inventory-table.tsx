@@ -1,8 +1,17 @@
 import { ChevronRight, ImageIcon, Pencil, Plus, Trash2 } from 'lucide-react';
 import { useState } from 'react';
+import type { ReactNode } from 'react';
 import { ClickableTableRow } from '@/components/clickable-table-row';
 import { TooltipIconButton } from '@/components/tooltip-icon-button';
 import { Badge } from '@/components/ui/badge';
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/components/ui/table';
 import type { ProductBatch, ProductGroup } from '@/types';
 import {
     ExpirationBadge,
@@ -16,6 +25,7 @@ type GroupedInventoryTableProps = {
     onEdit: (product: ProductBatch) => void;
     onRestock: (product: ProductBatch) => void;
     onDelete: (product: ProductBatch) => void;
+    emptyState?: ReactNode;
 };
 
 export function GroupedInventoryTable({
@@ -24,6 +34,7 @@ export function GroupedInventoryTable({
     onEdit,
     onRestock,
     onDelete,
+    emptyState,
 }: GroupedInventoryTableProps) {
     const [expandedGroups, setExpandedGroups] = useState<Set<string>>(
         new Set(),
@@ -44,22 +55,22 @@ export function GroupedInventoryTable({
     };
 
     return (
-        <table className="w-full min-w-6xl text-sm">
-            <thead className="border-b bg-muted/40 text-left text-xs font-medium tracking-wide text-muted-foreground uppercase">
-                <tr>
-                    <th className="w-12 px-4 py-3" aria-label="Expand" />
-                    <th className="px-4 py-3">Product</th>
-                    <th className="px-4 py-3">Batches</th>
-                    <th className="px-4 py-3">Unit</th>
-                    <th className="px-4 py-3">Category</th>
-                    <th className="px-4 py-3">Branch</th>
-                    <th className="px-4 py-3">Total quantity</th>
-                    <th className="px-4 py-3">Price</th>
-                    <th className="px-4 py-3">Primary expiry</th>
-                    <th className="px-4 py-3 text-right">Actions</th>
-                </tr>
-            </thead>
-            <tbody className="divide-y">
+        <Table className="min-w-6xl">
+            <TableHeader>
+                <TableRow>
+                    <TableHead className="w-12" aria-label="Expand" />
+                    <TableHead>Product</TableHead>
+                    <TableHead>Batches</TableHead>
+                    <TableHead>Unit</TableHead>
+                    <TableHead>Category</TableHead>
+                    <TableHead>Branch</TableHead>
+                    <TableHead>Total quantity</TableHead>
+                    <TableHead>Price</TableHead>
+                    <TableHead>Primary expiry</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+            </TableHeader>
+            <TableBody>
                 {groups.map((group) => {
                     const isExpanded = expandedGroups.has(group.key);
 
@@ -76,8 +87,9 @@ export function GroupedInventoryTable({
                         />
                     );
                 })}
-            </tbody>
-        </table>
+                {groups.length === 0 && emptyState}
+            </TableBody>
+        </Table>
     );
 }
 
@@ -103,10 +115,11 @@ function GroupRows({
     return (
         <>
             <ClickableTableRow
-                accessibleLabel={`View ${group.name}`}
-                onActivate={() => onView(group.primary_batch)}
+                accessibleLabel={`${expanded ? 'Collapse' : 'Expand'} ${group.name} batches`}
+                onActivate={onToggle}
+                aria-expanded={expanded}
             >
-                <td className="px-4 py-3">
+                <TableCell>
                     <TooltipIconButton
                         type="button"
                         variant="ghost"
@@ -119,8 +132,8 @@ function GroupRows({
                             className={`transition-transform ${expanded ? 'rotate-90' : ''}`}
                         />
                     </TooltipIconButton>
-                </td>
-                <td className="px-4 py-3">
+                </TableCell>
+                <TableCell>
                     <div className="flex items-center gap-3">
                         {group.image_url ? (
                             <img
@@ -135,37 +148,37 @@ function GroupRows({
                         )}
                         <span className="font-medium">{group.name}</span>
                     </div>
-                </td>
-                <td className="px-4 py-3">
+                </TableCell>
+                <TableCell>
                     <Badge variant="secondary">
                         {group.batch_count}{' '}
                         {group.batch_count === 1 ? 'batch' : 'batches'}
                     </Badge>
-                </td>
-                <td className="px-4 py-3 text-muted-foreground">
+                </TableCell>
+                <TableCell className="text-muted-foreground">
                     {group.measurement_unit}
-                </td>
-                <td className="px-4 py-3 text-muted-foreground">
+                </TableCell>
+                <TableCell className="text-muted-foreground">
                     {group.category.category_name}
-                </td>
-                <td className="px-4 py-3 text-muted-foreground">
+                </TableCell>
+                <TableCell className="text-muted-foreground">
                     {group.branch.branch_name}
-                </td>
-                <td className="px-4 py-3 font-medium">
+                </TableCell>
+                <TableCell className="font-medium">
                     {group.total_quantity}
-                </td>
-                <td className="px-4 py-3 whitespace-nowrap">
+                </TableCell>
+                <TableCell className="whitespace-nowrap">
                     {formatInventoryPrice(group.price)}
-                </td>
-                <td className="px-4 py-3">
+                </TableCell>
+                <TableCell>
                     <div className="flex flex-col items-start gap-2 whitespace-nowrap">
                         <span>
                             {formatInventoryDate(group.primary_expiration_date)}
                         </span>
                         <ExpirationBadge product={group.primary_batch} />
                     </div>
-                </td>
-                <td className="px-4 py-3">
+                </TableCell>
+                <TableCell>
                     <div className="flex justify-end gap-1">
                         <TooltipIconButton
                             variant="ghost"
@@ -186,7 +199,7 @@ function GroupRows({
                             </TooltipIconButton>
                         )}
                     </div>
-                </td>
+                </TableCell>
             </ClickableTableRow>
 
             {expanded &&
@@ -197,40 +210,40 @@ function GroupRows({
                         accessibleLabel={`View ${batch.name} batch ${batch.batch_number}`}
                         onActivate={() => onView(batch)}
                     >
-                        <td className="px-4 py-3" />
-                        <td className="px-4 py-3">
+                        <TableCell />
+                        <TableCell>
                             <div className="flex flex-wrap items-center gap-2">
                                 <Badge variant="outline">
                                     Batch {batch.batch_number}
                                 </Badge>
                                 {batch.is_primary && <Badge>Primary</Badge>}
                             </div>
-                        </td>
-                        <td className="px-4 py-3 text-muted-foreground">
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">
                             {batch.quantity} {batch.measurement_unit}
-                        </td>
-                        <td className="px-4 py-3 text-muted-foreground">
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">
                             {batch.measurement_unit}
-                        </td>
-                        <td className="px-4 py-3 text-muted-foreground">
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">
                             {batch.category.category_name}
-                        </td>
-                        <td className="px-4 py-3 text-muted-foreground">
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">
                             {batch.branch.branch_name}
-                        </td>
-                        <td className="px-4 py-3">{batch.quantity}</td>
-                        <td className="px-4 py-3 whitespace-nowrap">
+                        </TableCell>
+                        <TableCell>{batch.quantity}</TableCell>
+                        <TableCell className="whitespace-nowrap">
                             {formatInventoryPrice(batch.price)}
-                        </td>
-                        <td className="px-4 py-3">
+                        </TableCell>
+                        <TableCell>
                             <div className="flex flex-col items-start gap-2 whitespace-nowrap">
                                 <span>
                                     {formatInventoryDate(batch.expiration_date)}
                                 </span>
                                 <ExpirationBadge product={batch} />
                             </div>
-                        </td>
-                        <td className="px-4 py-3">
+                        </TableCell>
+                        <TableCell>
                             <div className="flex justify-end gap-1">
                                 <TooltipIconButton
                                     variant="ghost"
@@ -250,7 +263,7 @@ function GroupRows({
                                     <Trash2 />
                                 </TooltipIconButton>
                             </div>
-                        </td>
+                        </TableCell>
                     </ClickableTableRow>
                 ))}
         </>

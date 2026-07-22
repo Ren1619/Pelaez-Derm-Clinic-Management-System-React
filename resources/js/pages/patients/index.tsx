@@ -11,6 +11,12 @@ import {
 import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { ClickableTableRow } from '@/components/clickable-table-row';
+import { DataTableEmptyState } from '@/components/data-table-empty-state';
+import {
+    DataTableLayout,
+    DataTableToolbar,
+} from '@/components/data-table-layout';
+import { DataTablePagination } from '@/components/data-table-pagination';
 import Heading from '@/components/heading';
 import { TooltipIconButton } from '@/components/tooltip-icon-button';
 import { Badge } from '@/components/ui/badge';
@@ -24,6 +30,14 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/components/ui/table';
 import { index, show } from '@/routes/patients';
 import type {
     Patient,
@@ -34,7 +48,6 @@ import type {
 } from '@/types';
 import { PatientDeleteDialog } from './components/patient-delete-dialog';
 import { PatientDialog } from './components/patient-dialog';
-import { PatientPagination } from './components/patient-pagination';
 
 type PatientsIndexProps = {
     patients: PatientPaginator;
@@ -152,217 +165,202 @@ export default function PatientsIndex({
                     />
                 </div>
 
-                <Card className="gap-0 overflow-hidden py-0">
-                    <div className="grid gap-3 border-b p-4 sm:grid-cols-[minmax(14rem,1fr)_minmax(11rem,auto)_auto]">
-                        <div className="relative">
-                            <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-                            <Input
-                                value={search}
-                                onChange={(event) =>
-                                    setSearch(event.target.value)
-                                }
-                                placeholder="Search patients..."
-                                className="pl-9"
-                                aria-label="Search patients"
-                            />
-                        </div>
+                <DataTableLayout
+                    toolbar={
+                        <DataTableToolbar className="grid sm:grid-cols-[minmax(14rem,1fr)_minmax(11rem,auto)] lg:grid">
+                            <div className="relative">
+                                <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+                                <Input
+                                    value={search}
+                                    onChange={(event) =>
+                                        setSearch(event.target.value)
+                                    }
+                                    placeholder="Search patients..."
+                                    className="pl-9"
+                                    aria-label="Search patients"
+                                />
+                            </div>
 
-                        <Select
-                            value={filters.verification ?? 'all'}
-                            onValueChange={(value) =>
-                                visitWithFilters({
-                                    verification:
-                                        value === 'all'
-                                            ? null
-                                            : (value as
-                                                  'verified' | 'unverified'),
-                                })
-                            }
-                        >
-                            <SelectTrigger aria-label="Verification status">
-                                <SelectValue placeholder="All verification" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">
-                                    All verification
-                                </SelectItem>
-                                <SelectItem value="verified">
-                                    Verified
-                                </SelectItem>
-                                <SelectItem value="unverified">
-                                    Unverified
-                                </SelectItem>
-                            </SelectContent>
-                        </Select>
-
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <span>Rows</span>
                             <Select
-                                value={String(filters.per_page)}
+                                value={filters.verification ?? 'all'}
                                 onValueChange={(value) =>
                                     visitWithFilters({
-                                        per_page: Number(value),
+                                        verification:
+                                            value === 'all'
+                                                ? null
+                                                : (value as
+                                                      | 'verified'
+                                                      | 'unverified'),
                                     })
                                 }
                             >
-                                <SelectTrigger
-                                    className="w-20"
-                                    aria-label="Rows per page"
-                                >
-                                    <SelectValue />
+                                <SelectTrigger aria-label="Verification status">
+                                    <SelectValue placeholder="All verification" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="10">10</SelectItem>
-                                    <SelectItem value="25">25</SelectItem>
-                                    <SelectItem value="50">50</SelectItem>
+                                    <SelectItem value="all">
+                                        All verification
+                                    </SelectItem>
+                                    <SelectItem value="verified">
+                                        Verified
+                                    </SelectItem>
+                                    <SelectItem value="unverified">
+                                        Unverified
+                                    </SelectItem>
                                 </SelectContent>
                             </Select>
-                        </div>
-                    </div>
-
-                    <div className="overflow-x-auto">
-                        <table className="w-full min-w-5xl text-sm">
-                            <thead className="border-b bg-muted/40 text-left text-xs font-medium tracking-wide text-muted-foreground uppercase">
-                                <tr>
-                                    <th className="px-4 py-3">Patient</th>
-                                    <th className="px-4 py-3">Contact</th>
-                                    <th className="px-4 py-3">Demographics</th>
-                                    <th className="px-4 py-3">Last visit</th>
-                                    <th className="px-4 py-3">Verification</th>
-                                    <th className="px-4 py-3 text-right">
-                                        Actions
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y">
-                                {patients.data.map((patient) => (
-                                    <ClickableTableRow
-                                        key={patient.PID}
-                                        accessibleLabel={`View ${patient.full_name}`}
-                                        activationRole="link"
-                                        onActivate={() =>
-                                            router.visit(show(patient).url)
-                                        }
-                                    >
-                                        <td className="px-4 py-3">
-                                            <div className="font-medium">
-                                                {patient.last_name},{' '}
-                                                {patient.first_name}{' '}
-                                                {patient.middle_name ?? ''}
-                                            </div>
-                                            <p className="text-xs text-muted-foreground">
-                                                Patient #{patient.PID}
-                                            </p>
-                                        </td>
-                                        <td className="px-4 py-3">
-                                            <a
-                                                href={`mailto:${patient.email}`}
-                                                className="block hover:underline"
+                        </DataTableToolbar>
+                    }
+                    footer={
+                        <DataTablePagination
+                            paginator={patients}
+                            itemLabel="patients"
+                            onPageChange={(page) =>
+                                router.get(
+                                    index.url(),
+                                    { ...filters, page },
+                                    {
+                                        only: ['patients', 'filters'],
+                                        preserveState: true,
+                                        preserveScroll: true,
+                                    },
+                                )
+                            }
+                            onPerPageChange={(perPage) =>
+                                visitWithFilters({ per_page: perPage })
+                            }
+                        />
+                    }
+                >
+                    <Table className="min-w-5xl">
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Patient</TableHead>
+                                <TableHead>Contact</TableHead>
+                                <TableHead>Demographics</TableHead>
+                                <TableHead>Last visit</TableHead>
+                                <TableHead>Verification</TableHead>
+                                <TableHead className="text-right">
+                                    Actions
+                                </TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {patients.data.map((patient) => (
+                                <ClickableTableRow
+                                    key={patient.PID}
+                                    accessibleLabel={`View ${patient.full_name}`}
+                                    activationRole="link"
+                                    onActivate={() =>
+                                        router.visit(show(patient).url)
+                                    }
+                                >
+                                    <TableCell>
+                                        <div className="font-medium">
+                                            {patient.last_name},{' '}
+                                            {patient.first_name}{' '}
+                                            {patient.middle_name ?? ''}
+                                        </div>
+                                        <p className="text-xs text-muted-foreground">
+                                            Patient #{patient.PID}
+                                        </p>
+                                    </TableCell>
+                                    <TableCell>
+                                        <a
+                                            href={`mailto:${patient.email}`}
+                                            className="block hover:underline"
+                                        >
+                                            {patient.email}
+                                        </a>
+                                        <a
+                                            href={`tel:${patient.contact_number}`}
+                                            className="text-xs text-muted-foreground hover:underline"
+                                        >
+                                            {patient.contact_number}
+                                        </a>
+                                    </TableCell>
+                                    <TableCell className="text-muted-foreground">
+                                        {patient.sex}, {patient.age} years old
+                                        <p className="text-xs">
+                                            {patient.civil_status}
+                                        </p>
+                                    </TableCell>
+                                    <TableCell className="whitespace-nowrap text-muted-foreground">
+                                        {patient.last_visit_at ? (
+                                            <time
+                                                dateTime={patient.last_visit_at}
                                             >
-                                                {patient.email}
-                                            </a>
-                                            <a
-                                                href={`tel:${patient.contact_number}`}
-                                                className="text-xs text-muted-foreground hover:underline"
-                                            >
-                                                {patient.contact_number}
-                                            </a>
-                                        </td>
-                                        <td className="px-4 py-3 text-muted-foreground">
-                                            {patient.sex}, {patient.age} years
-                                            old
-                                            <p className="text-xs">
-                                                {patient.civil_status}
-                                            </p>
-                                        </td>
-                                        <td className="px-4 py-3 whitespace-nowrap text-muted-foreground">
-                                            {patient.last_visit_at ? (
-                                                <time
-                                                    dateTime={
-                                                        patient.last_visit_at
-                                                    }
-                                                >
-                                                    {new Intl.DateTimeFormat(
-                                                        'en-PH',
-                                                        { dateStyle: 'medium' },
-                                                    ).format(
-                                                        new Date(
-                                                            patient.last_visit_at,
-                                                        ),
-                                                    )}
-                                                </time>
-                                            ) : (
-                                                'No visits yet'
-                                            )}
-                                        </td>
-                                        <td className="px-4 py-3">
-                                            <Badge
-                                                variant={
-                                                    patient.email_verified_at
-                                                        ? 'outline'
-                                                        : 'secondary'
+                                                {new Intl.DateTimeFormat(
+                                                    'en-PH',
+                                                    { dateStyle: 'medium' },
+                                                ).format(
+                                                    new Date(
+                                                        patient.last_visit_at,
+                                                    ),
+                                                )}
+                                            </time>
+                                        ) : (
+                                            'No visits yet'
+                                        )}
+                                    </TableCell>
+                                    <TableCell>
+                                        <Badge
+                                            variant={
+                                                patient.email_verified_at
+                                                    ? 'outline'
+                                                    : 'secondary'
+                                            }
+                                        >
+                                            {patient.email_verified_at
+                                                ? 'Verified'
+                                                : 'Unverified'}
+                                        </Badge>
+                                    </TableCell>
+                                    <TableCell>
+                                        <div className="flex justify-end gap-1">
+                                            <TooltipIconButton
+                                                variant="ghost"
+                                                size="icon"
+                                                tooltip={`Edit ${patient.full_name}`}
+                                                onClick={() =>
+                                                    openPatientDialog(
+                                                        'edit',
+                                                        patient,
+                                                    )
                                                 }
+                                                aria-label={`Edit ${patient.full_name}`}
                                             >
-                                                {patient.email_verified_at
-                                                    ? 'Verified'
-                                                    : 'Unverified'}
-                                            </Badge>
-                                        </td>
-                                        <td className="px-4 py-3">
-                                            <div className="flex justify-end gap-1">
-                                                <TooltipIconButton
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    tooltip={`Edit ${patient.full_name}`}
-                                                    onClick={() =>
-                                                        openPatientDialog(
-                                                            'edit',
-                                                            patient,
-                                                        )
-                                                    }
-                                                    aria-label={`Edit ${patient.full_name}`}
-                                                >
-                                                    <Pencil />
-                                                </TooltipIconButton>
-                                                <TooltipIconButton
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="text-destructive hover:text-destructive"
-                                                    tooltip={`Delete ${patient.full_name}`}
-                                                    onClick={() =>
-                                                        openDeleteDialog(
-                                                            patient,
-                                                        )
-                                                    }
-                                                    aria-label={`Delete ${patient.full_name}`}
-                                                >
-                                                    <Trash2 />
-                                                </TooltipIconButton>
-                                            </div>
-                                        </td>
-                                    </ClickableTableRow>
-                                ))}
-                            </tbody>
-                        </table>
-
-                        {patients.data.length === 0 && (
-                            <div className="flex flex-col items-center gap-3 px-4 py-16 text-center">
-                                <UserRound className="size-10 text-muted-foreground" />
-                                <div>
-                                    <p className="font-medium">
-                                        No patients found
-                                    </p>
-                                    <p className="text-sm text-muted-foreground">
-                                        Try changing the search or verification
-                                        filter.
-                                    </p>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-
-                    <PatientPagination patients={patients} filters={filters} />
-                </Card>
+                                                <Pencil />
+                                            </TooltipIconButton>
+                                            <TooltipIconButton
+                                                variant="ghost"
+                                                size="icon"
+                                                className="text-destructive hover:text-destructive"
+                                                tooltip={`Delete ${patient.full_name}`}
+                                                onClick={() =>
+                                                    openDeleteDialog(patient)
+                                                }
+                                                aria-label={`Delete ${patient.full_name}`}
+                                            >
+                                                <Trash2 />
+                                            </TooltipIconButton>
+                                        </div>
+                                    </TableCell>
+                                </ClickableTableRow>
+                            ))}
+                            {patients.data.length === 0 && (
+                                <DataTableEmptyState
+                                    colSpan={6}
+                                    icon={
+                                        <UserRound className="size-10 text-muted-foreground" />
+                                    }
+                                    title="No patients found"
+                                    description="Try changing the search or verification filter."
+                                />
+                            )}
+                        </TableBody>
+                    </Table>
+                </DataTableLayout>
             </div>
 
             <PatientDialog

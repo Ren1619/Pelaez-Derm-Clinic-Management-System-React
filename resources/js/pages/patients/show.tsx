@@ -17,6 +17,7 @@ import { destroy as destroyDiagnosis } from '@/actions/App/Http/Controllers/Pati
 import { destroy as destroyPrescription } from '@/actions/App/Http/Controllers/PatientVisitPrescriptionController';
 import { destroy as destroyProduct } from '@/actions/App/Http/Controllers/PatientVisitProductController';
 import { destroy as destroyService } from '@/actions/App/Http/Controllers/PatientVisitServiceController';
+import { TooltipIconButton } from '@/components/tooltip-icon-button';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { index, show } from '@/routes/patients';
@@ -452,11 +453,17 @@ function PatientIdentityCard({ patient }: { patient: Patient }) {
     return (
         <section className="rounded-lg border bg-card p-4 shadow-sm">
             <div className="mb-7 flex items-center gap-3">
-                <Button variant="ghost" size="icon" className="size-8" asChild>
+                <TooltipIconButton
+                    variant="ghost"
+                    size="icon"
+                    className="size-8"
+                    asChild
+                    tooltip="Back to patient records"
+                >
                     <Link href={index()} aria-label="Back to patient records">
                         <ArrowLeft className="size-5" />
                     </Link>
-                </Button>
+                </TooltipIconButton>
                 <h1 className="text-xl font-bold sm:text-2xl">
                     <span className="text-primary">
                         {patient.first_name}

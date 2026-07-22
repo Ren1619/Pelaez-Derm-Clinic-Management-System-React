@@ -888,15 +888,31 @@ function CancelButton({
             onSuccess={onSuccess}
             className="grid w-full gap-2 sm:flex sm:w-auto"
         >
+            <p className="text-sm text-foreground">
+                All fields with{' '}
+                <span className="text-primary" aria-hidden="true">
+                    *
+                </span>{' '}
+                are required.
+            </p>
+            <Label htmlFor="cancellation_reason">
+                Cancellation reason
+                <span className="text-primary" aria-hidden="true">
+                    *
+                </span>
+            </Label>
             <Input
+                id="cancellation_reason"
                 name="cancellation_reason"
                 placeholder="Cancellation reason"
                 required
                 className="w-full sm:w-56"
             />
-            <Button type="submit" variant="destructive">
-                Confirm cancel
-            </Button>
+            <div>
+                <Button type="submit" variant="destructive">
+                    Confirm cancel
+                </Button>
+            </div>
         </Form>
     );
 }

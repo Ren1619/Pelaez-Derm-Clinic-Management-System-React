@@ -61,6 +61,16 @@ export function CategoryDialog({
                 >
                     {({ errors, processing }) => (
                         <>
+                            <p className="text-sm text-foreground">
+                                All fields with{' '}
+                                <span
+                                    className="text-primary"
+                                    aria-hidden="true"
+                                >
+                                    *
+                                </span>{' '}
+                                are required.
+                            </p>
                             <input
                                 type="hidden"
                                 name="category_type"
@@ -70,6 +80,12 @@ export function CategoryDialog({
                             <div className="grid gap-2">
                                 <Label htmlFor="category_name">
                                     Category name
+                                    <span
+                                        className="text-primary"
+                                        aria-hidden="true"
+                                    >
+                                        *
+                                    </span>
                                 </Label>
                                 <Input
                                     id="category_name"
@@ -149,7 +165,15 @@ export function CategoryDialog({
                             )}
 
                             <div className="grid gap-2">
-                                <Label htmlFor="description">Description</Label>
+                                <Label htmlFor="description">
+                                    Description
+                                    <span
+                                        className="text-primary"
+                                        aria-hidden="true"
+                                    >
+                                        *
+                                    </span>
+                                </Label>
                                 <textarea
                                     id="description"
                                     name="description"

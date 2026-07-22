@@ -491,6 +491,7 @@ function AppointmentDialog({
                                 <Field
                                     label="Clinic branch"
                                     error={errors.branch_ID}
+                                    required
                                 >
                                     <Select
                                         name="branch_ID"
@@ -520,6 +521,7 @@ function AppointmentDialog({
                                 <Field
                                     label="Appointment type"
                                     error={errors.appointment_type}
+                                    required
                                 >
                                     <Select
                                         name="appointment_type"
@@ -603,7 +605,11 @@ function AppointmentDialog({
                                 </div>
                             </div>
                             {type === 'consultation' ? (
-                                <Field label="Concern" error={errors.concern}>
+                                <Field
+                                    label="Concern"
+                                    error={errors.concern}
+                                    required
+                                >
                                     <textarea
                                         name="concern"
                                         defaultValue={
@@ -619,6 +625,7 @@ function AppointmentDialog({
                                 <Field
                                     label="Services"
                                     error={errors.service_ids}
+                                    required
                                 >
                                     <div className="grid max-h-64 min-h-24 gap-4 overflow-y-auto rounded-md border p-3">
                                         {Object.entries(
@@ -755,9 +762,20 @@ function CancelDialog({
                     >
                         {({ errors, processing }) => (
                             <>
+                                <p className="text-sm text-foreground">
+                                    All fields with{' '}
+                                    <span
+                                        className="text-primary"
+                                        aria-hidden="true"
+                                    >
+                                        *
+                                    </span>{' '}
+                                    are required.
+                                </p>
                                 <Field
                                     label="Cancellation reason"
                                     error={errors.reason}
+                                    required
                                 >
                                     <textarea
                                         name="reason"
@@ -927,10 +945,12 @@ function FilterSelect({
 function Field({
     label,
     error,
+    required = false,
     children,
 }: {
     label: string;
     error?: string;
+    required?: boolean;
     children: React.ReactNode;
 }) {
     return (

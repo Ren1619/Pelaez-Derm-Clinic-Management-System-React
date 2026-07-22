@@ -11,14 +11,36 @@ use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
 
 test('the public website uses the configured content without requiring a settings row', function () {
-    $this->get(route('home'))
+    $response = $this->get(route('home'));
+
+    $response
         ->assertSuccessful()
-        ->assertInertia(fn (Assert $page) => $page
-            ->component('welcome')
-            ->where('settings.business_name', 'Pelaez Dermatology Clinic')
-            ->where('settings.services_title', 'Our Services'));
+        ->assertSee('<link rel="icon" href="/favicon.ico" sizes="any">', false)
+        ->assertSee('<link rel="icon" href="/favicon.svg" type="image/svg+xml">', false)
+        ->assertSee('<link rel="apple-touch-icon" href="/apple-touch-icon.png">', false);
+
+    $response->assertInertia(fn (Assert $page) => $page
+        ->component('welcome')
+        ->where('settings.business_name', 'Pelaez Dermatology Clinic')
+        ->where('settings.services_title', 'Our Services'));
 
     $this->assertDatabaseEmpty((new SystemSetting)->getTable());
+});
+
+test('the uploaded business logo is used for favicon and touch icon links', function () {
+    Storage::fake('public');
+    $logoPath = 'system-settings/business/clinic-logo.svg';
+    Storage::disk('public')->put($logoPath, '<svg xmlns="http://www.w3.org/2000/svg"></svg>');
+    SystemSetting::factory()->create(['business_logo' => $logoPath]);
+    $logoUrl = Storage::disk('public')->url($logoPath);
+
+    $this->get(route('home'))
+        ->assertSuccessful()
+        ->assertSee('<link rel="icon" href="'.$logoUrl.'">', false)
+        ->assertSee('<link rel="apple-touch-icon" href="'.$logoUrl.'">', false)
+        ->assertDontSee('/favicon.ico', false)
+        ->assertDontSee('/favicon.svg', false)
+        ->assertDontSee('/apple-touch-icon.png', false);
 });
 
 test('the landing page provides the original service branch contact and clinic statistics data', function () {

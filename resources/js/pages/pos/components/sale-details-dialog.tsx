@@ -2,6 +2,7 @@ import { Form, Link } from '@inertiajs/react';
 import { ArrowLeft, Printer, RotateCcw, Undo2 } from 'lucide-react';
 import { useState } from 'react';
 import InputError from '@/components/input-error';
+import { TooltipIconButton } from '@/components/tooltip-icon-button';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -65,15 +66,16 @@ export function SaleDetailsDialog({
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
                         {mode !== 'details' && (
-                            <Button
+                            <TooltipIconButton
                                 type="button"
                                 variant="ghost"
                                 size="icon"
                                 className="size-7"
+                                tooltip="Back to sale details"
                                 onClick={() => setMode('details')}
                             >
                                 <ArrowLeft />
-                            </Button>
+                            </TooltipIconButton>
                         )}
                         {mode === 'details'
                             ? `Sale ${sale.invoice_number}`
@@ -281,6 +283,19 @@ function ReturnForm({
         >
             {({ processing, errors }) => (
                 <>
+                    <p className="text-sm text-foreground">
+                        All fields with{' '}
+                        <span className="text-primary" aria-hidden="true">
+                            *
+                        </span>{' '}
+                        are required.
+                    </p>
+                    <Label>
+                        Items to return
+                        <span className="text-primary" aria-hidden="true">
+                            *
+                        </span>
+                    </Label>
                     <div className="space-y-2">
                         {items.map((item) => {
                             const selectionKey = `${item.type}-${item.item_ID}`;
@@ -394,6 +409,13 @@ function VoidForm({
         >
             {({ processing, errors }) => (
                 <>
+                    <p className="text-sm text-foreground">
+                        All fields with{' '}
+                        <span className="text-primary" aria-hidden="true">
+                            *
+                        </span>{' '}
+                        are required.
+                    </p>
                     <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-3 text-sm">
                         This refunds {currency.format(Number(sale.total_cost))},
                         restores all products, and permanently marks the sale as
@@ -419,7 +441,12 @@ function ReturnReasonFields({ errors }: { errors: Record<string, string> }) {
     return (
         <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2 sm:col-span-2">
-                <Label htmlFor="reason">Reason</Label>
+                <Label htmlFor="reason">
+                    Reason
+                    <span className="text-primary" aria-hidden="true">
+                        *
+                    </span>
+                </Label>
                 <Select name="reason" required>
                     <SelectTrigger id="reason">
                         <SelectValue placeholder="Select a reason" />
@@ -447,7 +474,12 @@ function ReturnReasonFields({ errors }: { errors: Record<string, string> }) {
                 <InputError message={errors.reason} />
             </div>
             <div className="space-y-2">
-                <Label htmlFor="refund_method">Refund method</Label>
+                <Label htmlFor="refund_method">
+                    Refund method
+                    <span className="text-primary" aria-hidden="true">
+                        *
+                    </span>
+                </Label>
                 <Select name="refund_method" defaultValue="cash" required>
                     <SelectTrigger id="refund_method">
                         <SelectValue />

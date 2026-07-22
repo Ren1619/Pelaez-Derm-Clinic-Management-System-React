@@ -86,10 +86,21 @@ export function PatientVisitDialog({
                 >
                     {({ errors, processing }) => (
                         <>
+                            <p className="text-sm text-foreground">
+                                All fields with{' '}
+                                <span
+                                    className="text-primary"
+                                    aria-hidden="true"
+                                >
+                                    *
+                                </span>{' '}
+                                are required.
+                            </p>
                             <div className="grid gap-4 sm:grid-cols-2">
                                 <Field
                                     label="Clinic branch"
                                     error={errors.branch_ID}
+                                    required
                                 >
                                     <select
                                         name="branch_ID"
@@ -141,6 +152,7 @@ export function PatientVisitDialog({
                                 <Field
                                     label="Visit date and time"
                                     error={errors.visited_at}
+                                    required
                                 >
                                     <Input
                                         type="datetime-local"
@@ -151,7 +163,11 @@ export function PatientVisitDialog({
                                         required
                                     />
                                 </Field>
-                                <Field label="Status" error={errors.status}>
+                                <Field
+                                    label="Status"
+                                    error={errors.status}
+                                    required
+                                >
                                     <select
                                         name="status"
                                         defaultValue={
@@ -258,15 +274,24 @@ function toDateTimeLocal(value?: string): string {
 function Field({
     label,
     error,
+    required = false,
     children,
 }: {
     label: string;
     error?: string;
+    required?: boolean;
     children: React.ReactNode;
 }) {
     return (
         <div className="grid gap-2">
-            <Label>{label}</Label>
+            <Label>
+                {label}
+                {required && (
+                    <span className="text-primary" aria-hidden="true">
+                        *
+                    </span>
+                )}
+            </Label>
             {children}
             <InputError message={error} />
         </div>

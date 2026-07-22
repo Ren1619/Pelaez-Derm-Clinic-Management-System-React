@@ -23,6 +23,7 @@ import {
     updateMedication,
 } from '@/actions/App/Http/Controllers/PatientHealthRecordController';
 import InputError from '@/components/input-error';
+import { TooltipIconButton } from '@/components/tooltip-icon-button';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -413,13 +414,14 @@ function SummaryAccordion({
                                 placeholder={`Search ${title.toLowerCase()}`}
                             />
                         </div>
-                        <Button
+                        <TooltipIconButton
                             size="icon"
+                            tooltip={`Add ${kind}`}
                             onClick={onAdd}
                             aria-label={`Add ${kind}`}
                         >
                             <Plus />
-                        </Button>
+                        </TooltipIconButton>
                     </div>
                     {filtered.map((item) => (
                         <div
@@ -429,22 +431,24 @@ function SummaryAccordion({
                             <div className="flex items-start justify-between gap-2">
                                 <b>{recordTitle(item)}</b>
                                 <div className="flex">
-                                    <Button
+                                    <TooltipIconButton
                                         variant="ghost"
                                         size="icon"
                                         className="size-8"
+                                        tooltip={`Edit ${recordTitle(item)}`}
                                         onClick={() => onEdit(item)}
                                     >
                                         <Pencil className="size-4" />
-                                    </Button>
-                                    <Button
+                                    </TooltipIconButton>
+                                    <TooltipIconButton
                                         variant="ghost"
                                         size="icon"
                                         className="size-8 text-destructive"
+                                        tooltip={`Delete ${recordTitle(item)}`}
                                         onClick={() => onDelete(item)}
                                     >
                                         <Trash2 className="size-4" />
-                                    </Button>
+                                    </TooltipIconButton>
                                 </div>
                             </div>
                             <p className="mt-1 text-muted-foreground">
@@ -644,10 +648,21 @@ function SummaryDialog({
                 >
                     {({ errors, processing }) => (
                         <>
+                            <p className="text-sm text-foreground">
+                                All fields with{' '}
+                                <span
+                                    className="text-primary"
+                                    aria-hidden="true"
+                                >
+                                    *
+                                </span>{' '}
+                                are required.
+                            </p>
                             {state.kind === 'medical-condition' && (
                                 <Field
                                     label="Medical condition"
                                     error={errors.condition}
+                                    required
                                 >
                                     <Input
                                         name="condition"
@@ -659,7 +674,11 @@ function SummaryDialog({
                                 </Field>
                             )}
                             {state.kind === 'allergy' && (
-                                <Field label="Allergy" error={errors.allergy}>
+                                <Field
+                                    label="Allergy"
+                                    error={errors.allergy}
+                                    required
+                                >
                                     <Input
                                         name="allergy"
                                         defaultValue={allergy?.allergy ?? ''}
@@ -672,6 +691,7 @@ function SummaryDialog({
                                     <Field
                                         label="Medication"
                                         error={errors.medication}
+                                        required
                                     >
                                         <Input
                                             name="medication"
@@ -924,15 +944,24 @@ function DateField({
 function Field({
     label,
     error,
+    required = false,
     children,
 }: {
     label: string;
     error?: string;
+    required?: boolean;
     children: React.ReactNode;
 }) {
     return (
         <div className="grid gap-2">
-            <Label>{label}</Label>
+            <Label>
+                {label}
+                {required && (
+                    <span className="text-primary" aria-hidden="true">
+                        *
+                    </span>
+                )}
+            </Label>
             {children}
             <InputError message={error} />
         </div>

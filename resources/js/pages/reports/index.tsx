@@ -1,4 +1,4 @@
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, router } from '@inertiajs/react';
 import {
     Activity,
     ArrowDown,
@@ -6,13 +6,17 @@ import {
     BarChart3,
     Building2,
     Download,
-    Eye,
     Printer,
     Search,
     WalletCards,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { ClickableTableRow } from '@/components/clickable-table-row';
+import { DataTableEmptyState } from '@/components/data-table-empty-state';
+import { DataTableLayout } from '@/components/data-table-layout';
+import { DataTablePagination } from '@/components/data-table-pagination';
 import Heading from '@/components/heading';
+import { TooltipIconButton } from '@/components/tooltip-icon-button';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -26,6 +30,14 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/components/ui/table';
 import { exportMethod, index } from '@/routes/reports';
 import {
     branchSales as branchSalesPrint,
@@ -596,6 +608,8 @@ export default function ReportsIndex({
 
                     <SalesLedger
                         report={branchSales}
+                        filters={filters}
+                        onChange={visit}
                         onSelect={setSelectedSale}
                     />
                 </section>
@@ -697,22 +711,22 @@ function SeriesCard({
                             series.reduce((sum, point) => sum + point.total, 0),
                         )}
                     </span>
-                    <Button
+                    <TooltipIconButton
                         variant="ghost"
                         size="icon"
                         asChild
                         className="print:hidden"
+                        tooltip={`Print ${title}`}
                     >
                         <a
                             href={printUrl}
                             target="_blank"
                             rel="noreferrer"
                             aria-label={`Print ${title}`}
-                            title={`Print ${title}`}
                         >
                             <Printer />
                         </a>
-                    </Button>
+                    </TooltipIconButton>
                 </div>
             </CardHeader>
             <CardContent>
@@ -1315,27 +1329,6 @@ function BranchSalesFilters({
                         />
                     </div>
                 </div>
-                <div className="grid w-full gap-1.5 sm:w-36">
-                    <Label htmlFor="branch-sales-rows">Rows</Label>
-                    <Select
-                        value={filters.per_page.toString()}
-                        onValueChange={(value) =>
-                            onChange({ per_page: Number(value) })
-                        }
-                    >
-                        <SelectTrigger
-                            id="branch-sales-rows"
-                            className="w-full"
-                        >
-                            <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="10">10 per page</SelectItem>
-                            <SelectItem value="25">25 per page</SelectItem>
-                            <SelectItem value="50">50 per page</SelectItem>
-                        </SelectContent>
-                    </Select>
-                </div>
             </CardContent>
         </Card>
     );
@@ -1365,135 +1358,97 @@ function SimpleMetric({
 
 function SalesLedger({
     report,
+    filters,
+    onChange,
     onSelect,
 }: {
     report: BranchSalesReport;
+    filters: ReportFilters;
+    onChange: (changes: Partial<ReportFilters>) => void;
     onSelect: (sale: PosSale) => void;
 }) {
     return (
-        <Card className="gap-0 overflow-hidden py-0">
-            <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                    <thead className="border-b bg-muted/40 text-left">
-                        <tr>
-                            <th className="px-4 py-3 font-medium">Invoice</th>
-                            <th className="px-4 py-3 font-medium">Date</th>
-                            <th className="px-4 py-3 font-medium">Customer</th>
-                            <th className="px-4 py-3 font-medium">Status</th>
-                            <th className="px-4 py-3 font-medium">Items</th>
-                            <th className="px-4 py-3 text-right font-medium">
-                                Total
-                            </th>
-                            <th className="px-4 py-3 text-right font-medium print:hidden">
-                                View
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y">
-                        {report.sales.data.map((sale) => (
-                            <tr key={sale.sale_ID}>
-                                <td className="px-4 py-3 font-medium">
-                                    {sale.invoice_number}
-                                </td>
-                                <td className="px-4 py-3">
-                                    {new Date(sale.created_at).toLocaleString(
-                                        'en-PH',
-                                    )}
-                                </td>
-                                <td className="px-4 py-3">
-                                    {sale.customer_name}
-                                </td>
-                                <td className="px-4 py-3">
-                                    <Badge
-                                        variant={
-                                            sale.is_voided
-                                                ? 'destructive'
-                                                : Number(sale.total_returned) >
-                                                    0
-                                                  ? 'secondary'
-                                                  : 'outline'
-                                        }
-                                    >
-                                        {sale.is_voided
-                                            ? 'Voided'
-                                            : Number(sale.total_returned) >=
-                                                Number(sale.total_cost)
-                                              ? 'Returned'
-                                              : Number(sale.total_returned) > 0
-                                                ? 'Partial return'
-                                                : 'Complete'}
-                                    </Badge>
-                                </td>
-                                <td className="px-4 py-3">
-                                    {sale.total_items}
-                                </td>
-                                <td className="px-4 py-3 text-right font-medium">
-                                    {currency.format(Number(sale.net_total))}
-                                </td>
-                                <td className="px-4 py-3 text-right print:hidden">
-                                    <Button
-                                        size="icon"
-                                        variant="ghost"
-                                        onClick={() => onSelect(sale)}
-                                        title="View sale details"
-                                    >
-                                        <Eye />
-                                    </Button>
-                                </td>
-                            </tr>
-                        ))}
-                        {report.sales.data.length === 0 && (
-                            <tr>
-                                <td
-                                    colSpan={7}
-                                    className="px-4 py-12 text-center text-muted-foreground"
-                                >
-                                    No sales found for the selected filters.
-                                </td>
-                            </tr>
-                        )}
-                    </tbody>
-                </table>
-            </div>
-            <div className="flex flex-col gap-3 border-t p-4 sm:flex-row sm:items-center sm:justify-between print:hidden">
-                <p className="text-sm text-muted-foreground">
-                    Showing {report.sales.from ?? 0}–{report.sales.to ?? 0} of{' '}
-                    {report.sales.total}
-                </p>
-                <div className="flex flex-wrap gap-1">
-                    {report.sales.links.map((link, linkIndex) => (
-                        <Button
-                            key={`${link.label}-${linkIndex}`}
-                            size="sm"
-                            variant={link.active ? 'default' : 'outline'}
-                            disabled={!link.url}
-                            asChild={Boolean(link.url)}
+        <DataTableLayout>
+            <Table className="min-w-5xl">
+                <TableHeader>
+                    <TableRow>
+                        <TableHead>Invoice</TableHead>
+                        <TableHead>Date</TableHead>
+                        <TableHead>Customer</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Items</TableHead>
+                        <TableHead className="text-right">Total</TableHead>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    {report.sales.data.map((sale) => (
+                        <ClickableTableRow
+                            key={sale.sale_ID}
+                            accessibleLabel={`View invoice ${sale.invoice_number}`}
+                            onActivate={() => onSelect(sale)}
                         >
-                            {link.url ? (
-                                <Link
-                                    href={link.url}
-                                    preserveScroll
-                                    preserveState
-                                    only={['branchSales', 'filters']}
+                            <TableCell className="font-medium">
+                                {sale.invoice_number}
+                            </TableCell>
+                            <TableCell>
+                                {new Date(sale.created_at).toLocaleString(
+                                    'en-PH',
+                                )}
+                            </TableCell>
+                            <TableCell>{sale.customer_name}</TableCell>
+                            <TableCell>
+                                <Badge
+                                    variant={
+                                        sale.is_voided
+                                            ? 'destructive'
+                                            : Number(sale.total_returned) > 0
+                                              ? 'secondary'
+                                              : 'outline'
+                                    }
                                 >
-                                    <span
-                                        dangerouslySetInnerHTML={{
-                                            __html: link.label,
-                                        }}
-                                    />
-                                </Link>
-                            ) : (
-                                <span
-                                    dangerouslySetInnerHTML={{
-                                        __html: link.label,
-                                    }}
-                                />
-                            )}
-                        </Button>
+                                    {sale.is_voided
+                                        ? 'Voided'
+                                        : Number(sale.total_returned) >=
+                                            Number(sale.total_cost)
+                                          ? 'Returned'
+                                          : Number(sale.total_returned) > 0
+                                            ? 'Partial return'
+                                            : 'Complete'}
+                                </Badge>
+                            </TableCell>
+                            <TableCell>{sale.total_items}</TableCell>
+                            <TableCell className="text-right font-medium">
+                                {currency.format(Number(sale.net_total))}
+                            </TableCell>
+                        </ClickableTableRow>
                     ))}
-                </div>
-            </div>
-        </Card>
+                    {report.sales.data.length === 0 && (
+                        <DataTableEmptyState
+                            colSpan={6}
+                            title="No sales found"
+                            description="No sales found for the selected filters."
+                        />
+                    )}
+                </TableBody>
+            </Table>
+            <DataTablePagination
+                paginator={report.sales}
+                itemLabel="sales"
+                className="print:hidden"
+                onPageChange={(page) =>
+                    router.get(
+                        index.url(),
+                        { ...reportQuery(filters), page },
+                        {
+                            only: ['branchSales', 'filters'],
+                            preserveState: true,
+                            preserveScroll: true,
+                        },
+                    )
+                }
+                onPerPageChange={(perPage) => onChange({ per_page: perPage })}
+            />
+        </DataTableLayout>
     );
 }
 

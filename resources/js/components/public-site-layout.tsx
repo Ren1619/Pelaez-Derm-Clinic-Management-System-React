@@ -1,6 +1,11 @@
 import { Link, usePage } from '@inertiajs/react';
 import { Menu, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { dashboard, home } from '@/routes';
 import { login as patientLogin } from '@/routes/patient';
 import { index as patientsIndex } from '@/routes/patients';
@@ -165,15 +170,26 @@ export function PublicSiteLayout({
                         </Link>
                     </nav>
 
-                    <button
-                        type="button"
-                        className={`rounded-lg p-2 transition md:hidden ${landing && !scrolled ? 'text-white hover:bg-white/10' : 'text-foreground hover:bg-muted'}`}
-                        aria-label="Toggle navigation"
-                        aria-expanded={menuOpen}
-                        onClick={() => setMenuOpen((open) => !open)}
-                    >
-                        {menuOpen ? <X /> : <Menu />}
-                    </button>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <button
+                                type="button"
+                                className={`rounded-lg p-2 transition md:hidden ${landing && !scrolled ? 'text-white hover:bg-white/10' : 'text-foreground hover:bg-muted'}`}
+                                aria-label={
+                                    menuOpen
+                                        ? 'Close navigation'
+                                        : 'Open navigation'
+                                }
+                                aria-expanded={menuOpen}
+                                onClick={() => setMenuOpen((open) => !open)}
+                            >
+                                {menuOpen ? <X /> : <Menu />}
+                            </button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                            {menuOpen ? 'Close navigation' : 'Open navigation'}
+                        </TooltipContent>
+                    </Tooltip>
                 </div>
 
                 {menuOpen && (

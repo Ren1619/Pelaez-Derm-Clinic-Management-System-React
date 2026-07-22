@@ -1,8 +1,5 @@
-import type {
-    ComponentPropsWithoutRef,
-    KeyboardEvent,
-    MouseEvent,
-} from 'react';
+import type { ComponentProps, KeyboardEvent, MouseEvent } from 'react';
+import { TableRow } from '@/components/ui/table';
 import { cn } from '@/lib/utils';
 
 const interactiveElementSelector = [
@@ -16,7 +13,7 @@ const interactiveElementSelector = [
 ].join(',');
 
 type ClickableTableRowProps = Omit<
-    ComponentPropsWithoutRef<'tr'>,
+    ComponentProps<typeof TableRow>,
     'onClick' | 'onKeyDown'
 > & {
     accessibleLabel: string;
@@ -75,7 +72,7 @@ export function ClickableTableRow({
     };
 
     return (
-        <tr
+        <TableRow
             {...props}
             role={activationRole}
             tabIndex={0}

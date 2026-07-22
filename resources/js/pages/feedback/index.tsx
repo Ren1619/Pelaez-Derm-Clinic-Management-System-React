@@ -1,11 +1,22 @@
 import { Head, router, usePoll } from '@inertiajs/react';
-import { Eye, Search } from 'lucide-react';
+import { format, parseISO } from 'date-fns';
+import { CalendarDays, Eye, Search } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import type { DateRange } from 'react-day-picker';
+import { DataTableEmptyState } from '@/components/data-table-empty-state';
+import { DataTableLayout } from '@/components/data-table-layout';
+import { DataTablePagination } from '@/components/data-table-pagination';
 import Heading from '@/components/heading';
+import { TooltipIconButton } from '@/components/tooltip-icon-button';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
+import { Calendar } from '@/components/ui/calendar';
 import { Input } from '@/components/ui/input';
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from '@/components/ui/popover';
 import {
     Select,
     SelectContent,
@@ -13,6 +24,14 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/components/ui/table';
 import { index } from '@/routes/feedback';
 import type {
     Feedback,
@@ -95,7 +114,7 @@ export default function FeedbackIndex({ feedbacks, branches, filters }: Props) {
                     description="Review feedback submitted by clinic patients."
                 />
 
-                <Card className="gap-0 overflow-hidden py-0">
+                <DataTableLayout>
                     <div className="grid gap-3 border-b p-4 xl:grid-cols-[minmax(14rem,1fr)_9rem_11rem_12rem]">
                         <div className="relative">
                             <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -187,47 +206,11 @@ export default function FeedbackIndex({ feedbacks, branches, filters }: Props) {
 
                     <div className="flex flex-col gap-3 border-b p-4 sm:flex-row sm:items-center sm:justify-between">
                         <div className="flex flex-wrap items-center gap-2">
-                            <Input
-                                type="date"
-                                value={filters.date_from ?? ''}
-                                onChange={(event) =>
-                                    visit({
-                                        date_from: event.target.value || null,
-                                        all_dates: false,
-                                    })
-                                }
-                                className="w-auto"
-                                aria-label="Feedback date from"
+                            <FeedbackDateRangePicker
+                                key={`${filters.date_from ?? 'all'}:${filters.date_to ?? 'all'}`}
+                                filters={filters}
+                                onChange={visit}
                             />
-                            <span className="text-sm text-muted-foreground">
-                                to
-                            </span>
-                            <Input
-                                type="date"
-                                value={filters.date_to ?? ''}
-                                min={filters.date_from ?? undefined}
-                                onChange={(event) =>
-                                    visit({
-                                        date_to: event.target.value || null,
-                                        all_dates: false,
-                                    })
-                                }
-                                className="w-auto"
-                                aria-label="Feedback date to"
-                            />
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() =>
-                                    visit({
-                                        date_from: null,
-                                        date_to: null,
-                                        all_dates: true,
-                                    })
-                                }
-                            >
-                                All dates
-                            </Button>
                         </div>
 
                         <div className="text-sm text-muted-foreground">
@@ -241,12 +224,24 @@ export default function FeedbackIndex({ feedbacks, branches, filters }: Props) {
                         feedbacks={feedbacks.data}
                         onView={openDetails}
                     />
-                    <Pagination
+                    <DataTablePagination
                         paginator={feedbacks}
-                        filters={filters}
-                        visit={visit}
+                        itemLabel="feedback entries"
+                        onPageChange={(page) =>
+                            router.get(
+                                index.url(),
+                                { ...filters, page },
+                                {
+                                    preserveState: true,
+                                    preserveScroll: true,
+                                },
+                            )
+                        }
+                        onPerPageChange={(perPage) =>
+                            visit({ per_page: perPage })
+                        }
                     />
-                </Card>
+                </DataTableLayout>
             </div>
 
             <FeedbackDetailsDialog
@@ -258,6 +253,103 @@ export default function FeedbackIndex({ feedbacks, branches, filters }: Props) {
     );
 }
 
+function FeedbackDateRangePicker({
+    filters,
+    onChange,
+}: {
+    filters: Pick<FeedbackFilters, 'date_from' | 'date_to'>;
+    onChange: (changes: Partial<FeedbackFilters>) => void;
+}) {
+    const [dateRange, setDateRange] = useState<DateRange | undefined>(() =>
+        feedbackDateRange(filters),
+    );
+    const [open, setOpen] = useState(false);
+
+    const selectDateRange = (range: DateRange | undefined) => {
+        setDateRange(range);
+
+        if (!range?.from || !range.to) {
+            return;
+        }
+
+        setOpen(false);
+        onChange({
+            date_from: format(range.from, 'yyyy-MM-dd'),
+            date_to: format(range.to, 'yyyy-MM-dd'),
+            all_dates: false,
+        });
+    };
+
+    const showAllDates = () => {
+        setDateRange(undefined);
+        setOpen(false);
+        onChange({
+            date_from: null,
+            date_to: null,
+            all_dates: true,
+        });
+    };
+
+    return (
+        <>
+            <Popover open={open} onOpenChange={setOpen}>
+                <PopoverTrigger asChild>
+                    <Button
+                        variant="outline"
+                        className="w-full justify-start text-left font-normal sm:w-auto sm:min-w-72"
+                        aria-label="Select feedback date range"
+                    >
+                        <CalendarDays className="size-4" />
+                        {formatDateRange(dateRange)}
+                    </Button>
+                </PopoverTrigger>
+                <PopoverContent
+                    align="start"
+                    className="max-h-[min(38rem,calc(100vh-2rem))] w-auto max-w-[calc(100vw-2rem)] overflow-auto p-0"
+                >
+                    <Calendar
+                        mode="range"
+                        defaultMonth={dateRange?.from}
+                        selected={dateRange}
+                        onSelect={selectDateRange}
+                        numberOfMonths={2}
+                        resetOnSelect
+                        autoFocus
+                    />
+                </PopoverContent>
+            </Popover>
+            <Button variant="ghost" size="sm" onClick={showAllDates}>
+                All dates
+            </Button>
+        </>
+    );
+}
+
+const feedbackDateRange = (
+    filters: Pick<FeedbackFilters, 'date_from' | 'date_to'>,
+): DateRange | undefined => {
+    if (!filters.date_from && !filters.date_to) {
+        return undefined;
+    }
+
+    return {
+        from: filters.date_from ? parseISO(filters.date_from) : undefined,
+        to: filters.date_to ? parseISO(filters.date_to) : undefined,
+    };
+};
+
+const formatDateRange = (range: DateRange | undefined): string => {
+    if (!range?.from) {
+        return 'All dates';
+    }
+
+    if (!range.to) {
+        return format(range.from, 'MMM d, yyyy');
+    }
+
+    return `${format(range.from, 'MMM d, yyyy')} - ${format(range.to, 'MMM d, yyyy')}`;
+};
+
 function FeedbackTable({
     feedbacks,
     onView,
@@ -266,165 +358,95 @@ function FeedbackTable({
     onView: (feedback: Feedback) => void;
 }) {
     return (
-        <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-                <thead className="bg-muted/50 text-left">
-                    <tr>
-                        <th className="px-4 py-3">Appointment</th>
-                        <th className="px-4 py-3">Type / details</th>
-                        <th className="px-4 py-3">Appointment date</th>
-                        <th className="px-4 py-3">Rating</th>
-                        <th className="px-4 py-3">Comments</th>
-                        <th className="px-4 py-3">Feedback date</th>
-                        <th className="px-4 py-3 text-right">Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {feedbacks.map((feedback) => {
-                        const appointment = feedback.appointment;
-                        const details = appointmentDetails(appointment);
+        <Table className="min-w-6xl">
+            <TableHeader>
+                <TableRow>
+                    <TableHead>Appointment</TableHead>
+                    <TableHead>Type / details</TableHead>
+                    <TableHead>Appointment date</TableHead>
+                    <TableHead>Rating</TableHead>
+                    <TableHead>Comments</TableHead>
+                    <TableHead>Feedback date</TableHead>
+                    <TableHead className="text-right">Action</TableHead>
+                </TableRow>
+            </TableHeader>
+            <TableBody>
+                {feedbacks.map((feedback) => {
+                    const appointment = feedback.appointment;
+                    const details = appointmentDetails(appointment);
 
-                        return (
-                            <tr key={feedback.feedback_ID} className="border-t">
-                                <td className="px-4 py-4">
-                                    <button
-                                        type="button"
-                                        className="font-medium hover:underline"
-                                        onClick={() => onView(feedback)}
-                                    >
-                                        {appointment.appointment_code}
-                                    </button>
-                                    <p className="text-xs text-muted-foreground">
-                                        {appointment.patient_name} ·{' '}
-                                        {appointment.branch_name}
-                                    </p>
-                                </td>
-                                <td className="max-w-xs px-4 py-4">
-                                    <Badge
-                                        variant="outline"
-                                        className="capitalize"
-                                    >
-                                        {appointment.appointment_type}
-                                    </Badge>
-                                    <p className="mt-1 truncate text-xs text-muted-foreground">
-                                        {details}
-                                    </p>
-                                </td>
-                                <td className="px-4 py-4 whitespace-nowrap">
-                                    {new Date(
-                                        appointment.scheduled_at,
-                                    ).toLocaleDateString([], {
-                                        dateStyle: 'medium',
-                                    })}
-                                </td>
-                                <td className="px-4 py-4">
-                                    <StarRating rating={feedback.rating} />
-                                </td>
-                                <td className="max-w-sm px-4 py-4">
-                                    <p className="line-clamp-2">
-                                        {feedback.description || (
-                                            <span className="text-muted-foreground italic">
-                                                No comments
-                                            </span>
-                                        )}
-                                    </p>
-                                </td>
-                                <td className="px-4 py-4 whitespace-nowrap">
-                                    {new Date(
-                                        feedback.submitted_at,
-                                    ).toLocaleDateString([], {
-                                        dateStyle: 'medium',
-                                    })}
-                                </td>
-                                <td className="px-4 py-4 text-right">
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        onClick={() => onView(feedback)}
-                                        aria-label="View feedback"
-                                    >
-                                        <Eye />
-                                    </Button>
-                                </td>
-                            </tr>
-                        );
-                    })}
-                    {feedbacks.length === 0 && (
-                        <tr>
-                            <td
-                                colSpan={7}
-                                className="p-12 text-center text-muted-foreground"
-                            >
-                                No feedback matches these filters.
-                            </td>
-                        </tr>
-                    )}
-                </tbody>
-            </table>
-        </div>
-    );
-}
-
-function Pagination({
-    paginator,
-    filters,
-    visit,
-}: {
-    paginator: FeedbackPaginator;
-    filters: FeedbackFilters;
-    visit: (changes: Partial<FeedbackFilters>, only?: string[]) => void;
-}) {
-    const goToPage = (page: number) => {
-        router.get(
-            index.url(),
-            { ...filters, page },
-            { preserveState: true, preserveScroll: true },
-        );
-    };
-
-    return (
-        <div className="flex flex-col gap-3 border-t p-4 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-sm text-muted-foreground">
-                Showing {paginator.from ?? 0}–{paginator.to ?? 0} of{' '}
-                {paginator.total}
-            </p>
-            <div className="flex items-center gap-2">
-                <Select
-                    value={String(filters.per_page)}
-                    onValueChange={(value) =>
-                        visit({ per_page: Number(value) })
-                    }
-                >
-                    <SelectTrigger className="w-20">
-                        <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="10">10</SelectItem>
-                        <SelectItem value="25">25</SelectItem>
-                        <SelectItem value="50">50</SelectItem>
-                    </SelectContent>
-                </Select>
-                <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={paginator.current_page <= 1}
-                    onClick={() => goToPage(paginator.current_page - 1)}
-                >
-                    Previous
-                </Button>
-                <span className="text-sm">
-                    {paginator.current_page} / {paginator.last_page}
-                </span>
-                <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={paginator.current_page >= paginator.last_page}
-                    onClick={() => goToPage(paginator.current_page + 1)}
-                >
-                    Next
-                </Button>
-            </div>
-        </div>
+                    return (
+                        <TableRow key={feedback.feedback_ID}>
+                            <TableCell>
+                                <button
+                                    type="button"
+                                    className="font-medium hover:underline"
+                                    onClick={() => onView(feedback)}
+                                >
+                                    {appointment.appointment_code}
+                                </button>
+                                <p className="text-xs text-muted-foreground">
+                                    {appointment.patient_name} ·{' '}
+                                    {appointment.branch_name}
+                                </p>
+                            </TableCell>
+                            <TableCell className="max-w-xs">
+                                <Badge variant="outline" className="capitalize">
+                                    {appointment.appointment_type}
+                                </Badge>
+                                <p className="mt-1 truncate text-xs text-muted-foreground">
+                                    {details}
+                                </p>
+                            </TableCell>
+                            <TableCell className="whitespace-nowrap">
+                                {new Date(
+                                    appointment.scheduled_at,
+                                ).toLocaleDateString([], {
+                                    dateStyle: 'medium',
+                                })}
+                            </TableCell>
+                            <TableCell>
+                                <StarRating rating={feedback.rating} />
+                            </TableCell>
+                            <TableCell className="max-w-sm">
+                                <p className="line-clamp-2">
+                                    {feedback.description || (
+                                        <span className="text-muted-foreground italic">
+                                            No comments
+                                        </span>
+                                    )}
+                                </p>
+                            </TableCell>
+                            <TableCell className="whitespace-nowrap">
+                                {new Date(
+                                    feedback.submitted_at,
+                                ).toLocaleDateString([], {
+                                    dateStyle: 'medium',
+                                })}
+                            </TableCell>
+                            <TableCell className="text-right">
+                                <TooltipIconButton
+                                    variant="ghost"
+                                    size="icon"
+                                    tooltip="View feedback"
+                                    onClick={() => onView(feedback)}
+                                    aria-label="View feedback"
+                                >
+                                    <Eye />
+                                </TooltipIconButton>
+                            </TableCell>
+                        </TableRow>
+                    );
+                })}
+                {feedbacks.length === 0 && (
+                    <DataTableEmptyState
+                        colSpan={7}
+                        title="No feedback found"
+                        description="No feedback matches these filters."
+                    />
+                )}
+            </TableBody>
+        </Table>
     );
 }
 

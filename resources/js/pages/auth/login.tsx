@@ -31,9 +31,24 @@ export default function Login({ status, canResetPassword }: Props) {
             >
                 {({ processing, errors }) => (
                     <>
+                        <p className="text-sm text-foreground">
+                            All fields with{' '}
+                            <span className="text-primary" aria-hidden="true">
+                                *
+                            </span>{' '}
+                            are required.
+                        </p>
                         <div className="grid gap-6">
                             <div className="grid gap-2">
-                                <Label htmlFor="email">Email address</Label>
+                                <Label htmlFor="email">
+                                    Email address
+                                    <span
+                                        className="text-primary"
+                                        aria-hidden="true"
+                                    >
+                                        *
+                                    </span>
+                                </Label>
                                 <Input
                                     id="email"
                                     type="email"
@@ -49,7 +64,15 @@ export default function Login({ status, canResetPassword }: Props) {
 
                             <div className="grid gap-2">
                                 <div className="flex items-center">
-                                    <Label htmlFor="password">Password</Label>
+                                    <Label htmlFor="password">
+                                        Password
+                                        <span
+                                            className="text-primary"
+                                            aria-hidden="true"
+                                        >
+                                            *
+                                        </span>
+                                    </Label>
                                     {canResetPassword && (
                                         <TextLink
                                             href={request()}

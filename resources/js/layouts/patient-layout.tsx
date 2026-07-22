@@ -11,6 +11,7 @@ import {
 import { useState } from 'react';
 import AppLogoIcon from '@/components/app-logo-icon';
 import { SystemNotificationBell } from '@/components/system-notification-bell';
+import { TooltipIconButton } from '@/components/tooltip-icon-button';
 import { Button } from '@/components/ui/button';
 import { logout } from '@/routes/patient';
 import { index as appointmentsIndex } from '@/routes/patient/appointments';
@@ -68,14 +69,15 @@ export default function PatientLayout({
                         <AppLogoIcon className="size-9 fill-current" />
                         <span>Patient Portal</span>
                     </Link>
-                    <Button
+                    <TooltipIconButton
                         variant="ghost"
                         size="icon"
                         className="lg:hidden"
+                        tooltip="Close navigation"
                         onClick={() => setMenuOpen(false)}
                     >
                         <X className="size-5" />
-                    </Button>
+                    </TooltipIconButton>
                 </div>
 
                 <nav className="flex-1 space-y-1 p-4">
@@ -122,14 +124,15 @@ export default function PatientLayout({
             </aside>
 
             <header className="sticky top-0 z-20 flex h-20 items-center gap-4 border-b bg-background/95 px-4 backdrop-blur sm:px-6">
-                <Button
+                <TooltipIconButton
                     variant="ghost"
                     size="icon"
                     className="lg:hidden"
+                    tooltip="Open navigation"
                     onClick={() => setMenuOpen(true)}
                 >
                     <Menu className="size-5" />
-                </Button>
+                </TooltipIconButton>
                 <h1 className="text-lg font-semibold">
                     {current?.label ?? 'Patient Portal'}
                 </h1>

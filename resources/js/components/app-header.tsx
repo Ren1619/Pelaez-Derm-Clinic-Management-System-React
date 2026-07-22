@@ -3,6 +3,7 @@ import { BookOpen, Folder, LayoutGrid, Menu, Search } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import AppLogoIcon from '@/components/app-logo-icon';
 import { Breadcrumbs } from '@/components/breadcrumbs';
+import { TooltipIconButton } from '@/components/tooltip-icon-button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {
@@ -76,15 +77,21 @@ export function AppHeader({ breadcrumbs = [] }: Props) {
                     {/* Mobile Menu */}
                     <div className="lg:hidden">
                         <Sheet>
-                            <SheetTrigger asChild>
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="mr-2 h-[34px] w-[34px]"
-                                >
-                                    <Menu className="h-5 w-5" />
-                                </Button>
-                            </SheetTrigger>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <SheetTrigger asChild>
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="mr-2 h-[34px] w-[34px]"
+                                            aria-label="Open navigation"
+                                        >
+                                            <Menu className="h-5 w-5" />
+                                        </Button>
+                                    </SheetTrigger>
+                                </TooltipTrigger>
+                                <TooltipContent>Open navigation</TooltipContent>
+                            </Tooltip>
                             <SheetContent
                                 side="left"
                                 className="flex h-full w-64 flex-col items-stretch justify-between bg-sidebar"
@@ -178,13 +185,14 @@ export function AppHeader({ breadcrumbs = [] }: Props) {
 
                     <div className="ml-auto flex items-center space-x-2">
                         <div className="relative flex items-center space-x-1">
-                            <Button
+                            <TooltipIconButton
                                 variant="ghost"
                                 size="icon"
                                 className="group h-9 w-9 cursor-pointer"
+                                tooltip="Search"
                             >
                                 <Search className="!size-5 opacity-80 group-hover:opacity-100" />
-                            </Button>
+                            </TooltipIconButton>
                             <div className="ml-1 hidden gap-1 lg:flex">
                                 {rightNavItems.map((item) => (
                                     <Tooltip key={item.title}>
@@ -211,22 +219,32 @@ export function AppHeader({ breadcrumbs = [] }: Props) {
                             </div>
                         </div>
                         <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button
-                                    variant="ghost"
-                                    className="size-10 rounded-full p-1"
-                                >
-                                    <Avatar className="size-8 overflow-hidden rounded-full">
-                                        <AvatarImage
-                                            src={auth.user?.avatar}
-                                            alt={auth.user?.name}
-                                        />
-                                        <AvatarFallback className="rounded-lg bg-neutral-200 text-black dark:bg-neutral-700 dark:text-white">
-                                            {getInitials(auth.user?.name ?? '')}
-                                        </AvatarFallback>
-                                    </Avatar>
-                                </Button>
-                            </DropdownMenuTrigger>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button
+                                            variant="ghost"
+                                            className="size-10 rounded-full p-1"
+                                            aria-label="Open account menu"
+                                        >
+                                            <Avatar className="size-8 overflow-hidden rounded-full">
+                                                <AvatarImage
+                                                    src={auth.user?.avatar}
+                                                    alt={auth.user?.name}
+                                                />
+                                                <AvatarFallback className="rounded-lg bg-neutral-200 text-black dark:bg-neutral-700 dark:text-white">
+                                                    {getInitials(
+                                                        auth.user?.name ?? '',
+                                                    )}
+                                                </AvatarFallback>
+                                            </Avatar>
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    Open account menu
+                                </TooltipContent>
+                            </Tooltip>
                             <DropdownMenuContent className="w-56" align="end">
                                 {auth.user && (
                                     <UserMenuContent user={auth.user} />
