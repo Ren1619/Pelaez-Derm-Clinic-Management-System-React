@@ -10,10 +10,16 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\URL;
 
+/**
+ * Sends a signed verification and optional password-setup link to patients.
+ */
 class PatientAccountInvitation extends Notification implements ShouldQueue
 {
     use Queueable;
 
+    /**
+     * Store an optional password token and queue only after database commits.
+     */
     public function __construct(public readonly ?string $passwordResetToken = null)
     {
         $this->afterCommit();
@@ -31,6 +37,9 @@ class PatientAccountInvitation extends Notification implements ShouldQueue
 
     /**
      * Get the mail representation of the notification.
+     */
+    /**
+     * Build the patient verification email.
      */
     public function toMail(object $notifiable): MailMessage
     {
@@ -57,6 +66,9 @@ class PatientAccountInvitation extends Notification implements ShouldQueue
         return [];
     }
 
+    /**
+     * Build the temporary signed verification URL.
+     */
     private function verificationUrl(object $notifiable): string
     {
         /** @var \Illuminate\Contracts\Auth\MustVerifyEmail&\Illuminate\Database\Eloquent\Model $notifiable */

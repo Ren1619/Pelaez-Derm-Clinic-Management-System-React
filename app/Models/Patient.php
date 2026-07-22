@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Enums\AccountType;
+use App\Notifications\AccountPasswordResetNotification;
 use App\Notifications\PatientAccountInvitation;
 use Database\Factories\PatientFactory;
 use Illuminate\Auth\MustVerifyEmail as MustVerifyEmailTrait;
@@ -70,6 +72,14 @@ class Patient extends Authenticatable implements MustVerifyEmail
     public function sendEmailVerificationNotification(): void
     {
         $this->notify(new PatientAccountInvitation);
+    }
+
+    /**
+     * Send the patient account's queued password reset email.
+     */
+    public function sendPasswordResetNotification($token): void
+    {
+        $this->notify(new AccountPasswordResetNotification((string) $token, AccountType::Patient));
     }
 
     /** @return HasMany<PatientVisit, $this> */

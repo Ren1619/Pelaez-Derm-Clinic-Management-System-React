@@ -9,6 +9,9 @@ import { Label } from '@/components/ui/label';
 import { login } from '@/routes';
 import { email } from '@/routes/password';
 
+/**
+ * Requests a password reset without revealing whether an account exists.
+ */
 export default function ForgotPassword({ status }: { status?: string }) {
     return (
         <>

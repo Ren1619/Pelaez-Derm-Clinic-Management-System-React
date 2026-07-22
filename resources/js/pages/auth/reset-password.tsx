@@ -1,4 +1,4 @@
-import { Form, Head } from '@inertiajs/react';
+import { Form, Head, setLayoutProps } from '@inertiajs/react';
 import InputError from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
 import { Button } from '@/components/ui/button';
@@ -11,26 +11,43 @@ type Props = {
     accountType: 'staff' | 'patient';
     token: string;
     email: string;
+    isAccountSetup?: boolean;
     passwordRules: string;
 };
 
+/**
+ * Resets a password through the broker selected by the signed email link.
+ */
 export default function ResetPassword({
     accountType,
     token,
     email,
+    isAccountSetup = false,
     passwordRules,
 }: Props) {
+    const pageTitle = isAccountSetup
+        ? 'Create your password'
+        : 'Reset password';
+    const pageDescription = isAccountSetup
+        ? 'Your email is verified. Create a password to finish setting up your account.'
+        : 'Please enter your new password below';
+
+    // Keep the shared auth layout consistent with how the user reached this form.
+    setLayoutProps({ title: pageTitle, description: pageDescription });
+
     return (
         <>
-            <Head title="Reset password" />
+            <Head title={pageTitle} />
 
             <Form
                 {...update.form()}
+                // Hidden routing values keep the visible form simple and read-only.
                 transform={(data) => ({
                     ...data,
                     account_type: accountType,
                     token,
                     email,
+                    account_setup: isAccountSetup,
                 })}
                 resetOnSuccess={['password', 'password_confirmation']}
             >
@@ -92,7 +109,9 @@ export default function ResetPassword({
                             data-test="reset-password-button"
                         >
                             {processing && <Spinner />}
-                            Reset password
+                            {isAccountSetup
+                                ? 'Create password'
+                                : 'Reset password'}
                         </Button>
                     </div>
                 )}

@@ -88,7 +88,7 @@ export default function PatientLayout({
                                 key={link.label}
                                 href={link.href}
                                 onClick={() => setMenuOpen(false)}
-                                className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${active ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}
+                                className={`flex items-center gap-3 rounded-r-lg border-l-4 px-3 py-2.5 text-sm font-medium transition-colors ${active ? 'border-primary bg-primary/10 text-primary' : 'border-transparent text-muted-foreground hover:bg-primary/10 hover:text-foreground'}`}
                             >
                                 <Icon className="size-5" />
                                 {link.label}

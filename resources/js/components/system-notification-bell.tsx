@@ -172,7 +172,7 @@ export function SystemNotificationBell({ audience }: { audience: Audience }) {
                 >
                     <Bell className="size-5" />
                     {notificationSummary.unread_count > 0 && (
-                        <span className="absolute top-0 right-0 flex min-w-5 translate-x-1/4 -translate-y-1/4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-white">
+                        <span className="absolute top-0 right-0 flex min-w-5 translate-x-1/4 -translate-y-1/4 items-center justify-center rounded-full bg-linear-to-br from-brand-bright via-brand-mid to-brand-deep px-1 text-[10px] font-bold text-white">
                             {notificationSummary.unread_count > 99
                                 ? '99+'
                                 : notificationSummary.unread_count}

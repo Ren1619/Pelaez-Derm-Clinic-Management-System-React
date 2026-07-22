@@ -159,7 +159,7 @@ export function PublicSiteLayout({
                             href={
                                 auth.user ? authenticatedHref : patientLogin()
                             }
-                            className="rounded-lg bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg"
+                            className="rounded-lg bg-linear-to-br from-brand-bright via-brand-mid to-brand-deep px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg"
                         >
                             {auth.user ? 'Continue' : 'Login'}
                         </Link>
@@ -215,7 +215,7 @@ export function PublicSiteLayout({
                             href={
                                 auth.user ? authenticatedHref : patientLogin()
                             }
-                            className="mt-4 block rounded-lg bg-primary px-5 py-3 text-center font-semibold text-primary-foreground"
+                            className="mt-4 block rounded-lg bg-linear-to-br from-brand-bright via-brand-mid to-brand-deep px-5 py-3 text-center font-semibold text-white"
                             onClick={() => setMenuOpen(false)}
                         >
                             {auth.user ? 'Continue' : 'Login'}

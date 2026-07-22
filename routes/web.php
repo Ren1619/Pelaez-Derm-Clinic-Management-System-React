@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AccountAuthenticationController;
+use App\Http\Controllers\AccountEmailVerificationController;
 use App\Http\Controllers\AccountPasswordResetController;
 use App\Http\Controllers\ActivityLogController;
 use App\Http\Controllers\AppointmentController;
@@ -64,6 +65,12 @@ Route::middleware(['guest:web', 'guest:patient'])->group(function () {
     Route::post('account/login', [AccountAuthenticationController::class, 'store'])
         ->middleware('throttle:login')
         ->name('account.login.store');
+
+    Route::get('resend-verification', [AccountEmailVerificationController::class, 'create'])
+        ->name('account.verification.request');
+    Route::post('resend-verification', [AccountEmailVerificationController::class, 'store'])
+        ->middleware('throttle:6,1')
+        ->name('account.verification.send');
 
     Route::get('forgot-password', [AccountPasswordResetController::class, 'create'])
         ->name('password.request');

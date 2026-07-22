@@ -317,7 +317,7 @@ export default function PatientRecordShow({
 
                                 <Button
                                     onClick={() => openVisitDialog(null)}
-                                    className="bg-[#F91D7C] hover:bg-[#e01a70]"
+                                    className="bg-primary hover:bg-primary/90"
                                 >
                                     <Plus /> Visit
                                 </Button>
@@ -458,7 +458,7 @@ function PatientIdentityCard({ patient }: { patient: Patient }) {
                     </Link>
                 </Button>
                 <h1 className="text-xl font-bold sm:text-2xl">
-                    <span className="text-[#F91D7C]">
+                    <span className="text-primary">
                         {patient.first_name}
                         {patient.middle_name ? ` ${patient.middle_name}` : ''}
                     </span>{' '}
@@ -482,7 +482,7 @@ function PatientIdentityCard({ patient }: { patient: Patient }) {
             <div className="border-t">
                 <button
                     type="button"
-                    className="flex w-full items-center justify-between py-4 text-left font-medium hover:text-[#F91D7C]"
+                    className="flex w-full items-center justify-between py-4 text-left font-medium hover:text-primary"
                     onClick={() => setMoreInfoOpen((open) => !open)}
                     aria-expanded={moreInfoOpen}
                 >
@@ -577,7 +577,7 @@ function SummaryAccordion({
                         </div>
                         <Button
                             size="sm"
-                            className="bg-[#F91D7C] hover:bg-[#e01a70]"
+                            className="bg-primary hover:bg-primary/90"
                             onClick={onAdd}
                         >
                             <Plus />{' '}
@@ -786,7 +786,7 @@ function VisitCard({
                 <div className="flex flex-wrap items-center gap-2 font-semibold">
                     {dateFormatter.format(new Date(visit.visited_at))}
                     {isLatest && (
-                        <span className="rounded-full bg-[#F91D7C]/10 px-2 py-0.5 text-[11px] font-medium text-[#F91D7C]">
+                        <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
                             Last visit
                         </span>
                     )}
@@ -843,7 +843,7 @@ function VisitCard({
                                         setActiveTab(tab);
                                         setSearch('');
                                     }}
-                                    className={`border-b-2 px-2 py-3 text-sm font-medium capitalize ${activeTab === tab ? 'border-[#F91D7C] text-[#F91D7C]' : 'border-transparent text-muted-foreground hover:border-border hover:text-foreground'}`}
+                                    className={`border-b-2 px-2 py-3 text-sm font-medium capitalize ${activeTab === tab ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:border-border hover:text-foreground'}`}
                                 >
                                     {tab === 'prescription'
                                         ? 'Prescriptions'
@@ -872,7 +872,7 @@ function VisitCard({
                             </div>
                             <Button
                                 size="sm"
-                                className="bg-[#F91D7C] hover:bg-[#e01a70]"
+                                className="bg-primary hover:bg-primary/90"
                                 onClick={() => onAddRecord(activeTab)}
                             >
                                 <Plus />{' '}

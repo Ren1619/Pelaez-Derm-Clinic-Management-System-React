@@ -10,10 +10,16 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\URL;
 
+/**
+ * Sends a signed verification and optional password-setup link to staff.
+ */
 class StaffAccountInvitation extends Notification implements ShouldQueue
 {
     use Queueable;
 
+    /**
+     * Store an optional password token and queue only after database commits.
+     */
     public function __construct(public readonly ?string $passwordResetToken = null)
     {
         $this->afterCommit();
@@ -25,6 +31,9 @@ class StaffAccountInvitation extends Notification implements ShouldQueue
         return ['mail'];
     }
 
+    /**
+     * Build the staff verification email.
+     */
     public function toMail(object $notifiable): MailMessage
     {
         $message = (new MailMessage)
@@ -50,6 +59,9 @@ class StaffAccountInvitation extends Notification implements ShouldQueue
         return [];
     }
 
+    /**
+     * Build the temporary signed verification URL.
+     */
     private function verificationUrl(object $notifiable): string
     {
         /** @var \Illuminate\Contracts\Auth\MustVerifyEmail&\Illuminate\Database\Eloquent\Model $notifiable */
