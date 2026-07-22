@@ -1,13 +1,16 @@
 import { Form, Link } from '@inertiajs/react';
-import { Boxes, ImageIcon, Tags } from 'lucide-react';
+import { Boxes, CalendarIcon, ImageIcon, Tags } from 'lucide-react';
+import { useState } from 'react';
 import {
     restock,
     store,
     update,
 } from '@/actions/App/Http/Controllers/InventoryController';
+import ImageUploadField from '@/components/image-upload-field';
 import InputError from '@/components/input-error';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Calendar } from '@/components/ui/calendar';
 import {
     Dialog,
     DialogContent,
@@ -18,6 +21,11 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from '@/components/ui/popover';
 import { index as categoriesIndex } from '@/routes/categories';
 import type {
     InventoryBranchOption,
@@ -39,6 +47,91 @@ type ProductDialogProps = {
     open: boolean;
     onOpenChange: (open: boolean) => void;
 };
+
+/** Formats a selected expiration date for display. */
+function formatExpirationDate(date: Date): string {
+    return new Intl.DateTimeFormat('en-US', {
+        month: 'long',
+        day: 'numeric',
+        year: 'numeric',
+    }).format(date);
+}
+
+/** Formats a selected expiration date for Laravel submission. */
+function formatExpirationDateForSubmission(date: Date | undefined): string {
+    if (!date) {
+        return '';
+    }
+
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+
+    return `${year}-${month}-${day}`;
+}
+
+/** Displays the Shadcn calendar used to select a future expiration date. */
+function ExpirationDateInput({ invalid }: { invalid: boolean }) {
+    const [open, setOpen] = useState(false);
+    const [date, setDate] = useState<Date | undefined>();
+    const [month, setMonth] = useState<Date | undefined>();
+    const today = new Date();
+    const tomorrow = new Date(
+        today.getFullYear(),
+        today.getMonth(),
+        today.getDate() + 1,
+    );
+
+    return (
+        <>
+            <input
+                type="hidden"
+                name="expiration_date"
+                value={formatExpirationDateForSubmission(date)}
+            />
+            <Popover open={open} onOpenChange={setOpen}>
+                <PopoverTrigger asChild>
+                    <Button
+                        id="expiration_date"
+                        type="button"
+                        variant="outline"
+                        aria-required="true"
+                        aria-invalid={invalid}
+                        className="w-full justify-between font-normal aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20"
+                    >
+                        <span className={date ? '' : 'text-muted-foreground'}>
+                            {date
+                                ? formatExpirationDate(date)
+                                : 'July 10, 2026'}
+                        </span>
+                        <CalendarIcon className="size-4 text-muted-foreground" />
+                    </Button>
+                </PopoverTrigger>
+                <PopoverContent
+                    className="w-auto max-w-[calc(100vw-2rem)] overflow-auto p-0"
+                    align="end"
+                >
+                    <Calendar
+                        mode="single"
+                        selected={date}
+                        month={month}
+                        onMonthChange={setMonth}
+                        onSelect={(selectedDate) => {
+                            setDate(selectedDate);
+                            setMonth(selectedDate);
+                            setOpen(false);
+                        }}
+                        captionLayout="dropdown"
+                        startMonth={tomorrow}
+                        endMonth={new Date(today.getFullYear() + 50, 11)}
+                        disabled={{ before: tomorrow }}
+                        autoFocus
+                    />
+                </PopoverContent>
+            </Popover>
+        </>
+    );
+}
 
 function ProductImage({ product }: { product: ProductBatch | null }) {
     if (product?.image_url) {
@@ -138,7 +231,7 @@ export function ProductDialog({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+            <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-xl">
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
                         <Boxes className="size-5" />
@@ -169,34 +262,19 @@ export function ProductDialog({
                     >
                         {({ errors, processing, progress }) => (
                             <>
-                                <ProductImage product={product} />
-
-                                <div className="grid gap-2">
-                                    <Label htmlFor="new_image">
-                                        Product image
-                                    </Label>
-                                    <Input
-                                        id="new_image"
-                                        name="new_image"
-                                        type="file"
-                                        accept=".jpg,.jpeg,.png,image/jpeg,image/png"
-                                        aria-invalid={Boolean(errors.new_image)}
-                                    />
-                                    <p className="text-xs text-muted-foreground">
-                                        JPEG or PNG, up to 5 MB. Leave blank to
-                                        keep the current image.
-                                    </p>
-                                    <InputError message={errors.new_image} />
-                                    {progress && (
-                                        <progress
-                                            value={progress.percentage}
-                                            max="100"
-                                            className="h-2 w-full"
-                                        >
-                                            {progress.percentage}%
-                                        </progress>
-                                    )}
-                                </div>
+                                <ImageUploadField
+                                    key={`${open}-${product?.product_ID ?? 'new'}`}
+                                    id="product-new-image"
+                                    label="Product image"
+                                    accept=".jpg,.jpeg,.png,image/jpeg,image/png"
+                                    helpText="JPEG or PNG, up to 5 MB. Leave blank to keep the current image."
+                                    existingImageUrl={product?.image_url}
+                                    imageAlt={
+                                        product?.name ?? 'Product image preview'
+                                    }
+                                    error={errors.new_image}
+                                    progress={progress?.percentage}
+                                />
 
                                 {(isRestock || isEdit) && product && (
                                     <div className="grid gap-4 rounded-lg border bg-muted/30 p-4 sm:grid-cols-2">
@@ -257,7 +335,7 @@ export function ProductDialog({
                                             <div className="grid gap-2">
                                                 <div className="flex items-center justify-between gap-3">
                                                     <Label htmlFor="category_ID">
-                                                        Product category
+                                                        Category
                                                     </Label>
                                                     <Button
                                                         type="button"
@@ -321,117 +399,232 @@ export function ProductDialog({
                                                 />
                                             </div>
 
-                                            <div className="grid gap-2">
-                                                <Label htmlFor="measurement_unit">
-                                                    Measurement unit
-                                                </Label>
-                                                <Input
-                                                    id="measurement_unit"
-                                                    name="measurement_unit"
-                                                    defaultValue={
-                                                        product?.measurement_unit ??
-                                                        ''
-                                                    }
-                                                    placeholder="e.g. pcs, tube, ml"
-                                                    maxLength={50}
-                                                    required
-                                                    aria-invalid={Boolean(
-                                                        errors.measurement_unit,
-                                                    )}
-                                                />
-                                                <InputError
-                                                    message={
-                                                        errors.measurement_unit
-                                                    }
-                                                />
-                                            </div>
+                                            {isEdit && (
+                                                <div className="grid gap-2">
+                                                    <Label htmlFor="measurement_unit">
+                                                        Measurement unit
+                                                    </Label>
+                                                    <Input
+                                                        id="measurement_unit"
+                                                        name="measurement_unit"
+                                                        defaultValue={
+                                                            product?.measurement_unit ??
+                                                            ''
+                                                        }
+                                                        placeholder="e.g. pcs, tube, ml"
+                                                        maxLength={50}
+                                                        required
+                                                        aria-invalid={Boolean(
+                                                            errors.measurement_unit,
+                                                        )}
+                                                    />
+                                                    <InputError
+                                                        message={
+                                                            errors.measurement_unit
+                                                        }
+                                                    />
+                                                </div>
+                                            )}
+
+                                            {!isEdit && mainBranch && (
+                                                <div className="grid gap-2">
+                                                    <input
+                                                        type="hidden"
+                                                        name="branch_ID"
+                                                        value={
+                                                            mainBranch.branch_ID
+                                                        }
+                                                    />
+                                                    <Label htmlFor="branch_display">
+                                                        Branch
+                                                    </Label>
+                                                    <Input
+                                                        id="branch_display"
+                                                        value={
+                                                            mainBranch.branch_name
+                                                        }
+                                                        disabled
+                                                        className="bg-muted/40"
+                                                    />
+                                                    <InputError
+                                                        message={
+                                                            errors.branch_ID
+                                                        }
+                                                    />
+                                                </div>
+                                            )}
+
+                                            {!isEdit && (
+                                                <div className="grid gap-2">
+                                                    <Label htmlFor="measurement_unit">
+                                                        Measurement unit
+                                                    </Label>
+                                                    <Input
+                                                        id="measurement_unit"
+                                                        name="measurement_unit"
+                                                        defaultValue={
+                                                            product?.measurement_unit ??
+                                                            ''
+                                                        }
+                                                        placeholder="e.g. pcs, tube, ml"
+                                                        maxLength={50}
+                                                        required
+                                                        aria-invalid={Boolean(
+                                                            errors.measurement_unit,
+                                                        )}
+                                                    />
+                                                    <InputError
+                                                        message={
+                                                            errors.measurement_unit
+                                                        }
+                                                    />
+                                                </div>
+                                            )}
+
+                                            {!isEdit && (
+                                                <div className="grid gap-2">
+                                                    <Label htmlFor="quantity">
+                                                        Quantity
+                                                    </Label>
+                                                    <Input
+                                                        id="quantity"
+                                                        name="quantity"
+                                                        type="number"
+                                                        min={0}
+                                                        max={999999}
+                                                        defaultValue={
+                                                            product?.quantity ??
+                                                            ''
+                                                        }
+                                                        placeholder="e.g. 100"
+                                                        required
+                                                        aria-invalid={Boolean(
+                                                            errors.quantity,
+                                                        )}
+                                                    />
+                                                    <InputError
+                                                        message={
+                                                            errors.quantity
+                                                        }
+                                                    />
+                                                </div>
+                                            )}
+
+                                            {!isEdit && (
+                                                <div className="grid gap-2">
+                                                    <Label htmlFor="expiration_date">
+                                                        Expiration date
+                                                    </Label>
+                                                    <ExpirationDateInput
+                                                        key={`${open}-${product?.product_ID ?? 'new'}`}
+                                                        invalid={Boolean(
+                                                            errors.expiration_date,
+                                                        )}
+                                                    />
+                                                    <InputError
+                                                        message={
+                                                            errors.expiration_date
+                                                        }
+                                                    />
+                                                </div>
+                                            )}
+
+                                            {!isEdit && (
+                                                <div className="grid gap-2">
+                                                    <Label htmlFor="price">
+                                                        Price
+                                                    </Label>
+                                                    <Input
+                                                        id="price"
+                                                        name="price"
+                                                        type="number"
+                                                        inputMode="decimal"
+                                                        min="0"
+                                                        max="999999.99"
+                                                        step="0.01"
+                                                        defaultValue={
+                                                            product?.price ?? ''
+                                                        }
+                                                        placeholder="e.g. 1,500.00"
+                                                        required
+                                                        aria-invalid={Boolean(
+                                                            errors.price,
+                                                        )}
+                                                    />
+                                                    <InputError
+                                                        message={errors.price}
+                                                    />
+                                                </div>
+                                            )}
                                         </div>
                                     </>
                                 )}
 
-                                {!isEdit && !isRestock && mainBranch && (
-                                    <>
-                                        <input
-                                            type="hidden"
-                                            name="branch_ID"
-                                            value={mainBranch.branch_ID}
-                                        />
+                                {(isEdit || isRestock) && (
+                                    <div className="grid gap-4 sm:grid-cols-2">
                                         <div className="grid gap-2">
-                                            <Label htmlFor="branch_display">
-                                                Branch
+                                            <Label htmlFor="quantity">
+                                                {isRestock
+                                                    ? 'Quantity to add'
+                                                    : 'Quantity'}
                                             </Label>
                                             <Input
-                                                id="branch_display"
-                                                value={mainBranch.branch_name}
-                                                disabled
-                                                className="bg-muted/40"
+                                                id="quantity"
+                                                name="quantity"
+                                                type="number"
+                                                min={isRestock ? 1 : 0}
+                                                max={999999}
+                                                defaultValue={
+                                                    isRestock
+                                                        ? ''
+                                                        : (product?.quantity ??
+                                                          '')
+                                                }
+                                                placeholder="e.g. 100"
+                                                required
+                                                aria-invalid={Boolean(
+                                                    errors.quantity,
+                                                )}
                                             />
-                                            <p className="text-xs text-muted-foreground">
-                                                New inventory can only be added
-                                                to the main branch.
-                                            </p>
                                             <InputError
-                                                message={errors.branch_ID}
+                                                message={errors.quantity}
                                             />
                                         </div>
-                                    </>
+
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="price">Price</Label>
+                                            <Input
+                                                id="price"
+                                                name="price"
+                                                type="number"
+                                                inputMode="decimal"
+                                                min="0"
+                                                max="999999.99"
+                                                step="0.01"
+                                                defaultValue={
+                                                    product?.price ?? ''
+                                                }
+                                                placeholder="e.g. 1,500.00"
+                                                required
+                                                aria-invalid={Boolean(
+                                                    errors.price,
+                                                )}
+                                            />
+                                            <InputError
+                                                message={errors.price}
+                                            />
+                                        </div>
+                                    </div>
                                 )}
 
-                                <div className="grid gap-4 sm:grid-cols-2">
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="quantity">
-                                            {isRestock
-                                                ? 'Quantity to add'
-                                                : 'Quantity'}
-                                        </Label>
-                                        <Input
-                                            id="quantity"
-                                            name="quantity"
-                                            type="number"
-                                            min={isRestock ? 1 : 0}
-                                            max={999999}
-                                            defaultValue={
-                                                isRestock
-                                                    ? ''
-                                                    : (product?.quantity ?? '')
-                                            }
-                                            required
-                                            aria-invalid={Boolean(
-                                                errors.quantity,
-                                            )}
-                                        />
-                                        <InputError message={errors.quantity} />
-                                    </div>
-
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="price">Price</Label>
-                                        <Input
-                                            id="price"
-                                            name="price"
-                                            type="number"
-                                            inputMode="decimal"
-                                            min="0"
-                                            max="999999.99"
-                                            step="0.01"
-                                            defaultValue={product?.price ?? ''}
-                                            required
-                                            aria-invalid={Boolean(errors.price)}
-                                        />
-                                        <InputError message={errors.price} />
-                                    </div>
-                                </div>
-
-                                {!isEdit && (
+                                {isRestock && (
                                     <div className="grid gap-2">
                                         <Label htmlFor="expiration_date">
                                             Expiration date
                                         </Label>
-                                        <Input
-                                            id="expiration_date"
-                                            name="expiration_date"
-                                            type="date"
-                                            required
-                                            aria-invalid={Boolean(
+                                        <ExpirationDateInput
+                                            key={`${open}-${product?.product_ID ?? 'new'}`}
+                                            invalid={Boolean(
                                                 errors.expiration_date,
                                             )}
                                         />
