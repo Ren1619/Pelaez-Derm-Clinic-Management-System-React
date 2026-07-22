@@ -247,6 +247,7 @@ test('a new patient invitation verifies email and continues to password setup', 
         'accountType' => 'patient',
         'token' => $token,
         'email' => $patient->email,
+        'account_setup' => true,
     ]));
 
     expect($patient->refresh()->hasVerifiedEmail())->toBeTrue();

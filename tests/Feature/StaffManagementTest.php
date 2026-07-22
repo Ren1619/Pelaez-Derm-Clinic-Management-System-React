@@ -293,6 +293,7 @@ test('a new staff invitation verifies email and continues to password setup', fu
         'accountType' => 'staff',
         'token' => $token,
         'email' => $staffAccount->email,
+        'account_setup' => true,
     ]));
 
     expect($staffAccount->refresh()->hasVerifiedEmail())->toBeTrue();

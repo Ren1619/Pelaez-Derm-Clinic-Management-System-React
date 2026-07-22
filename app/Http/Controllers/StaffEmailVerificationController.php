@@ -27,6 +27,7 @@ class StaffEmailVerificationController extends Controller
                 'accountType' => AccountType::Staff->value,
                 'token' => $passwordResetToken,
                 'email' => $staffAccount->email,
+                'account_setup' => true,
             ]);
         }
 

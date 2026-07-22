@@ -14,6 +14,15 @@ return [
     |
     */
 
+    'brevo' => [
+        'key' => env('BREVO_API_KEY', env('BREVO_KEY')),
+        'api_url' => env('BREVO_API_URL', 'https://api.brevo.com/v3'),
+        'sender_email' => env('BREVO_SENDER_EMAIL', env('MAIL_FROM_ADDRESS')),
+        'sender_name' => env('BREVO_SENDER_NAME', env('MAIL_FROM_NAME', env('APP_NAME'))),
+        'timeout' => (int) env('BREVO_TIMEOUT', 10),
+        'connect_timeout' => (int) env('BREVO_CONNECT_TIMEOUT', 3),
+    ],
+
     'postmark' => [
         'key' => env('POSTMARK_API_KEY'),
     ],

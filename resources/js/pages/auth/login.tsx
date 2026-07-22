@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
 import { store } from '@/routes/account/login';
+import { request as requestVerification } from '@/routes/account/verification';
 import { request } from '@/routes/password';
 
 type Props = {
@@ -15,6 +16,9 @@ type Props = {
     canResetPassword: boolean;
 };
 
+/**
+ * Shows one secure login form for staff, administrators, and patients.
+ */
 export default function Login({ status, canResetPassword }: Props) {
     return (
         <>
@@ -91,6 +95,13 @@ export default function Login({ status, canResetPassword }: Props) {
                         <p className="text-center text-sm text-muted-foreground">
                             Staff, administrators, and patients use this secure
                             login.
+                        </p>
+
+                        <p className="text-center text-sm text-muted-foreground">
+                            Still waiting for account verification?{' '}
+                            <TextLink href={requestVerification()}>
+                                Resend the email
+                            </TextLink>
                         </p>
                     </>
                 )}

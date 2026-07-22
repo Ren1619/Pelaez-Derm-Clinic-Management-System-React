@@ -5,6 +5,9 @@ namespace App\Http\Requests;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
+/**
+ * Validates credentials submitted by the shared login form.
+ */
 class AccountLoginRequest extends FormRequest
 {
     /**

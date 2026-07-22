@@ -27,7 +27,11 @@ class StaffAccountService
             ->withQueryString();
     }
 
-    /** @param array<string, mixed> $attributes */
+    /**
+     * Create a staff account and send a secure verification/setup email.
+     *
+     * @param  array<string, mixed>  $attributes
+     */
     public function create(array $attributes): StaffAccount
     {
         $initialPassword = Str::password(40, true, true, true, false);
@@ -45,7 +49,11 @@ class StaffAccountService
         return $staffAccount;
     }
 
-    /** @param array<string, mixed> $attributes */
+    /**
+     * Update a staff account and re-verify a changed email address.
+     *
+     * @param  array<string, mixed>  $attributes
+     */
     public function update(StaffAccount $staffAccount, array $attributes): StaffAccount
     {
         $emailChanged = $staffAccount->email !== $attributes['email'];

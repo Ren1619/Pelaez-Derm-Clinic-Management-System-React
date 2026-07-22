@@ -8,6 +8,9 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 
+/**
+ * Validates a broker-aware password reset submission.
+ */
 class ResetAccountPasswordRequest extends FormRequest
 {
     /**
@@ -30,6 +33,7 @@ class ResetAccountPasswordRequest extends FormRequest
             'token' => ['required', 'string'],
             'email' => ['required', 'string', 'email', 'max:255'],
             'password' => ['required', 'string', Password::defaults(), 'confirmed'],
+            'account_setup' => ['sometimes', 'boolean'],
         ];
     }
 }

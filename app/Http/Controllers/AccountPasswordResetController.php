@@ -18,10 +18,19 @@ use Illuminate\Validation\Rules\Password as PasswordRule;
 use Inertia\Inertia;
 use Inertia\Response;
 
+/**
+ * Handles shared forgot-password and reset-password screens.
+ */
 class AccountPasswordResetController extends Controller
 {
+    /**
+     * Create the controller with the shared account locator.
+     */
     public function __construct(private AccountLocator $accountLocator) {}
 
+    /**
+     * Show the shared forgot-password form.
+     */
     public function create(Request $request): Response
     {
         return Inertia::render('auth/forgot-password', [
@@ -29,6 +38,9 @@ class AccountPasswordResetController extends Controller
         ]);
     }
 
+    /**
+     * Send a reset email through the account's matching broker.
+     */
     public function store(SendAccountPasswordResetLinkRequest $request): RedirectResponse
     {
         $email = $request->string('email')->lower()->toString();
@@ -42,6 +54,9 @@ class AccountPasswordResetController extends Controller
         return back()->with('status', $this->genericResetStatus());
     }
 
+    /**
+     * Show the password form for the account type in the email link.
+     */
     public function edit(Request $request, string $accountType, string $token): Response
     {
         abort_unless(AccountType::tryFrom($accountType) !== null, 404);
@@ -50,10 +65,14 @@ class AccountPasswordResetController extends Controller
             'accountType' => $accountType,
             'email' => $request->string('email')->toString(),
             'token' => $token,
+            'isAccountSetup' => $request->boolean('account_setup'),
             'passwordRules' => PasswordRule::defaults()->toPasswordRulesString(),
         ]);
     }
 
+    /**
+     * Reset the password after the matching broker validates the token.
+     */
     public function update(ResetAccountPasswordRequest $request): RedirectResponse
     {
         $accountType = AccountType::from($request->string('account_type')->toString());
@@ -80,9 +99,16 @@ class AccountPasswordResetController extends Controller
             return back()->withErrors(['email' => trans($status)]);
         }
 
-        return to_route('login')->with('status', trans($status));
+        $message = $request->boolean('account_setup')
+            ? 'Your account is ready. You can now log in.'
+            : trans($status);
+
+        return to_route('login')->with('status', $message);
     }
 
+    /**
+     * Return a response that does not reveal whether an account exists.
+     */
     private function genericResetStatus(): string
     {
         return 'If an account exists for that email address, a password reset link has been sent.';

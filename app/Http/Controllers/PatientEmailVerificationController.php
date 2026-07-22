@@ -28,6 +28,7 @@ class PatientEmailVerificationController extends Controller
                 'accountType' => AccountType::Patient->value,
                 'token' => $passwordResetToken,
                 'email' => $patient->email,
+                'account_setup' => true,
             ]);
         }
 

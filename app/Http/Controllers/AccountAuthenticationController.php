@@ -12,10 +12,19 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 
+/**
+ * Authenticates staff and patient accounts from one login form.
+ */
 class AccountAuthenticationController extends Controller
 {
+    /**
+     * Create the controller with the shared account locator.
+     */
     public function __construct(private AccountLocator $accountLocator) {}
 
+    /**
+     * Validate credentials and start the correct account session.
+     */
     public function store(AccountLoginRequest $request): RedirectResponse
     {
         $email = $request->string('email')->lower()->toString();
@@ -29,7 +38,7 @@ class AccountAuthenticationController extends Controller
 
         if (! $account->hasVerifiedEmail()) {
             throw ValidationException::withMessages([
-                'email' => 'Please verify your email address before logging in.',
+                'email' => 'Please verify your email address before logging in. You can resend the verification email below.',
             ]);
         }
 
@@ -40,6 +49,9 @@ class AccountAuthenticationController extends Controller
         return redirect()->to($this->landingUrl($account, $accountType));
     }
 
+    /**
+     * Return the first page available to the authenticated account.
+     */
     private function landingUrl(StaffAccount|Patient $account, AccountType $accountType): string
     {
         if ($accountType === AccountType::Patient) {

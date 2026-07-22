@@ -2,8 +2,10 @@
 
 namespace App\Models;
 
+use App\Enums\AccountType;
 use App\Enums\StaffModule;
 use App\Enums\StaffRole;
+use App\Notifications\AccountPasswordResetNotification;
 use App\Notifications\StaffAccountInvitation;
 use Database\Factories\StaffAccountFactory;
 use Illuminate\Auth\MustVerifyEmail as MustVerifyEmailTrait;
@@ -101,9 +103,12 @@ class StaffAccount extends Authenticatable implements MustVerifyEmail
         return $this->full_name;
     }
 
+    /**
+     * Return the account's typed staff role.
+     */
     public function roleKey(): ?StaffRole
     {
-        return StaffRole::tryFrom($this->role?->role_name ?? '');
+        return StaffRole::tryFrom($this->role->role_name);
     }
 
     public function isSuperAdmin(): bool
@@ -140,6 +145,14 @@ class StaffAccount extends Authenticatable implements MustVerifyEmail
     public function sendEmailVerificationNotification(): void
     {
         $this->notify(new StaffAccountInvitation);
+    }
+
+    /**
+     * Send the staff account's queued password reset email.
+     */
+    public function sendPasswordResetNotification($token): void
+    {
+        $this->notify(new AccountPasswordResetNotification((string) $token, AccountType::Staff));
     }
 
     /** @return array<string, string> */

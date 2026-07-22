@@ -70,7 +70,11 @@ class PatientManagementService
             ->withQueryString();
     }
 
-    /** @param array<string, mixed> $attributes */
+    /**
+     * Create a patient account and send a secure verification/setup email.
+     *
+     * @param  array<string, mixed>  $attributes
+     */
     public function create(array $attributes): Patient
     {
         $initialPassword = Str::password(40, true, true, true, false);
@@ -87,7 +91,11 @@ class PatientManagementService
         return $patient;
     }
 
-    /** @param array<string, mixed> $attributes */
+    /**
+     * Update a patient account and re-verify a changed email address.
+     *
+     * @param  array<string, mixed>  $attributes
+     */
     public function update(Patient $patient, array $attributes): Patient
     {
         $emailChanged = $patient->email !== $attributes['email'];
