@@ -3,10 +3,7 @@
 namespace App\Providers;
 
 use App\Mail\BrevoTransport;
-use App\Enums\AccountType;
-use App\Models\Patient;
 use App\Models\Product;
-use App\Models\StaffAccount;
 use App\Observers\ProductObserver;
 use App\Services\ActivityLogRecorder;
 use Carbon\CarbonImmutable;
@@ -35,7 +32,6 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->registerBrevoMailTransport();
         $this->configureDefaults();
-        $this->configurePasswordResetUrls();
         Product::observe(ProductObserver::class);
         $this->app->make(ActivityLogRecorder::class)->listen();
     }
@@ -80,14 +76,17 @@ class AppServiceProvider extends ServiceProvider
             app()->isProduction(),
         );
 
-        Password::defaults(fn (): ?Password => app()->isProduction()
-            ? Password::min(12)
+        Password::defaults(function (): Password {
+            $passwordRule = Password::min(8)
                 ->mixedCase()
                 ->letters()
                 ->numbers()
-                ->symbols()
-                ->uncompromised()
-            : null,
-        );
+                ->symbols();
+
+            // Avoid the external compromised-password lookup during local development and tests.
+            return app()->isProduction()
+                ? $passwordRule->uncompromised()
+                : $passwordRule;
+        });
     }
 }
