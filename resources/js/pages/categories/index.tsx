@@ -253,7 +253,7 @@ export default function CategoriesIndex({
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {categories.data.map((category, index) => (
+                            {categories.data.map((category, itemIndex) => (
                                 <ClickableTableRow
                                     key={category.category_ID}
                                     accessibleLabel={`Open ${category.category_name}`}
@@ -266,8 +266,6 @@ export default function CategoriesIndex({
                                     }}
                                     className={newRecordRowClass(category)}
                                 >
-                            {categories.data.map((category, itemIndex) => (
-                                <TableRow key={category.category_ID}>
                                     <TableCell className="text-muted-foreground">
                                         {(categories.current_page - 1) *
                                             categories.per_page +

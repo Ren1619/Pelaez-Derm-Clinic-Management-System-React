@@ -2,7 +2,6 @@ export type CategoryType = 'Product' | 'Service';
 
 import type { NewRecordTracked } from './new-record';
 
-export type Category = NewRecordTracked & {
 export type MajorServiceCategory = {
     major_service_category_ID: number;
     name: string;
@@ -10,7 +9,7 @@ export type MajorServiceCategory = {
     categories_count?: number;
 };
 
-export type Category = {
+export type Category = NewRecordTracked & {
     category_ID: number;
     category_name: string;
     category_type: CategoryType;
