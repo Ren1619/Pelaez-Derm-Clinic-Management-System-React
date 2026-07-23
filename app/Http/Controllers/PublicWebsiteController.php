@@ -106,7 +106,7 @@ class PublicWebsiteController extends Controller
                 'facebook_link' => $branch->fb_link,
                 'image_url' => $branch->branch_img === null
                     ? null
-                    : Storage::disk('public')->url($branch->branch_img),
+                    : "/storage/{$branch->branch_img}",
             ])
             ->all();
     }

@@ -10,7 +10,6 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -108,7 +107,7 @@ class BranchController extends Controller
             'map_link' => $branch->map_link,
             'fb_link' => $branch->fb_link,
             'branch_img' => $branch->branch_img,
-            'image_url' => $branch->branch_img === null ? null : Storage::disk('public')->url($branch->branch_img),
+            'image_url' => $branch->branch_img === null ? null : "/storage/{$branch->branch_img}",
             'created_at' => $branch->created_at?->toISOString(),
         ];
     }

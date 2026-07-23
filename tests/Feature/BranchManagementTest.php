@@ -33,6 +33,40 @@ test('authenticated users can view and search branches', function () {
             ->where('branches.data.0.branch_name', 'Valencia City'));
 });
 
+test('branch image URLs are host independent', function () {
+    $user = User::factory()->create();
+    Branch::factory()->create([
+        'branch_name' => 'Valencia City',
+        'branch_img' => 'branches/valencia.jpg',
+    ]);
+
+    $this->actingAs($user)
+        ->withServerVariables(['HTTP_HOST' => 'clinic.test'])
+        ->get(route('branches.index'))
+        ->assertSuccessful()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where(
+                'branches.data.0.image_url',
+                '/storage/branches/valencia.jpg',
+            ));
+});
+
+test('public branch image URLs are host independent', function () {
+    Branch::factory()->create([
+        'branch_name' => 'Valencia City',
+        'branch_img' => 'branches/valencia.jpg',
+    ]);
+
+    $this->withServerVariables(['HTTP_HOST' => 'clinic.test'])
+        ->get(route('public.branches'))
+        ->assertSuccessful()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where(
+                'branches.0.image_url',
+                '/storage/branches/valencia.jpg',
+            ));
+});
+
 test('authenticated users can create a branch with an image', function () {
     Storage::fake('public');
 
