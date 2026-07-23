@@ -1,11 +1,32 @@
 import type { PosBranch, PosSale } from './pos';
 
-export type ReportPeriod =
-    'today' | 'this_week' | 'this_month' | 'this_year' | 'all_time';
+export type StatisticPeriod = 'month' | 'quarter' | 'biannual' | 'annual';
+
+export type StatisticKey =
+    | 'topProducts'
+    | 'topServices'
+    | 'revenueSplit'
+    | 'paymentMethods'
+    | 'discounts'
+    | 'voidTrend'
+    | 'peakHours'
+    | 'patientRetention'
+    | 'visitFrequency'
+    | 'topPatients'
+    | 'serviceTrends'
+    | 'topDiagnoses'
+    | 'reorderSignals'
+    | 'branchComparison'
+    | 'parentCategoryUtilization';
+
+export type StatisticPeriodSelection = {
+    period: StatisticPeriod;
+    month: number;
+    year: number | null;
+};
 
 export type ReportFilters = {
-    summary_period: ReportPeriod;
-    comparison_period: 'week' | 'month' | 'year';
+    statistic_periods: Record<StatisticKey, StatisticPeriodSelection>;
     branch_ID: number;
     sales_period:
         | 'today'
@@ -39,16 +60,15 @@ export type RankedReportItem = {
 };
 
 export type ReportAnalytics = {
+    statisticPeriods: Record<
+        StatisticKey,
+        { label: string; resolved_year: number }
+    >;
     summary: {
         totalSales: number;
         totalTransactions: number;
         averageSale: number;
         activeBranches: number;
-        growth: Record<
-            'totalSales' | 'totalTransactions' | 'averageSale',
-            { pct: number; direction: 'up' | 'down' | 'flat' }
-        >;
-        comparisonLabel: string;
     };
     salesSeries: {
         daily: ReportSeriesPoint[];
@@ -140,6 +160,16 @@ export type ReportAnalytics = {
         count: number;
         average: number;
     }>;
+    parentCategoryUtilization: {
+        period_label: string;
+        branches: Array<{ branch_ID: number; label: string }>;
+        categories: Array<{
+            parent_category_ID: number;
+            label: string;
+            total: number;
+            branches: Array<{ branch_ID: number; quantity: number }>;
+        }>;
+    };
 };
 
 export type ReportSalePaginator = {

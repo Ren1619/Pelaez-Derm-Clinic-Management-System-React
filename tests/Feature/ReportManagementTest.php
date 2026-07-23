@@ -1,11 +1,14 @@
 <?php
 
 use App\Models\Branch;
+use App\Models\Category;
+use App\Models\MajorServiceCategory;
 use App\Models\Patient;
 use App\Models\Sale;
 use App\Models\SaleProductItem;
 use App\Models\SaleReturn;
 use App\Models\SaleServiceItem;
+use App\Models\Service;
 use App\Models\StaffAccount;
 use Illuminate\Support\Str;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -113,7 +116,7 @@ test('reports exclude voided sales and show returns in branch net sales', functi
     ]);
 
     $this->actingAs($admin)
-        ->get(route('reports.index', ['summary_period' => 'today', 'sales_period' => 'today']))
+        ->get(route('reports.index', ['sales_period' => 'today']))
         ->assertSuccessful()
         ->assertInertia(fn (Assert $page) => $page
             ->where('analytics.summary.totalSales', 1000)
@@ -122,6 +125,44 @@ test('reports exclude voided sales and show returns in branch net sales', functi
             ->where('branchSales.stats.voided_amount', 400)
             ->where('branchSales.stats.returned_amount', 250)
             ->where('branchSales.stats.total_sales', 750));
+});
+
+test('overview statistics always use all-time completed sales', function () {
+    $branch = Branch::factory()->create();
+    $admin = StaffAccount::factory()->admin()->create(['branch_ID' => $branch->branch_ID]);
+
+    foreach ([
+        ['date' => today(), 'total_cost' => 1000],
+        ['date' => today()->subYears(2), 'total_cost' => 500],
+    ] as $sale) {
+        Sale::factory()->create([
+            'branch_ID' => $branch->branch_ID,
+            'branch_name' => $branch->branch_name,
+            'processed_by' => $admin->account_ID,
+            'PID' => null,
+            ...$sale,
+        ]);
+    }
+
+    $this->actingAs($admin)
+        ->get(route('reports.index', [
+            'summary_period' => 'today',
+            'statistic_periods' => [
+                'summary' => [
+                    'period' => 'month',
+                    'month' => today()->month,
+                    'year' => today()->year,
+                ],
+            ],
+        ]))
+        ->assertSuccessful()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('analytics.summary.totalSales', 1500)
+            ->where('analytics.summary.totalTransactions', 2)
+            ->where('analytics.summary.averageSale', 750)
+            ->missing('analytics.statisticPeriods.summary')
+            ->missing('filters.summary_period')
+            ->missing('filters.statistic_periods.summary'));
 });
 
 test('branch sales can be filtered to the current quarter', function () {
@@ -206,6 +247,136 @@ test('reports include quarterly and annual sales series', function () {
             ->has('analytics.salesSeries.annual')
             ->where('analytics.salesSeries.quarterly', fn ($series): bool => $series->sum('total') === 875)
             ->where('analytics.salesSeries.annual', fn ($series): bool => $series->sum('total') === 875));
+});
+
+test('a super administrator can compare parent category utilization across every branch', function () {
+    $valencia = Branch::factory()->create(['branch_name' => 'Valencia Clinic']);
+    $malaybalay = Branch::factory()->create(['branch_name' => 'Malaybalay Clinic']);
+    $superAdmin = StaffAccount::factory()->superAdmin()->create();
+    $pathological = MajorServiceCategory::query()->where('name', 'Pathological')->firstOrFail();
+    $cosmetic = MajorServiceCategory::query()->where('name', 'Cosmetic')->firstOrFail();
+    $consultations = Category::query()->create([
+        'category_name' => 'Consultations',
+        'category_type' => 'Service',
+        'major_service_category_ID' => $pathological->major_service_category_ID,
+        'description' => 'Medical consultation services',
+    ]);
+    $facials = Category::query()->create([
+        'category_name' => 'Facials',
+        'category_type' => 'Service',
+        'major_service_category_ID' => $cosmetic->major_service_category_ID,
+        'description' => 'Cosmetic facial services',
+    ]);
+    $consultation = Service::query()->create([
+        'category_ID' => $consultations->category_ID,
+        'name' => 'Consultation',
+        'description' => 'Medical consultation',
+    ]);
+    $facial = Service::query()->create([
+        'category_ID' => $facials->category_ID,
+        'name' => 'Facial',
+        'description' => 'Cosmetic facial',
+    ]);
+
+    $valenciaSale = Sale::factory()->create([
+        'branch_ID' => $valencia->branch_ID,
+        'branch_name' => $valencia->branch_name,
+        'processed_by' => $superAdmin->account_ID,
+        'PID' => null,
+        'date' => today(),
+    ]);
+    $malaybalaySale = Sale::factory()->create([
+        'branch_ID' => $malaybalay->branch_ID,
+        'branch_name' => $malaybalay->branch_name,
+        'processed_by' => $superAdmin->account_ID,
+        'PID' => null,
+        'date' => today(),
+    ]);
+    $olderSale = Sale::factory()->create([
+        'branch_ID' => $valencia->branch_ID,
+        'branch_name' => $valencia->branch_name,
+        'processed_by' => $superAdmin->account_ID,
+        'PID' => null,
+        'date' => now()->subMonthNoOverflow()->startOfMonth(),
+    ]);
+    SaleServiceItem::factory()->create(['sale_ID' => $valenciaSale->sale_ID, 'service_ID' => $consultation->service_ID, 'quantity' => 3]);
+    SaleServiceItem::factory()->create(['sale_ID' => $malaybalaySale->sale_ID, 'service_ID' => $consultation->service_ID, 'quantity' => 2]);
+    SaleServiceItem::factory()->create(['sale_ID' => $malaybalaySale->sale_ID, 'service_ID' => $facial->service_ID, 'quantity' => 4]);
+    SaleServiceItem::factory()->create(['sale_ID' => $olderSale->sale_ID, 'service_ID' => $consultation->service_ID, 'quantity' => 99]);
+
+    $this->actingAs($superAdmin)
+        ->get(route('reports.index', [
+            'statistic_periods' => [
+                'parentCategoryUtilization' => [
+                    'period' => 'month',
+                    'month' => today()->month,
+                ],
+            ],
+        ]))
+        ->assertSuccessful()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('filters.statistic_periods.parentCategoryUtilization.period', 'month')
+            ->has('analytics.parentCategoryUtilization.branches', 2)
+            ->has('analytics.parentCategoryUtilization.categories', 3)
+            ->where('analytics.parentCategoryUtilization.categories', function ($categories): bool {
+                $totals = $categories->pluck('total', 'label');
+
+                return $totals->get('Aesthetic') === 0
+                    && $totals->get('Cosmetic') === 4
+                    && $totals->get('Pathological') === 5;
+            }));
+});
+
+test('parent category comparison only accepts the supported reporting periods', function (string $period) {
+    Branch::factory()->create();
+    $superAdmin = StaffAccount::factory()->superAdmin()->create();
+
+    $this->actingAs($superAdmin)
+        ->from(route('reports.index'))
+        ->get(route('reports.index', [
+            'statistic_periods' => [
+                'parentCategoryUtilization' => ['period' => $period],
+            ],
+        ]))
+        ->assertRedirect(route('reports.index'))
+        ->assertSessionHasErrors('statistic_periods.parentCategoryUtilization.period');
+})->with(['week', 'biennial']);
+
+test('parent category comparison supports each fixed reporting period', function (string $period) {
+    Branch::factory()->create();
+    $superAdmin = StaffAccount::factory()->superAdmin()->create();
+
+    $this->actingAs($superAdmin)
+        ->get(route('reports.index', [
+            'statistic_periods' => [
+                'parentCategoryUtilization' => ['period' => $period],
+            ],
+        ]))
+        ->assertSuccessful()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('filters.statistic_periods.parentCategoryUtilization.period', $period));
+})->with(['month', 'quarter', 'biannual', 'annual']);
+
+test('a month without a year resolves to the latest occurrence of that month', function () {
+    $this->travelTo('2026-07-15 10:00:00');
+    Branch::factory()->create();
+    $superAdmin = StaffAccount::factory()->superAdmin()->create();
+
+    $this->actingAs($superAdmin)
+        ->get(route('reports.index', [
+            'statistic_periods' => [
+                'topProducts' => [
+                    'period' => 'month',
+                    'month' => 9,
+                    'year' => null,
+                ],
+            ],
+        ]))
+        ->assertSuccessful()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('filters.statistic_periods.topProducts.year', null)
+            ->where('analytics.statisticPeriods.topProducts.label', 'September 2025')
+            ->where('analytics.statisticPeriods.topProducts.resolved_year', 2025));
 });
 
 test('an administrator can print each sales report only for the assigned branch', function (string $period) {

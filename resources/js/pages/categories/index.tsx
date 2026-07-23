@@ -18,7 +18,6 @@ import {
 import { DataTablePagination } from '@/components/data-table-pagination';
 import Heading from '@/components/heading';
 import { TooltipIconButton } from '@/components/tooltip-icon-button';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -261,9 +260,6 @@ export default function CategoriesIndex({
                                             <span className="font-medium">
                                                 {category.category_name}
                                             </span>
-                                            <Badge variant="outline">
-                                                {category.category_type}
-                                            </Badge>
                                         </div>
                                     </TableCell>
                                     {filters.tab === 'services' && (
