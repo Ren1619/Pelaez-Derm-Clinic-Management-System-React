@@ -3,34 +3,62 @@
 namespace App\Services;
 
 use App\Models\Branch;
+use App\Models\Category;
+use App\Models\MajorServiceCategory;
 use App\Models\Product;
 use App\Models\Sale;
+use App\Models\SaleServiceItem;
+use App\Models\Service;
 use App\Services\POS\PointOfSalePageService;
+use App\Support\ReportStatisticPeriod;
 use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
-use Illuminate\Support\LazyCollection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\LazyCollection;
 use Illuminate\Support\Str;
 
+/**
+ * @phpstan-type StatisticSelection array{period?: string, month?: int|null, year?: int|null}
+ * @phpstan-type DateRange array{start: CarbonInterface, end: CarbonInterface}
+ * @phpstan-type StatisticRange array{
+ *     period: string,
+ *     month: int,
+ *     selected_year: int|null,
+ *     resolved_year: int,
+ *     start: CarbonImmutable,
+ *     end: CarbonImmutable,
+ *     prior_start: CarbonImmutable,
+ *     prior_end: CarbonImmutable,
+ *     label: string,
+ *     comparison_label: string
+ * }
+ */
 class ReportsService
 {
     public function __construct(private PointOfSalePageService $pointOfSalePageService) {}
 
     /**
+     * @param  array<string, StatisticSelection>  $statisticPeriods
      * @return array<string, mixed>
      */
     public function analytics(
-        string $period,
         ?int $branchId,
         bool $canViewAllBranches,
-        string $comparisonPeriod,
+        array $statisticPeriods,
         bool $anonymizePatients,
     ): array {
+        $ranges = collect($statisticPeriods)
+            ->map(fn (array $selection): array => ReportStatisticPeriod::resolve($selection));
+
         return [
-            'summary' => $this->summary($period, $branchId),
+            'statisticPeriods' => $ranges->map(fn (array $range): array => [
+                'label' => $range['label'],
+                'resolved_year' => $range['resolved_year'],
+            ])->all(),
+            'summary' => $this->summary($branchId),
             'salesSeries' => [
                 'daily' => $this->timeSeries(now()->subDays(6)->startOfDay(), now(), $branchId, 'day'),
                 'weekly' => $this->timeSeries(now()->startOfWeek(), now(), $branchId, 'day'),
@@ -38,25 +66,28 @@ class ReportsService
                 'quarterly' => $this->calendarMonthSeries(now()->startOfQuarter(), now(), $branchId),
                 'annual' => $this->calendarMonthSeries(now()->startOfYear(), now(), $branchId),
             ],
-            'topProducts' => $this->topItems('product', $period, $branchId),
-            'topServices' => $this->topItems('service', $period, $branchId),
-            'revenueSplit' => $this->revenueSplit($period, $branchId),
-            'paymentMethods' => $this->paymentMethods($period, $branchId),
-            'discounts' => $this->discounts($period, $branchId),
-            'voidTrend' => $this->voidTrend($branchId),
-            'peakHours' => $this->peakHours($period, $branchId),
-            'patientRetention' => $this->patientRetention($period, $branchId),
-            'visitFrequency' => $this->visitFrequency($period, $branchId),
-            'topPatients' => $this->topPatients($period, $branchId, $anonymizePatients),
-            'serviceTrends' => $this->serviceTrends($period, $branchId),
-            'topDiagnoses' => $this->topDiagnoses($period, $branchId),
-            'reorderSignals' => $this->reorderSignals($branchId),
-            'branchComparison' => $canViewAllBranches ? $this->branchComparison($comparisonPeriod) : [],
+            'topProducts' => $this->topItems('product', $ranges['topProducts'], $branchId),
+            'topServices' => $this->topItems('service', $ranges['topServices'], $branchId),
+            'revenueSplit' => $this->revenueSplit($ranges['revenueSplit'], $branchId),
+            'paymentMethods' => $this->paymentMethods($ranges['paymentMethods'], $branchId),
+            'discounts' => $this->discounts($ranges['discounts'], $branchId),
+            'voidTrend' => $this->voidTrend($ranges['voidTrend'], $branchId),
+            'peakHours' => $this->peakHours($ranges['peakHours'], $branchId),
+            'patientRetention' => $this->patientRetention($ranges['patientRetention'], $branchId),
+            'visitFrequency' => $this->visitFrequency($ranges['visitFrequency'], $branchId),
+            'topPatients' => $this->topPatients($ranges['topPatients'], $branchId, $anonymizePatients),
+            'serviceTrends' => $this->serviceTrends($ranges['serviceTrends'], $branchId),
+            'topDiagnoses' => $this->topDiagnoses($ranges['topDiagnoses'], $branchId),
+            'reorderSignals' => $this->reorderSignals($ranges['reorderSignals'], $branchId),
+            'branchComparison' => $canViewAllBranches ? $this->branchComparison($ranges['branchComparison']) : [],
+            'parentCategoryUtilization' => $canViewAllBranches
+                ? $this->parentCategoryUtilization($ranges['parentCategoryUtilization'])
+                : ['period_label' => '', 'branches' => [], 'categories' => []],
         ];
     }
 
     /**
-     * @param array<string, mixed> $filters
+     * @param  array<string, mixed>  $filters
      * @return array{stats: array<string, mixed>, sales: LengthAwarePaginator<int, array<string, mixed>>}
      */
     public function branchSales(int $branchId, array $filters): array
@@ -97,7 +128,7 @@ class ReportsService
     }
 
     /**
-     * @param array<string, mixed> $filters
+     * @param  array<string, mixed>  $filters
      * @return array{period_label: string, stats: array<string, mixed>, sales: LazyCollection<int, array<string, mixed>>}
      */
     public function printableReport(?int $branchId, array $filters): array
@@ -146,55 +177,20 @@ class ReportsService
     }
 
     /** @return array<string, mixed> */
-    private function summary(string $period, ?int $branchId): array
+    private function summary(?int $branchId): array
     {
-        $current = $this->summaryForRange($this->periodRange($period), $branchId);
-        $prior = $this->summaryForRange($this->priorPeriodRange($period), $branchId);
-
-        return [
-            'totalSales' => (float) ($current->total_sales ?? 0),
-            'totalTransactions' => (int) ($current->total_transactions ?? 0),
-            'averageSale' => (float) ($current->average_sale ?? 0),
-            'activeBranches' => $branchId === null ? Branch::query()->count() : 1,
-            'growth' => [
-                'totalSales' => $this->growth((float) ($current->total_sales ?? 0), (float) ($prior->total_sales ?? 0)),
-                'totalTransactions' => $this->growth((float) ($current->total_transactions ?? 0), (float) ($prior->total_transactions ?? 0)),
-                'averageSale' => $this->growth((float) ($current->average_sale ?? 0), (float) ($prior->average_sale ?? 0)),
-            ],
-            'comparisonLabel' => match ($period) {
-                'today' => 'vs yesterday',
-                'this_week' => 'vs last week',
-                'this_month' => 'vs last month',
-                'this_year' => 'vs last year',
-                default => 'all-time view',
-            },
-        ];
-    }
-
-    private function summaryForRange(array $range, ?int $branchId): object
-    {
-        return $this->completedSales($branchId)
-            ->when($range['start'], fn (Builder $query, CarbonInterface $start) => $query->whereDate('date', '>=', $start))
-            ->when($range['end'], fn (Builder $query, CarbonInterface $end) => $query->whereDate('date', '<=', $end))
+        $summary = $this->completedSales($branchId)
             ->toBase()
             ->selectRaw('COUNT(*) as total_transactions')
             ->selectRaw('COALESCE(SUM(total_cost), 0) as total_sales')
             ->selectRaw('COALESCE(AVG(total_cost), 0) as average_sale')
             ->first();
-    }
-
-    /** @return array{pct: float, direction: string} */
-    private function growth(float $current, float $prior): array
-    {
-        if ($prior <= 0) {
-            return ['pct' => $current > 0 ? 100.0 : 0.0, 'direction' => $current > 0 ? 'up' : 'flat'];
-        }
-
-        $percentage = round((($current - $prior) / $prior) * 100, 1);
 
         return [
-            'pct' => abs($percentage),
-            'direction' => $percentage > 0 ? 'up' : ($percentage < 0 ? 'down' : 'flat'),
+            'totalSales' => (float) ($summary->total_sales ?? 0),
+            'totalTransactions' => (int) ($summary->total_transactions ?? 0),
+            'averageSale' => (float) ($summary->average_sale ?? 0),
+            'activeBranches' => $branchId === null ? Branch::query()->count() : 1,
         ];
     }
 
@@ -253,8 +249,11 @@ class ReportsService
             ])->values()->all();
     }
 
-    /** @return list<array<string, mixed>> */
-    private function topItems(string $type, string $period, ?int $branchId): array
+    /**
+     * @param  StatisticRange  $range
+     * @return list<array<string, mixed>>
+     */
+    private function topItems(string $type, array $range, ?int $branchId): array
     {
         $table = $type === 'product' ? 'sale_product_items' : 'sale_service_items';
         $nameColumn = $type === 'product' ? 'product_name' : 'service_name';
@@ -263,7 +262,7 @@ class ReportsService
             ->where('sales.finalized', true)
             ->where('sales.is_voided', false)
             ->when($branchId, fn ($builder, int $id) => $builder->where('sales.branch_ID', $id));
-        $this->applyPeriod($query, $period, 'sales.date');
+        $this->applyRange($query, $range, 'sales.date');
 
         return $query
             ->selectRaw("{$table}.{$nameColumn} as name, SUM({$table}.quantity) as total_qty, SUM({$table}.line_total) as revenue")
@@ -280,8 +279,11 @@ class ReportsService
             ])->all();
     }
 
-    /** @return array<string, float> */
-    private function revenueSplit(string $period, ?int $branchId): array
+    /**
+     * @param  StatisticRange  $range
+     * @return array<string, float>
+     */
+    private function revenueSplit(array $range, ?int $branchId): array
     {
         $totals = [];
 
@@ -291,7 +293,7 @@ class ReportsService
                 ->where('sales.finalized', true)
                 ->where('sales.is_voided', false)
                 ->when($branchId, fn ($builder, int $id) => $builder->where('sales.branch_ID', $id));
-            $this->applyPeriod($query, $period, 'sales.date');
+            $this->applyRange($query, $range, 'sales.date');
             $totals[$key] = (float) $query->sum("{$table}.line_total");
         }
 
@@ -306,11 +308,14 @@ class ReportsService
         ];
     }
 
-    /** @return list<array<string, mixed>> */
-    private function paymentMethods(string $period, ?int $branchId): array
+    /**
+     * @param  StatisticRange  $range
+     * @return list<array<string, mixed>>
+     */
+    private function paymentMethods(array $range, ?int $branchId): array
     {
         $query = $this->completedSales($branchId);
-        $this->applyPeriod($query, $period);
+        $this->applyRange($query, $range);
 
         return $query->toBase()
             ->selectRaw('pay_method as method, COUNT(*) as transactions, SUM(total_cost) as revenue')
@@ -325,11 +330,14 @@ class ReportsService
             ])->all();
     }
 
-    /** @return array<string, mixed> */
-    private function discounts(string $period, ?int $branchId): array
+    /**
+     * @param  StatisticRange  $range
+     * @return array<string, mixed>
+     */
+    private function discounts(array $range, ?int $branchId): array
     {
         $query = $this->completedSales($branchId);
-        $this->applyPeriod($query, $period);
+        $this->applyRange($query, $range);
         $summary = $query->toBase()
             ->selectRaw('COUNT(*) as total_transactions')
             ->selectRaw('SUM(CASE WHEN discount_perc > 0 THEN 1 ELSE 0 END) as discounted_transactions')
@@ -349,14 +357,19 @@ class ReportsService
         ];
     }
 
-    /** @return list<array<string, mixed>> */
-    private function voidTrend(?int $branchId): array
+    /**
+     * @param  StatisticRange  $range
+     * @return list<array<string, mixed>>
+     */
+    private function voidTrend(array $range, ?int $branchId): array
     {
-        $start = now()->subDays(29)->startOfDay();
+        $start = $range['start'];
+        $end = $range['end'];
         $sales = Sale::query()
             ->where('finalized', true)
             ->when($branchId, fn (Builder $query, int $id) => $query->where('branch_ID', $id))
             ->whereDate('date', '>=', $start)
+            ->whereDate('date', '<=', $end)
             ->toBase()
             ->selectRaw('DATE(date) as period, COUNT(*) as transactions, SUM(CASE WHEN is_voided = 1 THEN 1 ELSE 0 END) as voids')
             ->groupByRaw('DATE(date)')
@@ -366,6 +379,7 @@ class ReportsService
             ->join('sales', 'sale_returns.sale_ID', '=', 'sales.sale_ID')
             ->when($branchId, fn ($query, int $id) => $query->where('sales.branch_ID', $id))
             ->whereDate('sale_returns.created_at', '>=', $start)
+            ->whereDate('sale_returns.created_at', '<=', $end)
             ->selectRaw('DATE(sale_returns.created_at) as period, COUNT(DISTINCT sale_returns.sale_ID) as return_count')
             ->groupByRaw('DATE(sale_returns.created_at)')
             ->get()
@@ -373,7 +387,7 @@ class ReportsService
         $result = [];
         $cursor = $start->copy();
 
-        while ($cursor->lte(now())) {
+        while ($cursor->lte($end)) {
             $key = $cursor->toDateString();
             $saleRow = $sales->get($key);
             $transactions = (int) ($saleRow->transactions ?? 0);
@@ -392,11 +406,14 @@ class ReportsService
         return $result;
     }
 
-    /** @return array<string, mixed> */
-    private function peakHours(string $period, ?int $branchId): array
+    /**
+     * @param  StatisticRange  $range
+     * @return array<string, mixed>
+     */
+    private function peakHours(array $range, ?int $branchId): array
     {
         $query = $this->completedSales($branchId);
-        $this->applyPeriod($query, $period);
+        $this->applyRange($query, $range);
         $counts = [];
         $maximum = 0;
 
@@ -426,26 +443,27 @@ class ReportsService
         ];
     }
 
-    /** @return array<string, mixed> */
-    private function patientRetention(string $period, ?int $branchId): array
+    /**
+     * @param  StatisticRange  $range
+     * @return array<string, mixed>
+     */
+    private function patientRetention(array $range, ?int $branchId): array
     {
         $query = $this->completedSales($branchId)->whereNotNull('PID');
-        $this->applyPeriod($query, $period);
+        $this->applyRange($query, $range);
         $patientIds = $query->distinct()->pluck('PID');
 
         if ($patientIds->isEmpty()) {
             return ['new_count' => 0, 'returning_count' => 0, 'new_pct' => 0.0, 'returning_pct' => 0.0, 'total_unique_patients' => 0];
         }
 
-        $range = $this->periodRange($period);
         $firstSales = $this->completedSales($branchId)
             ->whereIn('PID', $patientIds)
             ->toBase()
             ->selectRaw('PID, MIN(date) as first_visit')
             ->groupBy('PID')
             ->get();
-        $newCount = $range['start'] === null ? 0 : $firstSales->filter(fn (object $row): bool =>
-            $row->first_visit >= $range['start']->toDateString()
+        $newCount = $firstSales->filter(fn (object $row): bool => $row->first_visit >= $range['start']->toDateString()
             && $row->first_visit <= $range['end']->toDateString()
         )->count();
         $total = $patientIds->count();
@@ -460,11 +478,14 @@ class ReportsService
         ];
     }
 
-    /** @return array<string, mixed> */
-    private function visitFrequency(string $period, ?int $branchId): array
+    /**
+     * @param  StatisticRange  $range
+     * @return array<string, mixed>
+     */
+    private function visitFrequency(array $range, ?int $branchId): array
     {
         $query = $this->completedSales($branchId)->whereNotNull('PID');
-        $this->applyPeriod($query, $period);
+        $this->applyRange($query, $range);
         $visits = $query->toBase()->selectRaw('PID, COUNT(*) as visit_count')->groupBy('PID')->get();
         $buckets = ['1 visit' => 0, '2-3 visits' => 0, '4-6 visits' => 0, '7+ visits' => 0];
 
@@ -479,22 +500,20 @@ class ReportsService
             $buckets[$label]++;
         }
 
-        $currentRange = $this->periodRange($period);
-        $priorRange = $this->priorPeriodRange($period);
+        $currentRange = $range;
+        $priorRange = ['start' => $range['prior_start'], 'end' => $range['prior_end']];
         $lapsed = 0;
 
-        if ($currentRange['start'] !== null && $priorRange['start'] !== null) {
-            $currentPatients = $this->completedSales($branchId)
-                ->whereNotNull('PID')
-                ->whereBetween('date', [$currentRange['start'], $currentRange['end']])
-                ->select('PID');
-            $lapsed = $this->completedSales($branchId)
-                ->whereNotNull('PID')
-                ->whereBetween('date', [$priorRange['start'], $priorRange['end']])
-                ->whereNotIn('PID', $currentPatients)
-                ->distinct()
-                ->count('PID');
-        }
+        $currentPatients = $this->completedSales($branchId)
+            ->whereNotNull('PID')
+            ->whereBetween('date', [$currentRange['start'], $currentRange['end']])
+            ->select('PID');
+        $lapsed = $this->completedSales($branchId)
+            ->whereNotNull('PID')
+            ->whereBetween('date', [$priorRange['start'], $priorRange['end']])
+            ->whereNotIn('PID', $currentPatients)
+            ->distinct()
+            ->count('PID');
 
         return [
             'buckets' => collect($buckets)->map(fn (int $count, string $label): array => compact('label', 'count'))->values()->all(),
@@ -502,8 +521,11 @@ class ReportsService
         ];
     }
 
-    /** @return list<array<string, mixed>> */
-    private function topPatients(string $period, ?int $branchId, bool $anonymized): array
+    /**
+     * @param  StatisticRange  $range
+     * @return list<array<string, mixed>>
+     */
+    private function topPatients(array $range, ?int $branchId, bool $anonymized): array
     {
         $returns = DB::table('sale_returns')
             ->selectRaw('sale_ID, SUM(return_amount) as returned_amount')
@@ -514,7 +536,7 @@ class ReportsService
             ->where('sales.finalized', true)
             ->where('sales.is_voided', false)
             ->when($branchId, fn ($builder, int $id) => $builder->where('sales.branch_ID', $id));
-        $this->applyPeriod($query, $period, 'sales.date');
+        $this->applyRange($query, $range, 'sales.date');
 
         return $query
             ->groupBy('sales.PID', 'patients.first_name', 'patients.middle_name', 'patients.last_name')
@@ -538,22 +560,27 @@ class ReportsService
             })->all();
     }
 
-    /** @return list<array<string, mixed>> */
-    private function serviceTrends(string $period, ?int $branchId): array
+    /**
+     * @param  StatisticRange  $range
+     * @return list<array<string, mixed>>
+     */
+    private function serviceTrends(array $range, ?int $branchId): array
     {
-        $topServices = collect($this->topItems('service', $period, $branchId))->take(5);
+        $topServices = collect($this->topItems('service', $range, $branchId))->take(5);
 
         if ($topServices->isEmpty()) {
             return [];
         }
 
-        $start = now()->subDays(29)->startOfDay();
+        $start = $range['start'];
+        $end = $range['end'];
         $rows = DB::table('sale_service_items')
             ->join('sales', 'sale_service_items.sale_ID', '=', 'sales.sale_ID')
             ->where('sales.finalized', true)
             ->where('sales.is_voided', false)
             ->whereIn('sale_service_items.service_name', $topServices->pluck('name'))
             ->whereDate('sales.date', '>=', $start)
+            ->whereDate('sales.date', '<=', $end)
             ->when($branchId, fn ($query, int $id) => $query->where('sales.branch_ID', $id))
             ->selectRaw('sale_service_items.service_name, DATE(sales.date) as period, SUM(sale_service_items.quantity) as qty')
             ->groupBy('sale_service_items.service_name')
@@ -561,12 +588,12 @@ class ReportsService
             ->get()
             ->groupBy('service_name');
 
-        return $topServices->values()->map(function (array $service) use ($rows, $start): array {
+        return $topServices->values()->map(function (array $service) use ($rows, $start, $end): array {
             $serviceRows = $rows->get($service['name'], collect())->keyBy('period');
             $data = [];
             $cursor = $start->copy();
 
-            while ($cursor->lte(now())) {
+            while ($cursor->lte($end)) {
                 $key = $cursor->toDateString();
                 $data[] = ['label' => $cursor->format('M j'), 'qty' => (int) ($serviceRows->get($key)->qty ?? 0)];
                 $cursor = $cursor->addDay();
@@ -576,13 +603,16 @@ class ReportsService
         })->all();
     }
 
-    /** @return list<array<string, mixed>> */
-    private function topDiagnoses(string $period, ?int $branchId): array
+    /**
+     * @param  StatisticRange  $range
+     * @return list<array<string, mixed>>
+     */
+    private function topDiagnoses(array $range, ?int $branchId): array
     {
         $query = DB::table('patient_visit_diagnoses')
             ->join('patient_visits', 'patient_visit_diagnoses.visit_ID', '=', 'patient_visits.visit_ID')
             ->when($branchId, fn ($builder, int $id) => $builder->where('patient_visits.branch_ID', $id));
-        $this->applyPeriod($query, $period, 'patient_visits.visited_at');
+        $this->applyRange($query, $range, 'patient_visits.visited_at');
         $diagnoses = $query
             ->selectRaw('patient_visit_diagnoses.diagnosis as name, COUNT(*) as frequency')
             ->groupBy('patient_visit_diagnoses.diagnosis')
@@ -596,8 +626,11 @@ class ReportsService
         ])->all();
     }
 
-    /** @return list<array<string, mixed>> */
-    private function reorderSignals(?int $branchId): array
+    /**
+     * @param  StatisticRange  $range
+     * @return list<array<string, mixed>>
+     */
+    private function reorderSignals(array $range, ?int $branchId): array
     {
         $stock = Product::query()
             ->when($branchId, fn (Builder $query, int $id) => $query->where('branch_ID', $id))
@@ -609,9 +642,13 @@ class ReportsService
             ->join('sales', 'sale_product_items.sale_ID', '=', 'sales.sale_ID')
             ->where('sales.finalized', true)
             ->where('sales.is_voided', false)
-            ->whereDate('sales.date', '>=', today()->subDays(6))
+            ->whereDate('sales.date', '>=', $range['start'])
+            ->whereDate('sales.date', '<=', $range['end'])
             ->when($branchId, fn ($query, int $id) => $query->where('sales.branch_ID', $id))
-            ->selectRaw('LOWER(sale_product_items.product_name) as product_key, sales.branch_ID, SUM(sale_product_items.quantity) / 7.0 as daily_sales')
+            ->selectRaw(
+                'LOWER(sale_product_items.product_name) as product_key, sales.branch_ID, SUM(sale_product_items.quantity) / ? as daily_sales',
+                [max(1, $range['start']->diffInDays($range['end']) + 1)],
+            )
             ->groupByRaw('LOWER(sale_product_items.product_name), sales.branch_ID')
             ->get()
             ->keyBy(fn (object $row): string => $row->product_key.'|'.$row->branch_ID);
@@ -636,11 +673,14 @@ class ReportsService
         })->sortBy(fn (array $item) => $item['runway_days'] ?? PHP_INT_MAX)->take(10)->values()->all();
     }
 
-    /** @return list<array<string, mixed>> */
-    private function branchComparison(string $period): array
+    /**
+     * @param  StatisticRange  $range
+     * @return list<array<string, mixed>>
+     */
+    private function branchComparison(array $range): array
     {
         $sales = $this->completedSales(null);
-        $this->applyPeriod($sales, $period);
+        $this->applyRange($sales, $range);
         $rows = $sales->toBase()
             ->selectRaw('branch_ID, SUM(total_cost) as total, COUNT(*) as count, AVG(total_cost) as average')
             ->groupBy('branch_ID')
@@ -659,6 +699,89 @@ class ReportsService
                     'average' => (float) ($row->average ?? 0),
                 ];
             })->all();
+    }
+
+    /**
+     * @param  StatisticRange  $range
+     * @return array{
+     *     period_label: string,
+     *     branches: array<int, array{branch_ID: int, label: string}>,
+     *     categories: array<int, array{
+     *         parent_category_ID: int,
+     *         label: string,
+     *         total: int,
+     *         branches: array<int, array{branch_ID: int, quantity: int}>
+     *     }>
+     * }
+     */
+    private function parentCategoryUtilization(array $range): array
+    {
+        $start = $range['start'];
+        $end = $range['end'];
+        $saleItemsTable = (new SaleServiceItem)->getTable();
+        $salesTable = (new Sale)->getTable();
+        $servicesTable = (new Service)->getTable();
+        $categoriesTable = (new Category)->getTable();
+        $parentCategoriesTable = (new MajorServiceCategory)->getTable();
+
+        $quantities = SaleServiceItem::query()
+            ->join($salesTable, "{$saleItemsTable}.sale_ID", '=', "{$salesTable}.sale_ID")
+            ->join($servicesTable, "{$saleItemsTable}.service_ID", '=', "{$servicesTable}.service_ID")
+            ->join($categoriesTable, "{$servicesTable}.category_ID", '=', "{$categoriesTable}.category_ID")
+            ->join(
+                $parentCategoriesTable,
+                "{$categoriesTable}.major_service_category_ID",
+                '=',
+                "{$parentCategoriesTable}.major_service_category_ID",
+            )
+            ->where("{$salesTable}.finalized", true)
+            ->where("{$salesTable}.is_voided", false)
+            ->whereDate("{$salesTable}.date", '>=', $start)
+            ->whereDate("{$salesTable}.date", '<=', $end)
+            ->toBase()
+            ->select("{$salesTable}.branch_ID", "{$parentCategoriesTable}.major_service_category_ID")
+            ->selectRaw('SUM(sale_service_items.quantity) as quantity')
+            ->groupBy("{$salesTable}.branch_ID", "{$parentCategoriesTable}.major_service_category_ID")
+            ->get()
+            ->keyBy(fn (object $item): string => $item->major_service_category_ID.'|'.$item->branch_ID);
+
+        $branches = Branch::query()
+            ->orderBy('branch_name')
+            ->get(['branch_ID', 'branch_name']);
+        $parentCategories = MajorServiceCategory::query()
+            ->orderBy('name')
+            ->get(['major_service_category_ID', 'name']);
+
+        return [
+            'period_label' => $this->dateRangeLabel($start, $end),
+            'branches' => $branches
+                ->map(fn (Branch $branch): array => [
+                    'branch_ID' => $branch->branch_ID,
+                    'label' => $branch->branch_name,
+                ])
+                ->values()
+                ->all(),
+            'categories' => $parentCategories->map(function (MajorServiceCategory $parentCategory) use ($branches, $quantities): array {
+                $branchQuantities = $branches->map(function (Branch $branch) use ($parentCategory, $quantities): array {
+                    $quantity = (int) $quantities->get(
+                        $parentCategory->major_service_category_ID.'|'.$branch->branch_ID,
+                        (object) ['quantity' => 0],
+                    )->quantity;
+
+                    return [
+                        'branch_ID' => $branch->branch_ID,
+                        'quantity' => $quantity,
+                    ];
+                })->values();
+
+                return [
+                    'parent_category_ID' => $parentCategory->major_service_category_ID,
+                    'label' => $parentCategory->name,
+                    'total' => (int) $branchQuantities->sum('quantity'),
+                    'branches' => $branchQuantities->all(),
+                ];
+            })->values()->all(),
+        ];
     }
 
     /** @param array<string, mixed> $filters */
@@ -729,12 +852,12 @@ class ReportsService
             ->when($branchId, fn (Builder $query, int $id) => $query->where('branch_ID', $id));
     }
 
-    private function applyPeriod(mixed $query, string $period, string $column = 'date'): void
+    /** @param DateRange $range */
+    private function applyRange(mixed $query, array $range, string $column = 'date'): void
     {
-        $range = $this->periodRange($period);
         $query
-            ->when($range['start'], fn ($builder, CarbonInterface $start) => $builder->whereDate($column, '>=', $start))
-            ->when($range['end'], fn ($builder, CarbonInterface $end) => $builder->whereDate($column, '<=', $end));
+            ->whereDate($column, '>=', $range['start'])
+            ->whereDate($column, '<=', $range['end']);
     }
 
     /** @param array<string, mixed> $filters */
@@ -793,29 +916,5 @@ class ReportsService
         }
 
         return $start->format('M j, Y').' - '.$end->format('M j, Y');
-    }
-
-    /** @return array{start: CarbonInterface|null, end: CarbonInterface|null} */
-    private function periodRange(string $period): array
-    {
-        return match ($period) {
-            'today' => ['start' => today(), 'end' => today()],
-            'this_week', 'week' => ['start' => now()->startOfWeek(), 'end' => today()],
-            'this_month', 'month' => ['start' => now()->startOfMonth(), 'end' => today()],
-            'this_year', 'year' => ['start' => now()->startOfYear(), 'end' => today()],
-            default => ['start' => null, 'end' => null],
-        };
-    }
-
-    /** @return array{start: CarbonInterface|null, end: CarbonInterface|null} */
-    private function priorPeriodRange(string $period): array
-    {
-        return match ($period) {
-            'today' => ['start' => today()->subDay(), 'end' => today()->subDay()],
-            'this_week', 'week' => ['start' => now()->subWeek()->startOfWeek(), 'end' => now()->subWeek()->endOfWeek()],
-            'this_month', 'month' => ['start' => now()->subMonthNoOverflow()->startOfMonth(), 'end' => now()->subMonthNoOverflow()->endOfMonth()],
-            'this_year', 'year' => ['start' => now()->subYear()->startOfYear(), 'end' => now()->subYear()->endOfYear()],
-            default => ['start' => null, 'end' => null],
-        };
     }
 }

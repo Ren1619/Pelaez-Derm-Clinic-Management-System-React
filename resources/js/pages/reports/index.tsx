@@ -1,10 +1,9 @@
 import { Head, router } from '@inertiajs/react';
 import {
     Activity,
-    ArrowDown,
-    ArrowUp,
     BarChart3,
     Building2,
+    CalendarRange,
     Download,
     Printer,
     Search,
@@ -24,6 +23,11 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from '@/components/ui/popover';
+import {
     Select,
     SelectContent,
     SelectItem,
@@ -38,6 +42,11 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { exportMethod, index } from '@/routes/reports';
 import {
     branchSales as branchSalesPrint,
@@ -51,6 +60,8 @@ import type {
     ReportBranch,
     ReportFilters,
     ReportSeriesPoint,
+    StatisticKey,
+    StatisticPeriodSelection,
 } from '@/types';
 import { SaleDetailsDialog } from '../pos/components/sale-details-dialog';
 
@@ -74,6 +85,25 @@ const compactCurrency = new Intl.NumberFormat('en-PH', {
     maximumFractionDigits: 1,
 });
 const number = new Intl.NumberFormat('en-PH');
+const statisticPeriodOptions: Array<{
+    value: StatisticPeriodSelection['period'];
+    label: string;
+}> = [
+    { value: 'month', label: 'Specific month' },
+    { value: 'quarter', label: 'Quarterly' },
+    { value: 'biannual', label: 'Bi-annual' },
+    { value: 'annual', label: 'Annual' },
+];
+const monthOptions = Array.from({ length: 12 }, (_, index) => ({
+    value: index + 1,
+    label: new Intl.DateTimeFormat('en-PH', { month: 'short' }).format(
+        new Date(2020, index, 1),
+    ),
+}));
+const yearOptions = Array.from(
+    { length: 12 },
+    (_, index) => new Date().getFullYear() - index,
+);
 
 export default function ReportsIndex({
     analytics,
@@ -98,6 +128,19 @@ export default function ReportsIndex({
             replace: true,
         });
     };
+    const changeStatisticPeriod = (
+        statistic: StatisticKey,
+        selection: StatisticPeriodSelection,
+    ) =>
+        visit(
+            {
+                statistic_periods: {
+                    ...filters.statistic_periods,
+                    [statistic]: selection,
+                },
+            },
+            ['analytics', 'filters'],
+        );
 
     useEffect(() => {
         if (search === filters.search) {
@@ -126,6 +169,19 @@ export default function ReportsIndex({
     const overviewPrintQuery = canViewAllBranches
         ? undefined
         : { branch_ID: filters.branch_ID };
+    const statisticActions = (statistic: StatisticKey, printTarget: string) => (
+        <StatisticCardActions
+            printTarget={printTarget}
+            selection={filters.statistic_periods[statistic]}
+            resolvedLabel={analytics.statisticPeriods[statistic].label}
+            onChange={(selection) =>
+                changeStatisticPeriod(statistic, selection)
+            }
+        />
+    );
+    const overviewActions = (printTarget: string) => (
+        <AllTimeStatisticActions printTarget={printTarget} />
+    );
 
     return (
         <>
@@ -143,58 +199,26 @@ export default function ReportsIndex({
                 </div>
 
                 <section className="grid gap-4">
-                    <SectionHeading title="Overview">
-                        <Select
-                            value={filters.summary_period}
-                            onValueChange={(value) =>
-                                visit(
-                                    {
-                                        summary_period:
-                                            value as ReportFilters['summary_period'],
-                                    },
-                                    ['analytics', 'filters'],
-                                )
-                            }
-                        >
-                            <SelectTrigger className="w-44 print:hidden">
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="today">Today</SelectItem>
-                                <SelectItem value="this_week">
-                                    This week
-                                </SelectItem>
-                                <SelectItem value="this_month">
-                                    This month
-                                </SelectItem>
-                                <SelectItem value="this_year">
-                                    This year
-                                </SelectItem>
-                                <SelectItem value="all_time">
-                                    All time
-                                </SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </SectionHeading>
+                    <SectionHeading title="Overview" />
 
-                    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                    <div className="grid gap-4 sm:grid-cols-2 2xl:grid-cols-4">
                         <MetricCard
                             label="Total sales"
                             value={currency.format(
                                 analytics.summary.totalSales,
                             )}
-                            growth={analytics.summary.growth.totalSales}
-                            comparison={analytics.summary.comparisonLabel}
                             icon={BarChart3}
+                            printTarget="total-sales"
+                            actions={overviewActions('total-sales')}
                         />
                         <MetricCard
                             label="Transactions"
                             value={number.format(
                                 analytics.summary.totalTransactions,
                             )}
-                            growth={analytics.summary.growth.totalTransactions}
-                            comparison={analytics.summary.comparisonLabel}
                             icon={WalletCards}
+                            printTarget="transactions"
+                            actions={overviewActions('transactions')}
                         />
                         <MetricCard
                             label={
@@ -210,15 +234,17 @@ export default function ReportsIndex({
                                     : currentBranch.branch_name
                             }
                             icon={Building2}
+                            printTarget="active-branches"
+                            actions={overviewActions('active-branches')}
                         />
                         <MetricCard
                             label="Average sale"
                             value={currency.format(
                                 analytics.summary.averageSale,
                             )}
-                            growth={analytics.summary.growth.averageSale}
-                            comparison={analytics.summary.comparisonLabel}
                             icon={Activity}
+                            printTarget="average-sale"
+                            actions={overviewActions('average-sale')}
                         />
                     </div>
                 </section>
@@ -231,7 +257,7 @@ export default function ReportsIndex({
                                 : `${currentBranch.branch_name} Sales Reports`
                         }
                     />
-                    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                    <div className="grid gap-4 lg:grid-cols-2 2xl:grid-cols-3">
                         <SeriesCard
                             title="Daily Report"
                             series={analytics.salesSeries.daily}
@@ -275,6 +301,7 @@ export default function ReportsIndex({
                         <SeriesCard
                             title="Annual Report"
                             series={analytics.salesSeries.annual}
+                            className="lg:col-span-2 2xl:col-span-2"
                             printUrl={
                                 salesPrint(
                                     { reportPeriod: 'annual' },
@@ -285,108 +312,167 @@ export default function ReportsIndex({
                     </div>
                 </section>
 
-                <section className="grid gap-4 xl:grid-cols-2">
-                    <RankingCard
-                        title="Top Products"
-                        subtitle="Revenue ranked"
-                        items={analytics.topProducts}
-                    />
-                    <RankingCard
-                        title="Top Services"
-                        subtitle="Revenue ranked"
-                        items={analytics.topServices}
-                    />
-                </section>
+                <section className="grid gap-4">
+                    <SectionHeading title="Revenue Intelligence" />
 
-                <section className="grid gap-4 xl:grid-cols-3">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Product vs Service Revenue</CardTitle>
-                        </CardHeader>
-                        <CardContent className="grid gap-4">
-                            <SplitBar
-                                first={analytics.revenueSplit.products_pct}
-                                second={analytics.revenueSplit.services_pct}
-                            />
-                            <KeyValue
-                                label={`Products (${analytics.revenueSplit.products_pct}%)`}
-                                value={currency.format(
-                                    analytics.revenueSplit.products_total,
+                    <div className="grid gap-4 2xl:grid-cols-2">
+                        <RankingCard
+                            title="Top Products"
+                            subtitle="Revenue ranked"
+                            items={analytics.topProducts}
+                            printTarget="top-products"
+                            actions={statisticActions(
+                                'topProducts',
+                                'top-products',
+                            )}
+                        />
+                        <RankingCard
+                            title="Top Services"
+                            subtitle="Revenue ranked"
+                            items={analytics.topServices}
+                            printTarget="top-services"
+                            actions={statisticActions(
+                                'topServices',
+                                'top-services',
+                            )}
+                        />
+                    </div>
+
+                    <div className="grid gap-4 lg:grid-cols-2 2xl:grid-cols-3">
+                        <Card
+                            className="h-full"
+                            data-statistic-card="revenue-split"
+                            data-statistic-title="Product vs Service Revenue"
+                        >
+                            <CardHeader className="grid gap-3">
+                                <CardTitle>
+                                    Product vs Service Revenue
+                                </CardTitle>
+                                {statisticActions(
+                                    'revenueSplit',
+                                    'revenue-split',
                                 )}
-                            />
-                            <KeyValue
-                                label={`Services (${analytics.revenueSplit.services_pct}%)`}
-                                value={currency.format(
-                                    analytics.revenueSplit.services_total,
+                            </CardHeader>
+                            <CardContent className="grid gap-4">
+                                <SplitBar
+                                    first={analytics.revenueSplit.products_pct}
+                                    second={analytics.revenueSplit.services_pct}
+                                />
+                                <KeyValue
+                                    label={`Products (${analytics.revenueSplit.products_pct}%)`}
+                                    value={currency.format(
+                                        analytics.revenueSplit.products_total,
+                                    )}
+                                />
+                                <KeyValue
+                                    label={`Services (${analytics.revenueSplit.services_pct}%)`}
+                                    value={currency.format(
+                                        analytics.revenueSplit.services_total,
+                                    )}
+                                />
+                            </CardContent>
+                        </Card>
+
+                        <Card
+                            className="h-full"
+                            data-statistic-card="payment-methods"
+                            data-statistic-title="Payment Methods"
+                        >
+                            <CardHeader className="grid gap-3">
+                                <CardTitle>Payment Methods</CardTitle>
+                                {statisticActions(
+                                    'paymentMethods',
+                                    'payment-methods',
                                 )}
-                            />
-                        </CardContent>
-                    </Card>
+                            </CardHeader>
+                            <CardContent className="grid gap-3">
+                                {analytics.paymentMethods.map((method) => (
+                                    <div
+                                        key={method.method}
+                                        className="grid gap-1 border-b pb-2 last:border-0"
+                                    >
+                                        <KeyValue
+                                            label={method.label}
+                                            value={currency.format(
+                                                method.revenue,
+                                            )}
+                                        />
+                                        <p className="text-xs text-muted-foreground">
+                                            {number.format(method.transactions)}{' '}
+                                            transactions
+                                        </p>
+                                    </div>
+                                ))}
+                                <Empty
+                                    show={analytics.paymentMethods.length === 0}
+                                />
+                            </CardContent>
+                        </Card>
 
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Payment Methods</CardTitle>
-                        </CardHeader>
-                        <CardContent className="grid gap-3">
-                            {analytics.paymentMethods.map((method) => (
-                                <div
-                                    key={method.method}
-                                    className="grid gap-1 border-b pb-2 last:border-0"
-                                >
-                                    <KeyValue
-                                        label={method.label}
-                                        value={currency.format(method.revenue)}
-                                    />
-                                    <p className="text-xs text-muted-foreground">
-                                        {number.format(method.transactions)}{' '}
-                                        transactions
-                                    </p>
-                                </div>
-                            ))}
-                            <Empty
-                                show={analytics.paymentMethods.length === 0}
-                            />
-                        </CardContent>
-                    </Card>
+                        <Card
+                            className="h-full lg:col-span-2 2xl:col-span-1"
+                            data-statistic-card="discounts"
+                            data-statistic-title="Discount Analytics"
+                        >
+                            <CardHeader className="grid gap-3">
+                                <CardTitle>Discount Analytics</CardTitle>
+                                {statisticActions('discounts', 'discounts')}
+                            </CardHeader>
+                            <CardContent className="grid gap-3">
+                                <KeyValue
+                                    label="Discounted transactions"
+                                    value={`${number.format(analytics.discounts.discounted_transactions)} / ${number.format(analytics.discounts.total_transactions)}`}
+                                />
+                                <KeyValue
+                                    label="Average discount"
+                                    value={`${analytics.discounts.average_discount.toFixed(1)}%`}
+                                />
+                                <KeyValue
+                                    label="Total discounts"
+                                    value={currency.format(
+                                        analytics.discounts.total_discount,
+                                    )}
+                                />
+                                <KeyValue
+                                    label="Revenue impact"
+                                    value={`${analytics.discounts.discount_impact_pct.toFixed(1)}%`}
+                                />
+                            </CardContent>
+                        </Card>
+                    </div>
 
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Discount Analytics</CardTitle>
-                        </CardHeader>
-                        <CardContent className="grid gap-3">
-                            <KeyValue
-                                label="Discounted transactions"
-                                value={`${number.format(analytics.discounts.discounted_transactions)} / ${number.format(analytics.discounts.total_transactions)}`}
-                            />
-                            <KeyValue
-                                label="Average discount"
-                                value={`${analytics.discounts.average_discount.toFixed(1)}%`}
-                            />
-                            <KeyValue
-                                label="Total discounts"
-                                value={currency.format(
-                                    analytics.discounts.total_discount,
-                                )}
-                            />
-                            <KeyValue
-                                label="Revenue impact"
-                                value={`${analytics.discounts.discount_impact_pct.toFixed(1)}%`}
-                            />
-                        </CardContent>
-                    </Card>
-                </section>
-
-                <section className="grid gap-4 xl:grid-cols-2">
-                    <VoidTrendCard data={analytics.voidTrend.slice(-7)} />
-                    <PeakHoursCard data={analytics.peakHours} />
+                    <div className="grid gap-4 2xl:grid-cols-2">
+                        <VoidTrendCard
+                            data={analytics.voidTrend.slice(-7)}
+                            actions={statisticActions(
+                                'voidTrend',
+                                'void-trend',
+                            )}
+                        />
+                        <PeakHoursCard
+                            data={analytics.peakHours}
+                            actions={statisticActions(
+                                'peakHours',
+                                'peak-hours',
+                            )}
+                        />
+                    </div>
                 </section>
 
                 <section className="grid gap-4">
                     <SectionHeading title="Patient Analytics" />
-                    <div className="grid gap-4 xl:grid-cols-3">
-                        <Card>
-                            <CardHeader>
+                    <div className="grid gap-4 lg:grid-cols-2 2xl:grid-cols-3">
+                        <Card
+                            className="h-full"
+                            data-statistic-card="patient-retention"
+                            data-statistic-title="New vs Returning Patients"
+                        >
+                            <CardHeader className="grid gap-3">
                                 <CardTitle>New vs Returning Patients</CardTitle>
+                                {statisticActions(
+                                    'patientRetention',
+                                    'patient-retention',
+                                )}
                             </CardHeader>
                             <CardContent className="grid gap-4">
                                 <SplitBar
@@ -427,27 +513,43 @@ export default function ReportsIndex({
                                     value: bucket.count,
                                 }),
                             )}
+                            printTarget="visit-frequency"
+                            actions={statisticActions(
+                                'visitFrequency',
+                                'visit-frequency',
+                            )}
                         />
 
-                        <Card>
-                            <CardHeader className="flex-row items-center justify-between gap-3">
-                                <CardTitle>
-                                    Top Patients by Lifetime Value
-                                </CardTitle>
-                                <label className="flex items-center gap-2 text-xs print:hidden">
-                                    <Checkbox
-                                        checked={filters.anonymize}
-                                        onCheckedChange={(checked) =>
-                                            visit(
-                                                {
-                                                    anonymize: checked === true,
-                                                },
-                                                ['analytics', 'filters'],
-                                            )
-                                        }
-                                    />
-                                    Privacy
-                                </label>
+                        <Card
+                            className="h-full lg:col-span-2 2xl:col-span-1"
+                            data-statistic-card="top-patients"
+                            data-statistic-title="Top Patients by Lifetime Value"
+                        >
+                            <CardHeader className="grid gap-3">
+                                <div className="flex items-center justify-between gap-3">
+                                    <CardTitle>
+                                        Top Patients by Lifetime Value
+                                    </CardTitle>
+                                    <label className="flex items-center gap-2 text-xs print:hidden">
+                                        <Checkbox
+                                            checked={filters.anonymize}
+                                            onCheckedChange={(checked) =>
+                                                visit(
+                                                    {
+                                                        anonymize:
+                                                            checked === true,
+                                                    },
+                                                    ['analytics', 'filters'],
+                                                )
+                                            }
+                                        />
+                                        Privacy
+                                    </label>
+                                </div>
+                                {statisticActions(
+                                    'topPatients',
+                                    'top-patients',
+                                )}
                             </CardHeader>
                             <CardContent className="grid max-h-72 gap-3 overflow-y-auto">
                                 {analytics.topPatients.map((patient) => (
@@ -484,57 +586,69 @@ export default function ReportsIndex({
 
                 <section className="grid gap-4">
                     <SectionHeading title="Clinical Intelligence" />
-                    <div className="grid gap-4 xl:grid-cols-3">
-                        <ServiceTrendsCard data={analytics.serviceTrends} />
+                    <div className="grid gap-4 lg:grid-cols-2 2xl:grid-cols-3">
+                        <ServiceTrendsCard
+                            data={analytics.serviceTrends}
+                            actions={statisticActions(
+                                'serviceTrends',
+                                'service-trends',
+                            )}
+                        />
                         <ProgressListCard
                             title="Diagnosis Frequency"
                             items={analytics.topDiagnoses.map((diagnosis) => ({
                                 label: diagnosis.name,
                                 value: diagnosis.frequency,
                             }))}
+                            printTarget="diagnosis-frequency"
+                            actions={statisticActions(
+                                'topDiagnoses',
+                                'diagnosis-frequency',
+                            )}
                         />
-                        <ReorderSignalsCard data={analytics.reorderSignals} />
+                        <ReorderSignalsCard
+                            data={analytics.reorderSignals}
+                            actions={statisticActions(
+                                'reorderSignals',
+                                'reorder-signals',
+                            )}
+                        />
                     </div>
                 </section>
 
                 {canViewAllBranches && (
-                    <Card>
-                        <CardHeader className="flex-row items-center justify-between gap-3">
-                            <CardTitle>Branch Comparison</CardTitle>
-                            <Select
-                                value={filters.comparison_period}
-                                onValueChange={(value) =>
-                                    visit(
-                                        {
-                                            comparison_period:
-                                                value as ReportFilters['comparison_period'],
-                                        },
-                                        ['analytics', 'filters'],
-                                    )
-                                }
+                    <section className="grid gap-4">
+                        <SectionHeading title="Branch Analytics" />
+
+                        <div className="grid gap-4 2xl:grid-cols-2">
+                            <Card
+                                className="h-full"
+                                data-statistic-card="branch-comparison"
+                                data-statistic-title="Branch Comparison"
                             >
-                                <SelectTrigger className="w-36 print:hidden">
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="week">
-                                        This week
-                                    </SelectItem>
-                                    <SelectItem value="month">
-                                        This month
-                                    </SelectItem>
-                                    <SelectItem value="year">
-                                        This year
-                                    </SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </CardHeader>
-                        <CardContent>
-                            <BranchComparison
-                                data={analytics.branchComparison}
+                                <CardHeader className="grid gap-3">
+                                    <CardTitle>Branch Comparison</CardTitle>
+                                    {statisticActions(
+                                        'branchComparison',
+                                        'branch-comparison',
+                                    )}
+                                </CardHeader>
+                                <CardContent>
+                                    <BranchComparison
+                                        data={analytics.branchComparison}
+                                    />
+                                </CardContent>
+                            </Card>
+
+                            <ParentCategoryUtilizationCard
+                                data={analytics.parentCategoryUtilization}
+                                actions={statisticActions(
+                                    'parentCategoryUtilization',
+                                    'parent-category-utilization',
+                                )}
                             />
-                        </CardContent>
-                    </Card>
+                        </div>
+                    </section>
                 )}
 
                 <section className="grid gap-4 print:break-before-page">
@@ -626,8 +740,7 @@ export default function ReportsIndex({
 
 function reportQuery(filters: ReportFilters) {
     return {
-        summary_period: filters.summary_period,
-        comparison_period: filters.comparison_period,
+        statistic_periods: filters.statistic_periods,
         branch_ID: filters.branch_ID,
         sales_period: filters.sales_period,
         specific_date: filters.specific_date ?? undefined,
@@ -654,37 +767,262 @@ function SectionHeading({
     );
 }
 
+function StatisticCardActions({
+    printTarget,
+    selection,
+    resolvedLabel,
+    onChange,
+}: {
+    printTarget: string;
+    selection: StatisticPeriodSelection;
+    resolvedLabel: string;
+    onChange: (selection: StatisticPeriodSelection) => void;
+}) {
+    const periodLabel =
+        statisticPeriodOptions.find(
+            (option) => option.value === selection.period,
+        )?.label ?? 'Period';
+
+    return (
+        <div className="flex flex-wrap items-center justify-between gap-2 print:hidden">
+            <Badge
+                variant="secondary"
+                className="max-w-full truncate font-normal"
+                title={resolvedLabel}
+            >
+                {resolvedLabel}
+            </Badge>
+
+            <div className="flex shrink-0 items-center gap-1">
+                <Popover>
+                    <PopoverTrigger asChild>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-8 gap-1.5"
+                        >
+                            <CalendarRange className="size-3.5" />
+                            {periodLabel}
+                        </Button>
+                    </PopoverTrigger>
+                    <PopoverContent align="end" className="w-72">
+                        <div className="grid gap-4">
+                            <div className="grid gap-1">
+                                <p className="text-sm font-medium">
+                                    Statistic period
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                    Choose the range used by this card.
+                                </p>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-3">
+                                <div className="grid gap-1.5">
+                                    <Label>Month</Label>
+                                    <Select
+                                        value={String(selection.month)}
+                                        onValueChange={(value) =>
+                                            onChange({
+                                                ...selection,
+                                                month: Number(value),
+                                            })
+                                        }
+                                    >
+                                        <SelectTrigger
+                                            className="w-full"
+                                            aria-label="Statistic month"
+                                        >
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {monthOptions.map((month) => (
+                                                <SelectItem
+                                                    key={month.value}
+                                                    value={String(month.value)}
+                                                >
+                                                    {month.label}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+
+                                <div className="grid gap-1.5">
+                                    <Label>Year</Label>
+                                    <Select
+                                        value={
+                                            selection.year === null
+                                                ? 'auto'
+                                                : String(selection.year)
+                                        }
+                                        onValueChange={(value) =>
+                                            onChange({
+                                                ...selection,
+                                                year:
+                                                    value === 'auto'
+                                                        ? null
+                                                        : Number(value),
+                                            })
+                                        }
+                                    >
+                                        <SelectTrigger
+                                            className="w-full"
+                                            aria-label="Statistic year"
+                                        >
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="auto">
+                                                Auto year
+                                            </SelectItem>
+                                            {yearOptions.map((year) => (
+                                                <SelectItem
+                                                    key={year}
+                                                    value={String(year)}
+                                                >
+                                                    {year}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+
+                                <div className="col-span-2 grid gap-1.5">
+                                    <Label>Range</Label>
+                                    <Select
+                                        value={selection.period}
+                                        onValueChange={(value) =>
+                                            onChange({
+                                                ...selection,
+                                                period: value as StatisticPeriodSelection['period'],
+                                            })
+                                        }
+                                    >
+                                        <SelectTrigger
+                                            className="w-full"
+                                            aria-label="Statistic period"
+                                        >
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {statisticPeriodOptions.map(
+                                                (option) => (
+                                                    <SelectItem
+                                                        key={option.value}
+                                                        value={option.value}
+                                                    >
+                                                        {option.label}
+                                                    </SelectItem>
+                                                ),
+                                            )}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            </div>
+
+                            <div className="rounded-md bg-muted px-3 py-2 text-xs text-muted-foreground">
+                                Showing {resolvedLabel}
+                            </div>
+                        </div>
+                    </PopoverContent>
+                </Popover>
+
+                <TooltipIconButton
+                    variant="outline"
+                    size="icon"
+                    className="size-8"
+                    tooltip={`Print / Save PDF for ${resolvedLabel}`}
+                    aria-label={`Print or save PDF for ${resolvedLabel}`}
+                    onClick={() =>
+                        printStatisticCard(printTarget, resolvedLabel)
+                    }
+                >
+                    <Printer />
+                </TooltipIconButton>
+            </div>
+        </div>
+    );
+}
+
+function AllTimeStatisticActions({ printTarget }: { printTarget: string }) {
+    return (
+        <div className="flex items-center justify-between gap-2 print:hidden">
+            <Badge variant="secondary" className="font-normal">
+                All time
+            </Badge>
+            <TooltipIconButton
+                variant="outline"
+                size="icon"
+                className="size-8"
+                tooltip="Print / Save PDF for all-time data"
+                aria-label="Print or save PDF for all-time data"
+                onClick={() => printStatisticCard(printTarget, 'All time')}
+            >
+                <Printer />
+            </TooltipIconButton>
+        </div>
+    );
+}
+
+function printStatisticCard(printTarget: string, resolvedLabel: string) {
+    const source = document.querySelector<HTMLElement>(
+        `[data-statistic-card="${printTarget}"]`,
+    );
+
+    if (source === null) {
+        return;
+    }
+
+    const printRoot = document.createElement('main');
+    const heading = document.createElement('header');
+    const title = document.createElement('h1');
+    const period = document.createElement('p');
+    printRoot.className = 'statistic-print-root';
+    heading.className = 'statistic-print-heading';
+    title.textContent = source.dataset.statisticTitle ?? 'Report statistic';
+    period.textContent = resolvedLabel;
+    heading.append(title, period);
+    printRoot.append(heading);
+    printRoot.append(source.cloneNode(true));
+    document.body.append(printRoot);
+    document.body.classList.add('printing-statistic');
+
+    const cleanup = () => {
+        document.body.classList.remove('printing-statistic');
+        printRoot.remove();
+    };
+
+    window.addEventListener('afterprint', cleanup, { once: true });
+    window.print();
+    window.setTimeout(cleanup, 1000);
+}
+
 function MetricCard({
     label,
     value,
-    growth,
-    comparison,
     icon: Icon,
+    actions,
+    printTarget,
 }: {
     label: string;
     value: string;
-    growth?: { pct: number; direction: 'up' | 'down' | 'flat' };
-    comparison?: string;
     icon: React.ComponentType<{ className?: string }>;
+    actions?: React.ReactNode;
+    printTarget: string;
 }) {
     return (
-        <Card>
+        <Card
+            className="h-full"
+            data-statistic-card={printTarget}
+            data-statistic-title={label}
+        >
             <CardContent className="grid gap-3 p-5">
                 <div className="flex items-center justify-between gap-3">
                     <p className="text-sm text-muted-foreground">{label}</p>
                     <Icon className="size-5 text-muted-foreground" />
                 </div>
                 <p className="truncate text-xl font-semibold">{value}</p>
-                {growth && (
-                    <p className="flex items-center gap-1 text-xs text-muted-foreground">
-                        {growth.direction === 'up' ? (
-                            <ArrowUp className="size-3" />
-                        ) : growth.direction === 'down' ? (
-                            <ArrowDown className="size-3" />
-                        ) : null}
-                        {growth.pct.toFixed(1)}% {comparison}
-                    </p>
-                )}
+                {actions}
             </CardContent>
         </Card>
     );
@@ -694,15 +1032,17 @@ function SeriesCard({
     title,
     series,
     printUrl,
+    className,
 }: {
     title: string;
     series: ReportSeriesPoint[];
     printUrl: string;
+    className?: string;
 }) {
     const maximum = Math.max(...series.map((point) => point.total), 1);
 
     return (
-        <Card>
+        <Card className={className}>
             <CardHeader className="flex-row items-center justify-between gap-3">
                 <CardTitle>{title}</CardTitle>
                 <div className="flex items-center gap-2">
@@ -758,20 +1098,31 @@ function RankingCard({
     title,
     subtitle,
     items,
+    actions,
+    printTarget,
 }: {
     title: string;
     subtitle: string;
     items: RankedReportItem[];
+    actions?: React.ReactNode;
+    printTarget: string;
 }) {
     const maximum = Math.max(...items.map((item) => item.revenue), 1);
 
     return (
-        <Card>
-            <CardHeader className="flex-row items-center justify-between gap-3">
-                <CardTitle>{title}</CardTitle>
-                <span className="text-sm text-muted-foreground">
-                    {subtitle}
-                </span>
+        <Card
+            className="h-full"
+            data-statistic-card={printTarget}
+            data-statistic-title={title}
+        >
+            <CardHeader className="grid gap-3">
+                <div className="flex items-center justify-between gap-3">
+                    <CardTitle>{title}</CardTitle>
+                    <span className="text-sm text-muted-foreground">
+                        {subtitle}
+                    </span>
+                </div>
+                {actions}
             </CardHeader>
             <CardContent className="grid gap-3">
                 {items.map((item) => (
@@ -829,16 +1180,29 @@ function KeyValue({ label, value }: { label: string; value: string }) {
     );
 }
 
-function VoidTrendCard({ data }: { data: ReportAnalytics['voidTrend'] }) {
+function VoidTrendCard({
+    data,
+    actions,
+}: {
+    data: ReportAnalytics['voidTrend'];
+    actions?: React.ReactNode;
+}) {
     const maximum = Math.max(...data.map((point) => point.rate), 0);
 
     return (
-        <Card className="h-full">
-            <CardHeader className="flex-row items-center justify-between">
-                <CardTitle>Voids & Returns</CardTitle>
-                <span className="text-sm text-muted-foreground">
-                    Last 7 days
-                </span>
+        <Card
+            className="h-full"
+            data-statistic-card="void-trend"
+            data-statistic-title="Voids & Returns"
+        >
+            <CardHeader className="grid gap-3">
+                <div className="flex items-center justify-between">
+                    <CardTitle>Voids & Returns</CardTitle>
+                    <span className="text-sm text-muted-foreground">
+                        Last 7 days
+                    </span>
+                </div>
+                {actions}
             </CardHeader>
             <CardContent className="flex min-h-0 flex-1 flex-col">
                 <div className="flex min-h-24 flex-1 items-end gap-2 border-b">
@@ -880,14 +1244,26 @@ function VoidTrendCard({ data }: { data: ReportAnalytics['voidTrend'] }) {
     );
 }
 
-function PeakHoursCard({ data }: { data: ReportAnalytics['peakHours'] }) {
+function PeakHoursCard({
+    data,
+    actions,
+}: {
+    data: ReportAnalytics['peakHours'];
+    actions?: React.ReactNode;
+}) {
     return (
-        <Card>
-            <CardHeader className="flex-row items-center justify-between">
-                <CardTitle>Traffic Patterns</CardTitle>
-                <span className="text-sm text-muted-foreground">
-                    Peak hours
-                </span>
+        <Card
+            data-statistic-card="peak-hours"
+            data-statistic-title="Traffic Patterns"
+        >
+            <CardHeader className="grid gap-3">
+                <div className="flex items-center justify-between">
+                    <CardTitle>Traffic Patterns</CardTitle>
+                    <span className="text-sm text-muted-foreground">
+                        Peak hours
+                    </span>
+                </div>
+                {actions}
             </CardHeader>
             <CardContent className="overflow-x-auto">
                 <div className="grid min-w-[620px] grid-cols-[3rem_repeat(12,minmax(2.5rem,1fr))] gap-1">
@@ -929,22 +1305,29 @@ function ProgressListCard({
     title,
     subtitle,
     items,
+    actions,
+    printTarget,
 }: {
     title: string;
     subtitle?: string;
     items: Array<{ label: string; value: number }>;
+    actions?: React.ReactNode;
+    printTarget: string;
 }) {
     const maximum = Math.max(...items.map((item) => item.value), 1);
 
     return (
-        <Card>
-            <CardHeader className="flex-row items-center justify-between gap-3">
-                <CardTitle>{title}</CardTitle>
-                {subtitle && (
-                    <span className="text-sm text-muted-foreground">
-                        {subtitle}
-                    </span>
-                )}
+        <Card data-statistic-card={printTarget} data-statistic-title={title}>
+            <CardHeader className="grid gap-3">
+                <div className="flex items-center justify-between gap-3">
+                    <CardTitle>{title}</CardTitle>
+                    {subtitle && (
+                        <span className="text-sm text-muted-foreground">
+                            {subtitle}
+                        </span>
+                    )}
+                </div>
+                {actions}
             </CardHeader>
             <CardContent className="grid max-h-80 gap-3 overflow-y-auto">
                 {items.map((item) => (
@@ -971,13 +1354,20 @@ function ProgressListCard({
 
 function ServiceTrendsCard({
     data,
+    actions,
 }: {
     data: ReportAnalytics['serviceTrends'];
+    actions?: React.ReactNode;
 }) {
     return (
-        <Card className="h-full">
-            <CardHeader>
+        <Card
+            className="h-full"
+            data-statistic-card="service-trends"
+            data-statistic-title="Service Trends"
+        >
+            <CardHeader className="grid gap-3">
                 <CardTitle>Service Trends</CardTitle>
+                {actions}
             </CardHeader>
             <CardContent className="flex min-h-0 flex-1 flex-col gap-4">
                 {data.map((service) => {
@@ -1022,13 +1412,19 @@ function ServiceTrendsCard({
 
 function ReorderSignalsCard({
     data,
+    actions,
 }: {
     data: ReportAnalytics['reorderSignals'];
+    actions?: React.ReactNode;
 }) {
     return (
-        <Card>
-            <CardHeader>
+        <Card
+            data-statistic-card="reorder-signals"
+            data-statistic-title="Product Reorder Signals"
+        >
+            <CardHeader className="grid gap-3">
                 <CardTitle>Product Reorder Signals</CardTitle>
+                {actions}
             </CardHeader>
             <CardContent className="grid max-h-80 gap-3 overflow-y-auto">
                 {data.map((item) => (
@@ -1161,6 +1557,196 @@ function BranchComparison({
                 </div>
             </div>
         </div>
+    );
+}
+
+function ParentCategoryUtilizationCard({
+    data,
+    actions,
+}: {
+    data: ReportAnalytics['parentCategoryUtilization'];
+    actions?: React.ReactNode;
+}) {
+    const categoryColors = [
+        'bg-chart-1',
+        'bg-chart-2',
+        'bg-chart-3',
+        'bg-chart-4',
+        'bg-chart-5',
+    ];
+    const branches = data.branches.map((branch) => ({
+        ...branch,
+        total: data.categories.reduce(
+            (total, category) =>
+                total +
+                (category.branches.find(
+                    (item) => item.branch_ID === branch.branch_ID,
+                )?.quantity ?? 0),
+            0,
+        ),
+    }));
+    const highestTotal = Math.max(...branches.map((branch) => branch.total), 0);
+    const scaleMaximum = Math.max(highestTotal, 1);
+
+    return (
+        <Card
+            className="h-full"
+            data-statistic-card="parent-category-utilization"
+            data-statistic-title="Parent Category Service Utilization"
+        >
+            <CardHeader className="grid gap-3">
+                <div className="grid gap-1">
+                    <CardTitle>Parent Category Service Utilization</CardTitle>
+                    <p className="text-xs text-muted-foreground">
+                        Parent category mix per branch during{' '}
+                        {data.period_label}.
+                    </p>
+                </div>
+                {actions}
+            </CardHeader>
+            <CardContent className="grid gap-6">
+                {data.categories.length === 0 || data.branches.length === 0 ? (
+                    <Empty show />
+                ) : (
+                    <>
+                        <div
+                            className="flex flex-wrap gap-x-4 gap-y-2"
+                            aria-label="Parent category legend"
+                        >
+                            {data.categories.map((category, index) => (
+                                <div
+                                    key={category.parent_category_ID}
+                                    className="flex min-w-0 items-center gap-2 text-xs"
+                                >
+                                    <span
+                                        className={`size-2.5 shrink-0 rounded-sm ${categoryColors[index % categoryColors.length]}`}
+                                        aria-hidden="true"
+                                    />
+                                    <span className="max-w-40 truncate font-medium">
+                                        {category.label}
+                                    </span>
+                                    <span className="text-muted-foreground tabular-nums">
+                                        {number.format(category.total)}
+                                    </span>
+                                </div>
+                            ))}
+                        </div>
+
+                        <figure className="grid gap-5">
+                            <figcaption className="sr-only">
+                                Stacked bar graph of parent category service
+                                utilization by branch for {data.period_label}.
+                            </figcaption>
+
+                            {branches.map((branch) => (
+                                <div
+                                    key={branch.branch_ID}
+                                    className="grid gap-2"
+                                >
+                                    <div className="flex items-center justify-between gap-3">
+                                        <span className="truncate text-sm font-medium">
+                                            {branch.label}
+                                        </span>
+                                        <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
+                                            {number.format(branch.total)}{' '}
+                                            services
+                                        </span>
+                                    </div>
+
+                                    <div className="relative h-9 overflow-hidden rounded-md bg-muted/70">
+                                        <div
+                                            className="absolute inset-0 grid grid-cols-4 divide-x divide-border/70"
+                                            aria-hidden="true"
+                                        >
+                                            <span />
+                                            <span />
+                                            <span />
+                                            <span />
+                                        </div>
+
+                                        <div className="relative flex h-full">
+                                            {data.categories.map(
+                                                (category, index) => {
+                                                    const quantity =
+                                                        category.branches.find(
+                                                            (item) =>
+                                                                item.branch_ID ===
+                                                                branch.branch_ID,
+                                                        )?.quantity ?? 0;
+
+                                                    if (quantity === 0) {
+                                                        return null;
+                                                    }
+
+                                                    return (
+                                                        <Tooltip
+                                                            key={
+                                                                category.parent_category_ID
+                                                            }
+                                                        >
+                                                            <TooltipTrigger
+                                                                asChild
+                                                            >
+                                                                <button
+                                                                    type="button"
+                                                                    className={`h-full min-w-px border-r border-background/40 outline-none last:border-r-0 focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-ring ${categoryColors[index % categoryColors.length]}`}
+                                                                    style={{
+                                                                        width: `${(quantity / scaleMaximum) * 100}%`,
+                                                                    }}
+                                                                    aria-label={`${branch.label}, ${category.label}: ${number.format(quantity)} services`}
+                                                                />
+                                                            </TooltipTrigger>
+                                                            <TooltipContent>
+                                                                {category.label}
+                                                                :{' '}
+                                                                {number.format(
+                                                                    quantity,
+                                                                )}{' '}
+                                                                services
+                                                            </TooltipContent>
+                                                        </Tooltip>
+                                                    );
+                                                },
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    <p className="sr-only">
+                                        {data.categories
+                                            .map((category) => {
+                                                const quantity =
+                                                    category.branches.find(
+                                                        (item) =>
+                                                            item.branch_ID ===
+                                                            branch.branch_ID,
+                                                    )?.quantity ?? 0;
+
+                                                return `${category.label}: ${number.format(quantity)}`;
+                                            })
+                                            .join(', ')}
+                                    </p>
+                                </div>
+                            ))}
+
+                            <div
+                                className="flex justify-between border-t pt-2 text-[11px] text-muted-foreground tabular-nums"
+                                aria-hidden="true"
+                            >
+                                <span>0</span>
+                                <span>
+                                    {number.format(
+                                        Math.round(highestTotal / 2),
+                                    )}
+                                </span>
+                                <span>
+                                    {number.format(highestTotal)} services
+                                </span>
+                            </div>
+                        </figure>
+                    </>
+                )}
+            </CardContent>
+        </Card>
     );
 }
 

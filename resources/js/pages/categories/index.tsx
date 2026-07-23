@@ -24,7 +24,6 @@ import {
     newRecordRowClass,
 } from '@/components/new-record-indicator';
 import { TooltipIconButton } from '@/components/tooltip-icon-button';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -281,9 +280,6 @@ export default function CategoriesIndex({
                                             {category.is_new && (
                                                 <NewRecordBadge />
                                             )}
-                                            <Badge variant="outline">
-                                                {category.category_type}
-                                            </Badge>
                                         </div>
                                     </TableCell>
                                     {filters.tab === 'services' && (

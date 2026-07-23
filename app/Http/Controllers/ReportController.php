@@ -6,6 +6,7 @@ use App\Http\Requests\ReportFilterRequest;
 use App\Models\Branch;
 use App\Models\StaffAccount;
 use App\Services\ReportsService;
+use App\Support\ReportStatisticPeriod;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -27,10 +28,9 @@ class ReportController extends Controller
 
         return Inertia::render('reports/index', [
             'analytics' => fn (): array => $this->reportsService->analytics(
-                $filters['summary_period'],
                 $canViewAllBranches ? null : $branchId,
                 $canViewAllBranches,
-                $filters['comparison_period'],
+                $filters['statistic_periods'],
                 $filters['anonymize'],
             ),
             'branchSales' => fn (): array => $this->reportsService->branchSales($branchId, $filters),
@@ -50,8 +50,7 @@ class ReportController extends Controller
         $validated = $request->validated();
 
         return [
-            'summary_period' => $validated['summary_period'] ?? 'this_month',
-            'comparison_period' => $validated['comparison_period'] ?? 'month',
+            'statistic_periods' => $this->statisticPeriods($validated['statistic_periods'] ?? []),
             'branch_ID' => $validated['branch_ID'] ?? null,
             'sales_period' => $validated['sales_period'] ?? 'month',
             'specific_date' => $validated['specific_date'] ?? null,
@@ -61,5 +60,25 @@ class ReportController extends Controller
             'per_page' => $validated['per_page'] ?? 10,
             'anonymize' => (bool) ($validated['anonymize'] ?? false),
         ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $periods
+     * @return array<string, array{period: string, month: int, year: int|null}>
+     */
+    private function statisticPeriods(array $periods): array
+    {
+        return collect(ReportStatisticPeriod::STATISTICS)
+            ->mapWithKeys(function (string $statistic) use ($periods): array {
+                $selection = is_array($periods[$statistic] ?? null) ? $periods[$statistic] : [];
+                $resolved = ReportStatisticPeriod::resolve($selection);
+
+                return [$statistic => [
+                    'period' => $resolved['period'],
+                    'month' => $resolved['month'],
+                    'year' => $resolved['selected_year'],
+                ]];
+            })
+            ->all();
     }
 }

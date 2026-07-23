@@ -45,6 +45,29 @@ test('categories can be searched within the selected tab', function () {
             ->where('categories.data.0.category_name', 'Laser Procedures'));
 });
 
+test('product and service category tables are ordered alphabetically', function (string $tab, string $factoryState) {
+    $user = User::factory()->create();
+
+    foreach (['Zebra Care', 'Alpha Care', 'Middle Care'] as $categoryName) {
+        Category::factory()
+            ->{$factoryState}()
+            ->create(['category_name' => $categoryName]);
+    }
+
+    $response = $this->actingAs($user)
+        ->get(route('categories.index', ['tab' => $tab]))
+        ->assertSuccessful();
+
+    expect(
+        collect($response->inertiaProps('categories.data'))
+            ->pluck('category_name')
+            ->all(),
+    )->toBe(['Alpha Care', 'Middle Care', 'Zebra Care']);
+})->with([
+    'products' => ['products', 'product'],
+    'services' => ['services', 'service'],
+]);
+
 test('authenticated users can create a category', function () {
     $user = User::factory()->create();
 

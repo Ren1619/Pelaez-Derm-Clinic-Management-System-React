@@ -212,3 +212,34 @@
         print-color-adjust: exact;
     }
 }
+
+.statistic-print-root {
+    display: none;
+}
+
+@media print {
+    body.printing-statistic #app {
+        display: none !important;
+    }
+
+    body.printing-statistic .statistic-print-root {
+        display: grid;
+        gap: 1rem;
+        padding: 1rem;
+        print-color-adjust: exact;
+    }
+
+    .statistic-print-root .statistic-print-heading {
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 0.75rem;
+    }
+
+    .statistic-print-root .statistic-print-heading h1 {
+        font-size: 1.5rem;
+        font-weight: 600;
+    }
+
+    .statistic-print-root [data-statistic-card] {
+        box-shadow: none !important;
+    }
+}

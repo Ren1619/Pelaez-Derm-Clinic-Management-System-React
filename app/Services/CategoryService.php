@@ -45,8 +45,8 @@ class CategoryService
                         ),
                 ),
             )
-            ->orderBy('major_service_category_ID')
             ->orderBy('category_name')
+            ->orderBy('category_ID')
             ->paginate($perPage)
             ->withQueryString();
     }

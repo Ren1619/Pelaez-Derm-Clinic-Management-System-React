@@ -2,164 +2,155 @@
 
 namespace Database\Seeders;
 
+use App\Models\Branch;
 use App\Models\Patient;
 use App\Models\PatientVisit;
+use App\Models\Product;
+use App\Models\Service;
+use App\Models\StaffAccount;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Carbon;
 
 class PatientClinicalRecordSeeder extends Seeder
 {
     use WithoutModelEvents;
 
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
-        $this->seedMedicalSummary();
-        $this->seedVisits();
+        $patients = Patient::query()->where('email', 'like', '%@pelaez.test')->orderBy('PID')->get();
+
+        if ($patients->isEmpty()) {
+            return;
+        }
+
+        $this->seedMedicalSummaries($patients);
+        $this->seedVisits($patients);
     }
 
-    private function seedMedicalSummary(): void
+    /** @param EloquentCollection<int, Patient> $patients */
+    private function seedMedicalSummaries(EloquentCollection $patients): void
     {
-        $records = [
-            1 => [
-                'allergies' => [['Penicillin', 'Causes rash and difficulty breathing.']],
-                'conditions' => [['Acne Vulgaris', 'Moderate acne on forehead and chin. Under treatment.']],
-                'medications' => [['Doxycycline', '100mg', 'Once daily', '3 months', 'Taken for acne management.']],
-            ],
-            2 => [
-                'allergies' => [['Fragrance / Perfume', 'Triggers contact dermatitis.']],
-                'conditions' => [['Atopic Dermatitis', 'Chronic eczema, flares during dry season.']],
-                'medications' => [['Hydrocortisone Cream 1%', 'Thin layer', 'Twice daily', 'As needed', 'Applied to affected eczema areas.']],
-            ],
-            3 => [
-                'allergies' => [['Nickel', 'Allergic reaction from metal jewelry.']],
-                'conditions' => [],
-                'medications' => [],
-            ],
-            4 => [
-                'allergies' => [],
-                'conditions' => [['Melasma', 'Hyperpigmentation on cheeks and upper lip.']],
-                'medications' => [['Tranexamic Acid', '250mg', 'Twice daily', '6 months', 'For melasma management.']],
-            ],
+        $allergies = [
+            ['Penicillin', 'Reported skin rash after taking penicillin.'],
+            ['Fragrance', 'May trigger contact dermatitis.'],
+            ['Nickel', 'Local reaction to metal jewelry.'],
+            ['None reported', 'Patient reports no known allergies.'],
+        ];
+        $conditions = [
+            ['Acne Vulgaris', 'Recurring facial acne under active management.'],
+            ['Atopic Dermatitis', 'Intermittent dry and irritated skin.'],
+            ['Melasma', 'Facial hyperpigmentation monitored during treatment.'],
+            ['Sensitive Skin', 'History of irritation from strong topical products.'],
+        ];
+        $medications = [
+            ['Doxycycline', '100 mg', 'Once daily', '8 weeks', 'Take with food and water.'],
+            ['Hydrocortisone Cream 1%', 'Thin layer', 'Twice daily', 'As needed', 'Apply only to affected areas.'],
+            ['Tranexamic Acid', '250 mg', 'Twice daily', '3 months', 'For pigmentation management.'],
+            ['Cetirizine', '10 mg', 'Once daily', 'As needed', 'For allergy-related itching.'],
         ];
 
-        foreach ($records as $patientId => $record) {
-            $patient = Patient::query()->findOrFail($patientId);
+        foreach ($patients as $index => $patient) {
+            [$allergy, $allergyNote] = $allergies[$index % count($allergies)];
+            [$condition, $conditionNote] = $conditions[$index % count($conditions)];
+            [$medication, $dosage, $frequency, $duration, $medicationNote] = $medications[$index % count($medications)];
 
-            foreach ($record['allergies'] as [$allergy, $note]) {
-                $patient->allergies()->updateOrCreate(['allergy' => $allergy], ['note' => $note]);
-            }
-
-            foreach ($record['conditions'] as [$condition, $note]) {
-                $patient->medicalConditions()->updateOrCreate(['condition' => $condition], ['note' => $note]);
-            }
-
-            foreach ($record['medications'] as [$medication, $dosage, $frequency, $duration, $note]) {
-                $patient->medications()->updateOrCreate(
-                    ['medication' => $medication],
-                    compact('dosage', 'frequency', 'duration', 'note'),
-                );
-            }
+            $patient->allergies()->updateOrCreate(['allergy' => $allergy], ['note' => $allergyNote]);
+            $patient->medicalConditions()->updateOrCreate(['condition' => $condition], ['note' => $conditionNote]);
+            $patient->medications()->updateOrCreate(
+                ['medication' => $medication],
+                compact('dosage', 'frequency', 'duration') + ['note' => $medicationNote],
+            );
         }
     }
 
-    private function seedVisits(): void
+    /** @param EloquentCollection<int, Patient> $patients */
+    private function seedVisits(EloquentCollection $patients): void
     {
-        $visits = [
-            [
-                'patient_id' => 1,
-                'branch_id' => 1,
-                'branch_name' => 'Valencia City',
-                'doctor_name' => 'Dr. Rosa Pelaez',
-                'visited_at' => '2026-02-10 09:00:00',
-                'blood_pressure' => '120/80',
-                'weight' => 72,
-                'height' => 170,
-                'services' => [[1, 'Initial Dermatology Consultation', 'Skin assessment and personalized treatment planning.']],
-                'products' => [
-                    [1, 'CeraVe Moisturizing Cream', 1, 450, 'Recommended to reduce dryness from tretinoin.'],
-                    [2, 'Biore UV Aqua Rich SPF50', 1, 380, 'Daily sunscreen while on retinoid therapy.'],
-                ],
-                'diagnoses' => [['Acne Vulgaris (Moderate)', 'Comedonal and inflammatory acne predominantly on the T-zone.']],
-                'prescriptions' => [
-                    ['Tretinoin 0.025% Cream', 'Pea-sized amount', 'Once nightly', '3 months', 'Apply to clean, dry skin and use sunscreen daily.'],
-                    ['Doxycycline', '100mg', 'Once daily with food', '8 weeks', 'Take with a full glass of water.'],
-                ],
-            ],
-            [
-                'patient_id' => 2,
-                'branch_id' => 2,
-                'branch_name' => 'Malaybalay City',
-                'doctor_name' => 'Dr. Rosa Pelaez',
-                'visited_at' => '2026-02-12 10:30:00',
-                'blood_pressure' => '115/75',
-                'weight' => 58,
-                'height' => 162,
-                'services' => [[2, 'Follow-up Consultation', 'Treatment progress review and care-plan adjustment.']],
-                'products' => [[4, 'CeraVe Moisturizing Cream', 1, 450, 'Emollient for skin-barrier support.']],
-                'diagnoses' => [['Atopic Dermatitis (Mild-Moderate)', 'Eczematous patches on bilateral antecubital fossae.']],
-                'prescriptions' => [['Hydrocortisone Cream 1%', 'Thin layer', 'Twice daily', '2 weeks', 'Apply only to affected areas.']],
-            ],
-            [
-                'patient_id' => 3,
-                'branch_id' => 1,
-                'branch_name' => 'Valencia City',
-                'doctor_name' => 'Dr. Rosa Pelaez',
-                'visited_at' => '2026-02-18 14:00:00',
-                'blood_pressure' => null,
-                'weight' => 65,
-                'height' => 175,
-                'services' => [
-                    [5, 'Laser Toning', 'Session 1 of 6 targeting cheeks and forehead pigmentation.'],
-                    [3, 'Hydra Facial', 'Deep cleanse and hydration after laser treatment.'],
-                ],
-                'products' => [],
-                'diagnoses' => [['Post-Inflammatory Hyperpigmentation', 'PIH following resolved acne.']],
-                'prescriptions' => [],
-            ],
+        $branches = Branch::query()->orderBy('branch_ID')->get();
+        $services = Service::query()->orderBy('service_ID')->get();
+        $products = Product::query()->orderBy('product_ID')->get();
+        $doctors = StaffAccount::query()
+            ->whereHas('role', fn ($query) => $query->where('role_name', 'doctor'))
+            ->get()
+            ->keyBy('branch_ID');
+        $diagnoses = [
+            ['Acne Vulgaris', 'Comedonal and inflammatory lesions noted during examination.'],
+            ['Atopic Dermatitis', 'Dry, eczematous patches with mild inflammation.'],
+            ['Post-inflammatory Hyperpigmentation', 'Residual pigmentation following resolved inflammation.'],
+            ['Melasma', 'Symmetric facial pigmentation requiring sun protection.'],
+            ['Benign Skin Lesion', 'No suspicious features observed during assessment.'],
+            ['Skin Rejuvenation Follow-up', 'Expected response after cosmetic procedure.'],
         ];
 
-        foreach ($visits as $visitData) {
-            $visit = PatientVisit::query()->updateOrCreate(
-                ['PID' => $visitData['patient_id'], 'visited_at' => Carbon::parse($visitData['visited_at'])],
-                [
-                    'branch_ID' => $visitData['branch_id'],
-                    'branch_name' => $visitData['branch_name'],
-                    'doctor_name' => $visitData['doctor_name'],
-                    'blood_pressure' => $visitData['blood_pressure'],
-                    'weight' => $visitData['weight'],
-                    'height' => $visitData['height'],
-                    'status' => 'completed',
-                    'finalized_at' => Carbon::parse($visitData['visited_at'])->addHours(2),
-                ],
-            );
+        if ($branches->isEmpty() || $services->isEmpty()) {
+            return;
+        }
 
-            foreach ($visitData['services'] as [$serviceId, $serviceName, $note]) {
+        for ($monthOffset = 0; $monthOffset < 12; $monthOffset++) {
+            foreach ($branches as $branchIndex => $branch) {
+                $recordIndex = ($monthOffset * $branches->count()) + $branchIndex;
+                $patient = $patients[$recordIndex % $patients->count()];
+                $service = $services[$recordIndex % $services->count()];
+                $doctor = $doctors->get($branch->branch_ID);
+                $visitedAt = CarbonImmutable::now()
+                    ->subMonthsNoOverflow($monthOffset)
+                    ->startOfMonth()
+                    ->addDays(4 + ($branchIndex * 7))
+                    ->setTime(9 + ($recordIndex % 6), 0);
+
+                $visit = PatientVisit::query()->updateOrCreate(
+                    ['PID' => $patient->PID, 'visited_at' => $visitedAt],
+                    [
+                        'branch_ID' => $branch->branch_ID,
+                        'doctor_account_ID' => $doctor?->account_ID,
+                        'branch_name' => $branch->branch_name,
+                        'doctor_name' => $doctor?->full_name,
+                        'blood_pressure' => (110 + ($recordIndex % 16)).'/'.(70 + ($recordIndex % 11)),
+                        'weight' => 52 + ($recordIndex % 28),
+                        'height' => 152 + ($recordIndex % 27),
+                        'status' => 'completed',
+                        'finalized_at' => $visitedAt->addHours(2),
+                    ],
+                );
+
                 $visit->services()->updateOrCreate(
-                    ['service_name' => $serviceName],
-                    ['service_ID' => $serviceId, 'quantity' => 1, 'note' => $note],
+                    ['service_ID' => $service->service_ID],
+                    [
+                        'service_name' => $service->name,
+                        'quantity' => 1 + ($recordIndex % 2),
+                        'note' => 'Completed as part of the seeded longitudinal care record.',
+                    ],
                 );
-            }
 
-            foreach ($visitData['products'] as [$productId, $productName, $quantity, $unitPrice, $note]) {
-                $visit->products()->updateOrCreate(
-                    ['product_name' => $productName],
-                    ['product_ID' => $productId, 'quantity' => $quantity, 'unit_price' => $unitPrice, 'note' => $note],
-                );
-            }
+                [$diagnosis, $diagnosisNote] = $diagnoses[$recordIndex % count($diagnoses)];
+                $visit->diagnoses()->updateOrCreate(['diagnosis' => $diagnosis], ['note' => $diagnosisNote]);
 
-            foreach ($visitData['diagnoses'] as [$diagnosis, $note]) {
-                $visit->diagnoses()->updateOrCreate(['diagnosis' => $diagnosis], ['note' => $note]);
-            }
+                if ($recordIndex % 2 === 0) {
+                    $visit->prescriptions()->updateOrCreate(
+                        ['prescription' => 'Tretinoin 0.025% Cream'],
+                        [
+                            'dosage' => 'Pea-sized amount',
+                            'frequency' => 'Once nightly',
+                            'duration' => '8 weeks',
+                            'note' => 'Apply to dry skin and use sunscreen daily.',
+                        ],
+                    );
+                }
 
-            foreach ($visitData['prescriptions'] as [$prescription, $dosage, $frequency, $duration, $note]) {
-                $visit->prescriptions()->updateOrCreate(
-                    ['prescription' => $prescription],
-                    compact('dosage', 'frequency', 'duration', 'note'),
-                );
+                $product = $products->firstWhere('branch_ID', $branch->branch_ID);
+                if ($product !== null && $recordIndex % 3 === 0) {
+                    $visit->products()->updateOrCreate(
+                        ['product_ID' => $product->product_ID],
+                        [
+                            'product_name' => $product->name,
+                            'quantity' => 1,
+                            'unit_price' => $product->price,
+                            'note' => 'Recommended for the patient home-care routine.',
+                        ],
+                    );
+                }
             }
         }
     }

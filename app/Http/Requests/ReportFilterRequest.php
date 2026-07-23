@@ -6,6 +6,7 @@ use App\Enums\StaffModule;
 use App\Models\Branch;
 use App\Models\StaffAccount;
 use App\Models\User;
+use App\Support\ReportStatisticPeriod;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -30,8 +31,11 @@ class ReportFilterRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'summary_period' => ['nullable', Rule::in(['today', 'this_week', 'this_month', 'this_year', 'all_time'])],
-            'comparison_period' => ['nullable', Rule::in(['week', 'month', 'year'])],
+            'statistic_periods' => ['nullable', 'array'],
+            'statistic_periods.*' => ['array'],
+            'statistic_periods.*.period' => ['nullable', Rule::in(ReportStatisticPeriod::PERIODS)],
+            'statistic_periods.*.month' => ['nullable', 'integer', 'between:1,12'],
+            'statistic_periods.*.year' => ['nullable', 'integer', 'between:2000,'.now()->year],
             'branch_ID' => ['nullable', 'integer', Rule::exists((new Branch)->getTable(), 'branch_ID')],
             'sales_period' => ['nullable', Rule::in(['today', 'week', 'month', 'quarter', 'year', 'all', 'specific_date', 'custom_range'])],
             'specific_date' => ['nullable', 'date'],
