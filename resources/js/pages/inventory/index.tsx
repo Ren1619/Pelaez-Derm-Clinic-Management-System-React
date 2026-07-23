@@ -15,6 +15,7 @@ import { DataTableEmptyState } from '@/components/data-table-empty-state';
 import { DataTableLayout } from '@/components/data-table-layout';
 import { DataTablePagination } from '@/components/data-table-pagination';
 import Heading from '@/components/heading';
+import { markNewRecordSeen } from '@/components/new-record-indicator';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -147,6 +148,10 @@ export default function InventoryIndex({
         mode: ProductDialogMode,
         product: ProductBatch | null = null,
     ) => {
+        if (mode === 'view' && product !== null) {
+            markNewRecordSeen(product, 'inventory');
+        }
+
         setDialogMode(mode);
         setSelectedProduct(product);
         setDialogOpen(true);
@@ -191,7 +196,7 @@ export default function InventoryIndex({
                 <InventoryStatisticCards statistics={statistics} />
 
                 <DataTableLayout>
-                    <div className="flex flex-col gap-3 border-b p-4 xl:flex-row xl:items-center xl:justify-between">
+                    <div className="flex flex-col gap-3 border-b p-4 xl:flex-row xl:flex-wrap xl:items-center xl:justify-start">
                         <div className="relative w-full xl:max-w-sm">
                             <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
                             <Input

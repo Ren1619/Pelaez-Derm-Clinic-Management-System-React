@@ -66,7 +66,7 @@ function ServiceDetails({ service }: { service: ClinicService }) {
                 </div>
                 <div className="grid gap-1.5">
                     <span className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-                        Major category
+                        Parent category
                     </span>
                     <span className="text-sm">
                         {service.category.major_service_category.name}

@@ -7,6 +7,11 @@ import { DataTableEmptyState } from '@/components/data-table-empty-state';
 import { DataTableLayout } from '@/components/data-table-layout';
 import { DataTablePagination } from '@/components/data-table-pagination';
 import Heading from '@/components/heading';
+import {
+    markNewRecordSeen,
+    NewRecordBadge,
+    newRecordRowClass,
+} from '@/components/new-record-indicator';
 import { TooltipIconButton } from '@/components/tooltip-icon-button';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -100,6 +105,7 @@ export default function FeedbackIndex({ feedbacks, branches, filters }: Props) {
     }, [search]);
 
     const openDetails = (feedback: Feedback) => {
+        markNewRecordSeen(feedback, 'feedback');
         setSelectedFeedback(feedback);
         setDetailsOpen(true);
     };
@@ -115,8 +121,8 @@ export default function FeedbackIndex({ feedbacks, branches, filters }: Props) {
                 />
 
                 <DataTableLayout>
-                    <div className="grid gap-3 border-b p-4 xl:grid-cols-[minmax(14rem,1fr)_9rem_11rem_12rem]">
-                        <div className="relative">
+                    <div className="flex flex-col gap-3 border-b p-4 sm:flex-row sm:flex-wrap sm:items-center">
+                        <div className="relative w-full sm:w-80">
                             <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
                             <Input
                                 value={search}
@@ -137,7 +143,7 @@ export default function FeedbackIndex({ feedbacks, branches, filters }: Props) {
                                 })
                             }
                         >
-                            <SelectTrigger>
+                            <SelectTrigger className="w-full sm:w-36">
                                 <SelectValue placeholder="All ratings" />
                             </SelectTrigger>
                             <SelectContent>
@@ -162,7 +168,7 @@ export default function FeedbackIndex({ feedbacks, branches, filters }: Props) {
                                 })
                             }
                         >
-                            <SelectTrigger>
+                            <SelectTrigger className="w-full sm:w-40">
                                 <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
@@ -187,7 +193,7 @@ export default function FeedbackIndex({ feedbacks, branches, filters }: Props) {
                                 })
                             }
                         >
-                            <SelectTrigger>
+                            <SelectTrigger className="w-full sm:w-48">
                                 <SelectValue placeholder="All clinics" />
                             </SelectTrigger>
                             <SelectContent>
@@ -204,7 +210,7 @@ export default function FeedbackIndex({ feedbacks, branches, filters }: Props) {
                         </Select>
                     </div>
 
-                    <div className="flex flex-col gap-3 border-b p-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex flex-col gap-3 border-b p-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-start">
                         <div className="flex flex-wrap items-center gap-2">
                             <FeedbackDateRangePicker
                                 key={`${filters.date_from ?? 'all'}:${filters.date_to ?? 'all'}`}
@@ -376,7 +382,10 @@ function FeedbackTable({
                     const details = appointmentDetails(appointment);
 
                     return (
-                        <TableRow key={feedback.feedback_ID}>
+                        <TableRow
+                            key={feedback.feedback_ID}
+                            className={newRecordRowClass(feedback)}
+                        >
                             <TableCell>
                                 <button
                                     type="button"
@@ -385,6 +394,9 @@ function FeedbackTable({
                                 >
                                     {appointment.appointment_code}
                                 </button>
+                                {feedback.is_new && (
+                                    <NewRecordBadge className="ml-2" />
+                                )}
                                 <p className="text-xs text-muted-foreground">
                                     {appointment.patient_name} ·{' '}
                                     {appointment.branch_name}

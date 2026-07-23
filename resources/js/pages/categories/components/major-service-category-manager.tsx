@@ -1,5 +1,5 @@
 import { Form } from '@inertiajs/react';
-import { Layers3, Pencil, Plus, Trash2 } from 'lucide-react';
+import { ChevronDown, Layers3, Pencil, Plus, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import {
     destroy,
@@ -8,7 +8,11 @@ import {
 } from '@/actions/App/Http/Controllers/MajorServiceCategoryController';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+    Collapsible,
+    CollapsibleContent,
+    CollapsibleTrigger,
+} from '@/components/ui/collapsible';
 import {
     Dialog,
     DialogContent,
@@ -44,72 +48,104 @@ export function MajorServiceCategoryManager({
 
     return (
         <>
-            <Card>
-                <CardHeader className="flex flex-row items-start justify-between gap-4">
-                    <div className="grid gap-1">
-                        <CardTitle className="flex items-center gap-2 text-base">
-                            <Layers3 className="size-4" /> Major service
-                            categories
-                        </CardTitle>
-                        <p className="text-sm text-muted-foreground">
-                            Superadmin-only parent groups for all service
-                            categories.
-                        </p>
-                    </div>
-                    <Button size="sm" onClick={openCreate}>
-                        <Plus /> Add major category
-                    </Button>
-                </CardHeader>
-                <CardContent className="grid gap-3 md:grid-cols-3">
-                    {categories.map((category) => (
-                        <div
-                            key={category.major_service_category_ID}
-                            className="grid gap-3 rounded-lg border p-4"
-                        >
-                            <div className="flex items-start justify-between gap-3">
-                                <div className="min-w-0">
-                                    <p className="font-medium">
-                                        {category.name}
-                                    </p>
-                                    <p className="text-xs text-muted-foreground">
-                                        {category.categories_count ?? 0} service{' '}
-                                        {(category.categories_count ?? 0) === 1
-                                            ? 'category'
-                                            : 'categories'}
-                                    </p>
-                                </div>
-                                <div className="flex shrink-0 gap-1">
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        onClick={() => openEdit(category)}
-                                        aria-label={`Edit ${category.name}`}
-                                    >
-                                        <Pencil />
-                                    </Button>
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="text-destructive hover:text-destructive"
-                                        onClick={() =>
-                                            setDeletingCategory(category)
-                                        }
-                                        disabled={
-                                            (category.categories_count ?? 0) > 0
-                                        }
-                                        aria-label={`Delete ${category.name}`}
-                                    >
-                                        <Trash2 />
-                                    </Button>
-                                </div>
-                            </div>
-                            <p className="text-sm leading-6 text-muted-foreground">
-                                {category.description}
+            <Collapsible className="border-b">
+                <CollapsibleTrigger className="group flex w-full items-center gap-2 px-4 py-2.5 text-left transition-colors hover:bg-muted/50 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none focus-visible:ring-inset">
+                    <Layers3 className="size-3.5 text-muted-foreground" />
+                    <span className="text-sm font-medium">
+                        Parent categories
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                        {categories.length} configured
+                    </span>
+                    <span className="ml-auto text-xs text-muted-foreground">
+                        Manage
+                    </span>
+                    <ChevronDown className="size-3.5 text-muted-foreground transition-transform group-data-[state=open]:rotate-180" />
+                </CollapsibleTrigger>
+
+                <CollapsibleContent className="border-t bg-muted/20 p-3">
+                    <div className="grid gap-3">
+                        <div className="flex items-center justify-between gap-3">
+                            <p className="text-xs text-muted-foreground">
+                                Superadmin-only parent groups for service
+                                categories.
                             </p>
+                            <Button
+                                size="sm"
+                                className="h-7 px-2 text-xs"
+                                onClick={openCreate}
+                            >
+                                <Plus className="size-3.5" /> Add parent
+                                category
+                            </Button>
                         </div>
-                    ))}
-                </CardContent>
-            </Card>
+
+                        <div className="grid gap-2 md:grid-cols-3">
+                            {categories.map((category) => (
+                                <div
+                                    key={category.major_service_category_ID}
+                                    className="grid gap-2 rounded-md border bg-background p-3"
+                                >
+                                    <div className="flex items-start justify-between gap-2">
+                                        <div className="min-w-0">
+                                            <p className="text-sm font-medium">
+                                                {category.name}
+                                            </p>
+                                            <p className="text-xs text-muted-foreground">
+                                                {category.categories_count ?? 0}{' '}
+                                                service{' '}
+                                                {(category.categories_count ??
+                                                    0) === 1
+                                                    ? 'category'
+                                                    : 'categories'}
+                                            </p>
+                                        </div>
+                                        <div className="flex shrink-0 gap-1">
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="size-7"
+                                                onClick={() =>
+                                                    openEdit(category)
+                                                }
+                                                aria-label={`Edit ${category.name}`}
+                                            >
+                                                <Pencil className="size-3.5" />
+                                            </Button>
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="size-7 text-destructive hover:text-destructive"
+                                                onClick={() =>
+                                                    setDeletingCategory(
+                                                        category,
+                                                    )
+                                                }
+                                                disabled={
+                                                    (category.categories_count ??
+                                                        0) > 0
+                                                }
+                                                aria-label={`Delete ${category.name}`}
+                                            >
+                                                <Trash2 className="size-3.5" />
+                                            </Button>
+                                        </div>
+                                    </div>
+                                    <p className="text-xs leading-5 text-muted-foreground">
+                                        {category.description}
+                                    </p>
+                                </div>
+                            ))}
+
+                            {categories.length === 0 && (
+                                <p className="rounded-md border border-dashed p-3 text-xs text-muted-foreground md:col-span-3">
+                                    No parent categories configured yet.
+                                </p>
+                            )}
+                        </div>
+                    </div>
+                </CollapsibleContent>
+            </Collapsible>
 
             <MajorServiceCategoryDialog
                 key={editingCategory?.major_service_category_ID ?? 'new'}
@@ -146,7 +182,7 @@ function MajorServiceCategoryDialog({
             <DialogContent className="sm:max-w-xl">
                 <DialogHeader>
                     <DialogTitle>
-                        {isEdit ? 'Edit' : 'Add'} major service category
+                        {isEdit ? 'Edit' : 'Add'} parent category
                     </DialogTitle>
                     <DialogDescription>
                         This parent category will group related service
@@ -206,8 +242,8 @@ function MajorServiceCategoryDialog({
                                     {processing
                                         ? 'Saving...'
                                         : isEdit
-                                          ? 'Update major category'
-                                          : 'Add major category'}
+                                          ? 'Update parent category'
+                                          : 'Add parent category'}
                                 </Button>
                             </DialogFooter>
                         </>
@@ -235,9 +271,9 @@ function MajorServiceCategoryDeleteDialog({
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>Delete major service category</DialogTitle>
+                    <DialogTitle>Delete parent category</DialogTitle>
                     <DialogDescription>
-                        Delete “{category.name}”? Only unused major categories
+                        Delete “{category.name}”? Only unused parent categories
                         can be deleted.
                     </DialogDescription>
                 </DialogHeader>

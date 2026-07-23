@@ -429,6 +429,7 @@ class InventoryManagementService
             : (int) today()->diffInDays($product->expiration_date, false);
 
         return [
+            ...app(NewRecordService::class)->metadata($product),
             'product_ID' => $product->product_ID,
             'category_ID' => $product->category_ID,
             'branch_ID' => $product->branch_ID,

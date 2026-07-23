@@ -18,6 +18,11 @@ import {
 } from '@/components/data-table-layout';
 import { DataTablePagination } from '@/components/data-table-pagination';
 import Heading from '@/components/heading';
+import {
+    markNewRecordSeen,
+    NewRecordBadge,
+    newRecordRowClass,
+} from '@/components/new-record-indicator';
 import { TooltipIconButton } from '@/components/tooltip-icon-button';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -167,8 +172,8 @@ export default function PatientsIndex({
 
                 <DataTableLayout
                     toolbar={
-                        <DataTableToolbar className="grid sm:grid-cols-[minmax(14rem,1fr)_minmax(11rem,auto)] lg:grid">
-                            <div className="relative">
+                        <DataTableToolbar className="flex-wrap">
+                            <div className="relative w-full sm:w-72">
                                 <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
                                 <Input
                                     value={search}
@@ -194,7 +199,10 @@ export default function PatientsIndex({
                                     })
                                 }
                             >
-                                <SelectTrigger aria-label="Verification status">
+                                <SelectTrigger
+                                    className="w-full sm:w-48"
+                                    aria-label="Verification status"
+                                >
                                     <SelectValue placeholder="All verification" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -251,15 +259,28 @@ export default function PatientsIndex({
                                     key={patient.PID}
                                     accessibleLabel={`View ${patient.full_name}`}
                                     activationRole="link"
-                                    onActivate={() =>
-                                        router.visit(show(patient).url)
-                                    }
+                                    onActivate={() => {
+                                        markNewRecordSeen(
+                                            patient,
+                                            'patients',
+                                            () =>
+                                                router.visit(
+                                                    show(patient).url,
+                                                ),
+                                        );
+                                    }}
+                                    className={newRecordRowClass(patient)}
                                 >
                                     <TableCell>
-                                        <div className="font-medium">
-                                            {patient.last_name},{' '}
-                                            {patient.first_name}{' '}
-                                            {patient.middle_name ?? ''}
+                                        <div className="flex items-center gap-2">
+                                            <span className="font-medium">
+                                                {patient.last_name},{' '}
+                                                {patient.first_name}{' '}
+                                                {patient.middle_name ?? ''}
+                                            </span>
+                                            {patient.is_new && (
+                                                <NewRecordBadge />
+                                            )}
                                         </div>
                                         <p className="text-xs text-muted-foreground">
                                             Patient #{patient.PID}

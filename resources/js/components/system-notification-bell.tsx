@@ -117,7 +117,16 @@ export function SystemNotificationBell({ audience }: { audience: Audience }) {
         notificationSummary: NotificationSummary;
         auth: Auth;
     }>().props;
-    usePoll(30000, { only: ['notificationSummary'] }, { mode: 'rest' });
+    usePoll(
+        5000,
+        {
+            only:
+                audience === 'staff'
+                    ? ['notificationSummary', 'newRecordSummary']
+                    : ['notificationSummary'],
+        },
+        { mode: 'rest' },
+    );
 
     const markRead = (notification: SystemNotificationItem) => {
         const target = targetFor(notification, audience, auth);

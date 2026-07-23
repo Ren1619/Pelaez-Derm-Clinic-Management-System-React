@@ -16,6 +16,11 @@ import { DataTableEmptyState } from '@/components/data-table-empty-state';
 import { DataTableLayout } from '@/components/data-table-layout';
 import { DataTablePagination } from '@/components/data-table-pagination';
 import Heading from '@/components/heading';
+import {
+    markNewRecordSeen,
+    NewRecordBadge,
+    newRecordRowClass,
+} from '@/components/new-record-indicator';
 import { TooltipIconButton } from '@/components/tooltip-icon-button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
@@ -508,7 +513,7 @@ export default function DistributionIndex({
                 </div>
 
                 <DataTableLayout>
-                    <div className="flex flex-col gap-3 border-b p-4 lg:flex-row lg:items-center lg:justify-between">
+                    <div className="flex flex-col gap-3 border-b p-4 lg:flex-row lg:flex-wrap lg:items-center lg:justify-start">
                         <div className="flex gap-1 rounded-lg bg-muted p-1">
                             {(['outbound', 'inbound'] as const).map((tab) => (
                                 <Button
@@ -611,10 +616,22 @@ export default function DistributionIndex({
                                 <ClickableTableRow
                                     key={distribution.distribution_ID}
                                     accessibleLabel={`View distribution ${distribution.distribution_ID}`}
-                                    onActivate={() => setDetails(distribution)}
+                                    onActivate={() => {
+                                        markNewRecordSeen(
+                                            distribution,
+                                            'distribution',
+                                        );
+                                        setDetails(distribution);
+                                    }}
+                                    className={newRecordRowClass(distribution)}
                                 >
-                                    <TableCell className="font-medium">
-                                        #{distribution.distribution_ID}
+                                    <TableCell>
+                                        <div className="flex items-center gap-2 font-medium">
+                                            #{distribution.distribution_ID}
+                                            {distribution.is_new && (
+                                                <NewRecordBadge />
+                                            )}
+                                        </div>
                                     </TableCell>
                                     <TableCell>
                                         {filters.tab === 'outbound'

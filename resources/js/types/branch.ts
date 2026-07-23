@@ -1,4 +1,6 @@
-export type Branch = {
+import type { NewRecordTracked } from './new-record';
+
+export type Branch = NewRecordTracked & {
     branch_ID: number;
     branch_name: string;
     branch_location: string;

@@ -44,7 +44,7 @@ abstract class MajorServiceCategoryRequest extends FormRequest
                 }
 
                 if ($duplicateQuery->exists()) {
-                    $validator->errors()->add('name', 'A major service category already uses that name.');
+                    $validator->errors()->add('name', 'A parent category already uses that name.');
                 }
             },
         ];
@@ -55,7 +55,7 @@ abstract class MajorServiceCategoryRequest extends FormRequest
     {
         return [
             'name.regex' => "The name may only contain letters, numbers, spaces, and / - & ' ( ) [ ] % symbols.",
-            'name.unique' => 'A major service category already uses that name.',
+            'name.unique' => 'A parent category already uses that name.',
             'description.required' => 'The description cannot be empty or contain only whitespace.',
         ];
     }

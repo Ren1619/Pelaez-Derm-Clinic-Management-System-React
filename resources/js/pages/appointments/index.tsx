@@ -17,6 +17,12 @@ import { DataTableEmptyState } from '@/components/data-table-empty-state';
 import { DataTableLayout } from '@/components/data-table-layout';
 import { DataTablePagination } from '@/components/data-table-pagination';
 import Heading from '@/components/heading';
+import {
+    markNewRecordSeen,
+    NewRecordBadge,
+    newRecordCardClass,
+    newRecordRowClass,
+} from '@/components/new-record-indicator';
 import { TooltipIconButton } from '@/components/tooltip-icon-button';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -115,6 +121,10 @@ export default function AppointmentsIndex(props: Props) {
         mode: 'create' | 'edit' | 'view',
         appointment: Appointment | null = null,
     ) => {
+        if (mode === 'view' && appointment !== null) {
+            markNewRecordSeen(appointment, 'appointments');
+        }
+
         setDialogMode(mode);
         setSelected(appointment);
         setDialogOpen(true);
@@ -174,7 +184,7 @@ export default function AppointmentsIndex(props: Props) {
                 </div>
 
                 <DataTableLayout>
-                    <div className="flex flex-col gap-3 border-b p-4 lg:flex-row lg:items-center lg:justify-between">
+                    <div className="flex flex-col gap-3 border-b p-4 lg:flex-row lg:flex-wrap lg:items-center lg:justify-start">
                         <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
                             <div className="relative w-full sm:w-72">
                                 <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -290,12 +300,18 @@ export default function AppointmentsIndex(props: Props) {
                                             onClick={() =>
                                                 openDialog('view', appointment)
                                             }
-                                            className="w-full rounded-lg border p-3 text-left hover:bg-accent"
+                                            className={newRecordCardClass(
+                                                appointment,
+                                                'w-full rounded-lg border p-3 text-left transition-colors hover:bg-accent',
+                                            )}
                                         >
                                             <div className="flex items-center justify-between">
                                                 <span className="font-medium">
                                                     {appointment.patient_name}
                                                 </span>
+                                                {appointment.is_new && (
+                                                    <NewRecordBadge />
+                                                )}
                                                 <Badge
                                                     variant="outline"
                                                     className="capitalize"
@@ -467,11 +483,15 @@ function AppointmentTable({
                         key={appointment.appointment_ID}
                         accessibleLabel={`View ${appointment.patient_name}'s appointment`}
                         onActivate={() => onView(appointment)}
+                        className={newRecordRowClass(appointment)}
                     >
                         <TableCell>
-                            <span className="font-medium">
-                                {appointment.patient_name}
-                            </span>
+                            <div className="flex items-center gap-2">
+                                <span className="font-medium">
+                                    {appointment.patient_name}
+                                </span>
+                                {appointment.is_new && <NewRecordBadge />}
+                            </div>
                             <p className="text-xs text-muted-foreground">
                                 {appointment.patient_contact}
                             </p>

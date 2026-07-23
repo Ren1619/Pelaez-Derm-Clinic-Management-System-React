@@ -16,7 +16,13 @@ import {
     DataTableToolbar,
 } from '@/components/data-table-layout';
 import { DataTablePagination } from '@/components/data-table-pagination';
+import { ClickableTableRow } from '@/components/clickable-table-row';
 import Heading from '@/components/heading';
+import {
+    markNewRecordSeen,
+    NewRecordBadge,
+    newRecordRowClass,
+} from '@/components/new-record-indicator';
 import { TooltipIconButton } from '@/components/tooltip-icon-button';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -160,13 +166,6 @@ export default function CategoriesIndex({
                     />
                 </div>
 
-                {filters.tab === 'services' &&
-                    can.manage_major_service_categories && (
-                        <MajorServiceCategoryManager
-                            categories={majorServiceCategories}
-                        />
-                    )}
-
                 <DataTableLayout
                     toolbar={
                         <DataTableToolbar>
@@ -232,13 +231,20 @@ export default function CategoriesIndex({
                         />
                     }
                 >
+                    {filters.tab === 'services' &&
+                        can.manage_major_service_categories && (
+                            <MajorServiceCategoryManager
+                                categories={majorServiceCategories}
+                            />
+                        )}
+
                     <Table className="min-w-2xl">
                         <TableHeader>
                             <TableRow>
                                 <TableHead className="w-20">#</TableHead>
                                 <TableHead>Category name</TableHead>
                                 {filters.tab === 'services' && (
-                                    <TableHead>Major category</TableHead>
+                                    <TableHead>Parent category</TableHead>
                                 )}
                                 <TableHead>Description</TableHead>
                                 <TableHead className="text-right">
@@ -248,7 +254,18 @@ export default function CategoriesIndex({
                         </TableHeader>
                         <TableBody>
                             {categories.data.map((category, itemIndex) => (
-                                <TableRow key={category.category_ID}>
+                                <ClickableTableRow
+                                    key={category.category_ID}
+                                    accessibleLabel={`Open ${category.category_name}`}
+                                    onActivate={() => {
+                                        markNewRecordSeen(
+                                            category,
+                                            'categories',
+                                        );
+                                        openEditDialog(category);
+                                    }}
+                                    className={newRecordRowClass(category)}
+                                >
                                     <TableCell className="text-muted-foreground">
                                         {(categories.current_page - 1) *
                                             categories.per_page +
@@ -261,6 +278,9 @@ export default function CategoriesIndex({
                                             <span className="font-medium">
                                                 {category.category_name}
                                             </span>
+                                            {category.is_new && (
+                                                <NewRecordBadge />
+                                            )}
                                             <Badge variant="outline">
                                                 {category.category_type}
                                             </Badge>
@@ -304,7 +324,7 @@ export default function CategoriesIndex({
                                             </TooltipIconButton>
                                         </div>
                                     </TableCell>
-                                </TableRow>
+                                </ClickableTableRow>
                             ))}
                             {categories.data.length === 0 && (
                                 <DataTableEmptyState

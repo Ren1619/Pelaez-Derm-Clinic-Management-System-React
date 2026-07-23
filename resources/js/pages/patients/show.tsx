@@ -18,6 +18,11 @@ import { destroy as destroyPrescription } from '@/actions/App/Http/Controllers/P
 import { destroy as destroyProduct } from '@/actions/App/Http/Controllers/PatientVisitProductController';
 import { destroy as destroyService } from '@/actions/App/Http/Controllers/PatientVisitServiceController';
 import { TooltipIconButton } from '@/components/tooltip-icon-button';
+import {
+    markNewRecordSeen,
+    NewRecordBadge,
+    newRecordCardClass,
+} from '@/components/new-record-indicator';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { index, show } from '@/routes/patients';
@@ -600,12 +605,26 @@ function SummaryAccordion({
                         filteredItems.map((item) => (
                             <div
                                 key={summaryRecordId(item)}
-                                className="rounded-md border p-3 text-sm shadow-xs"
+                                className={newRecordCardClass(
+                                    item,
+                                    'rounded-md border p-3 text-sm shadow-xs',
+                                )}
                             >
                                 <div className="flex items-start justify-between gap-2 border-b pb-2">
-                                    <span className="font-semibold">
+                                    <button
+                                        type="button"
+                                        className="flex items-center gap-2 text-left font-semibold hover:underline"
+                                        onClick={() => {
+                                            markNewRecordSeen(
+                                                item,
+                                                'patients',
+                                            );
+                                            onEdit(item);
+                                        }}
+                                    >
                                         {summaryRecordTitle(item)}
-                                    </span>
+                                        {item.is_new && <NewRecordBadge />}
+                                    </button>
                                     <div className="flex gap-1">
                                         <IconAction
                                             label="Edit"
@@ -758,7 +777,12 @@ function VisitCard({
     );
 
     return (
-        <article className="overflow-hidden rounded-lg border bg-card shadow-sm">
+        <article
+            className={newRecordCardClass(
+                visit,
+                'overflow-hidden rounded-lg border bg-card shadow-sm',
+            )}
+        >
             <div className="px-4 pt-2">
                 <div className="flex items-center justify-between border-b">
                     <div className="flex gap-1">
@@ -788,10 +812,14 @@ function VisitCard({
             <button
                 type="button"
                 className="flex w-full flex-col gap-3 px-4 py-5 text-left sm:flex-row sm:items-center sm:justify-between"
-                onClick={() => setOpen((value) => !value)}
+                onClick={() => {
+                    markNewRecordSeen(visit, 'patients');
+                    setOpen((value) => !value);
+                }}
             >
                 <div className="flex flex-wrap items-center gap-2 font-semibold">
                     {dateFormatter.format(new Date(visit.visited_at))}
+                    {visit.is_new && <NewRecordBadge />}
                     {isLatest && (
                         <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
                             Last visit
@@ -897,12 +925,31 @@ function VisitCard({
                             records.map((record) => (
                                 <div
                                     key={visitRecordId(record)}
-                                    className="rounded-lg border shadow-xs"
+                                    className={newRecordCardClass(
+                                        record,
+                                        'rounded-lg border shadow-xs',
+                                    )}
                                 >
                                     <div className="flex items-start justify-between gap-3 border-b px-3 py-2">
-                                        <span className="font-semibold">
+                                        <button
+                                            type="button"
+                                            className="flex items-center gap-2 text-left font-semibold hover:underline"
+                                            onClick={() => {
+                                                markNewRecordSeen(
+                                                    record,
+                                                    'patients',
+                                                );
+                                                onEditRecord(
+                                                    activeTab,
+                                                    record,
+                                                );
+                                            }}
+                                        >
                                             {visitRecordTitle(record)}
-                                        </span>
+                                            {record.is_new && (
+                                                <NewRecordBadge />
+                                            )}
+                                        </button>
                                         <div className="flex gap-1">
                                             <IconAction
                                                 label="Edit"

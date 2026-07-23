@@ -92,6 +92,7 @@ class ServiceController extends Controller
     private function serializeService(Service $service): array
     {
         return [
+            ...app(\App\Services\NewRecordService::class)->metadata($service),
             'service_ID' => $service->service_ID,
             'category_ID' => $service->category_ID,
             'name' => $service->name,

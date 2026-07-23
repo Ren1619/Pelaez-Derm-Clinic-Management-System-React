@@ -15,7 +15,7 @@ class MajorServiceCategoryController extends Controller
     {
         MajorServiceCategory::query()->create($request->validated());
 
-        Inertia::flash('toast', ['type' => 'success', 'message' => 'Major service category created successfully.']);
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Parent category created successfully.']);
 
         return back();
     }
@@ -26,7 +26,7 @@ class MajorServiceCategoryController extends Controller
     ): RedirectResponse {
         $majorServiceCategory->update($request->validated());
 
-        Inertia::flash('toast', ['type' => 'success', 'message' => 'Major service category updated successfully.']);
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Parent category updated successfully.']);
 
         return back();
     }
@@ -37,13 +37,13 @@ class MajorServiceCategoryController extends Controller
 
         if ($majorServiceCategory->categories()->exists()) {
             return back()->withErrors([
-                'major_service_category' => 'Move or delete its service categories before deleting this major category.',
+                'major_service_category' => 'Move or delete its service categories before deleting this parent category.',
             ]);
         }
 
         $majorServiceCategory->delete();
 
-        Inertia::flash('toast', ['type' => 'success', 'message' => 'Major service category deleted successfully.']);
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Parent category deleted successfully.']);
 
         return back();
     }

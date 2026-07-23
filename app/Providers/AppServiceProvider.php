@@ -3,9 +3,29 @@
 namespace App\Providers;
 
 use App\Mail\BrevoTransport;
+use App\Models\Appointment;
+use App\Models\Branch;
+use App\Models\Category;
+use App\Models\Distribution;
+use App\Models\Expense;
+use App\Models\Feedback;
+use App\Models\Patient;
+use App\Models\PatientAllergy;
+use App\Models\PatientMedicalCondition;
+use App\Models\PatientMedication;
+use App\Models\PatientVisit;
+use App\Models\PatientVisitDiagnosis;
+use App\Models\PatientVisitPrescription;
+use App\Models\PatientVisitProduct;
+use App\Models\PatientVisitService;
 use App\Models\Product;
+use App\Models\Sale;
+use App\Models\Service;
+use App\Models\StaffAccount;
+use App\Observers\NewRecordObserver;
 use App\Observers\ProductObserver;
 use App\Services\ActivityLogRecorder;
+use App\Services\NewRecordService;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Client\Factory as HttpFactory;
 use Illuminate\Support\Facades\Date;
@@ -22,7 +42,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->scoped(NewRecordService::class);
     }
 
     /**
@@ -33,7 +53,35 @@ class AppServiceProvider extends ServiceProvider
         $this->registerBrevoMailTransport();
         $this->configureDefaults();
         Product::observe(ProductObserver::class);
+        $this->registerNewRecordObservers();
         $this->app->make(ActivityLogRecorder::class)->listen();
+    }
+
+    private function registerNewRecordObservers(): void
+    {
+        foreach ([
+            Appointment::class,
+            Patient::class,
+            PatientAllergy::class,
+            PatientMedicalCondition::class,
+            PatientMedication::class,
+            PatientVisit::class,
+            PatientVisitDiagnosis::class,
+            PatientVisitPrescription::class,
+            PatientVisitProduct::class,
+            PatientVisitService::class,
+            Product::class,
+            Sale::class,
+            Expense::class,
+            Service::class,
+            Category::class,
+            StaffAccount::class,
+            Branch::class,
+            Distribution::class,
+            Feedback::class,
+        ] as $model) {
+            $model::observe(NewRecordObserver::class);
+        }
     }
 
     /**

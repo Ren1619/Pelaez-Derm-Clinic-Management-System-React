@@ -1,4 +1,6 @@
-export type Patient = {
+import type { NewRecordTracked } from './new-record';
+
+export type Patient = NewRecordTracked & {
     PID: number;
     name?: string;
     first_name: string;
@@ -41,19 +43,19 @@ export type PatientSummary = {
 
 export type PatientDialogMode = 'create' | 'edit' | 'view';
 
-export type PatientAllergy = {
+export type PatientAllergy = NewRecordTracked & {
     allergy_ID: number;
     allergy: string;
     note: string | null;
 };
 
-export type PatientMedicalCondition = {
+export type PatientMedicalCondition = NewRecordTracked & {
     medical_condition_ID: number;
     condition: string;
     note: string | null;
 };
 
-export type PatientMedication = {
+export type PatientMedication = NewRecordTracked & {
     medication_ID: number;
     medication: string;
     dosage: string | null;
@@ -68,7 +70,7 @@ export type PatientMedicalRecord = {
     medications: PatientMedication[];
 };
 
-export type PatientVisitService = {
+export type PatientVisitService = NewRecordTracked & {
     visit_service_ID: number;
     service_ID: number | null;
     service_name: string;
@@ -76,7 +78,7 @@ export type PatientVisitService = {
     note: string | null;
 };
 
-export type PatientVisitProduct = {
+export type PatientVisitProduct = NewRecordTracked & {
     visit_product_ID: number;
     product_ID: number | null;
     product_name: string;
@@ -85,13 +87,13 @@ export type PatientVisitProduct = {
     note: string | null;
 };
 
-export type PatientVisitDiagnosis = {
+export type PatientVisitDiagnosis = NewRecordTracked & {
     diagnosis_ID: number;
     diagnosis: string;
     note: string | null;
 };
 
-export type PatientVisitPrescription = {
+export type PatientVisitPrescription = NewRecordTracked & {
     prescription_ID: number;
     prescription: string;
     dosage: string | null;
@@ -100,7 +102,7 @@ export type PatientVisitPrescription = {
     note: string | null;
 };
 
-export type PatientVisit = {
+export type PatientVisit = NewRecordTracked & {
     visit_ID: number;
     branch: {
         branch_ID: number | null;

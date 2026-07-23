@@ -58,6 +58,7 @@ class PointOfSalePageService
             ],
             'expenseCategories' => ExpenseCategory::query()->orderBy('category_name')->get(['category_ID', 'category_name']),
             'expenses' => $expenses->map(fn (Expense $expense): array => [
+                ...app(\App\Services\NewRecordService::class)->metadata($expense),
                 'expense_ID' => $expense->expense_ID,
                 'description' => $expense->description,
                 'amount' => $expense->amount,
@@ -130,6 +131,7 @@ class PointOfSalePageService
         $returnedAmount = (float) $sale->returns->sum('return_amount');
 
         return [
+            ...app(\App\Services\NewRecordService::class)->metadata($sale),
             'sale_ID' => $sale->sale_ID,
             'invoice_number' => $sale->invoice_number,
             'branch_ID' => $sale->branch_ID,

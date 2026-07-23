@@ -1,3 +1,5 @@
+import type { NewRecordTracked } from './new-record';
+
 export type FeedbackAppointment = {
     appointment_ID: number;
     appointment_code: string;
@@ -13,7 +15,7 @@ export type FeedbackAppointment = {
     services: Array<{ service_ID: number | null; service_name: string }>;
 };
 
-export type Feedback = {
+export type Feedback = NewRecordTracked & {
     feedback_ID: number;
     rating: number;
     description: string | null;
