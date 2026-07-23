@@ -10,6 +10,7 @@ import {
     Phone,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import BranchLocationMap from '@/components/branch-location-map';
 import { PublicSiteLayout } from '@/components/public-site-layout';
 import { login as patientLogin } from '@/routes/patient';
 import {
@@ -237,8 +238,13 @@ export default function Welcome({
                                 </figure>
                                 <div className="flex flex-1 flex-col p-3 sm:p-4">
                                     <p className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
-                                        {service.category ?? 'Service'}
+                                        {service.major_category ?? 'Service'}
                                     </p>
+                                    {service.category && (
+                                        <p className="mt-1 text-xs text-muted-foreground">
+                                            {service.category}
+                                        </p>
+                                    )}
                                     <h3 className="mt-2 line-clamp-2 leading-snug font-semibold transition group-hover:text-primary">
                                         {service.name}
                                     </h3>
@@ -307,6 +313,14 @@ export default function Welcome({
                                         loading="lazy"
                                     />
                                 </figure>
+                                {branch.latitude !== null &&
+                                    branch.longitude !== null && (
+                                        <BranchLocationMap
+                                            latitude={branch.latitude}
+                                            longitude={branch.longitude}
+                                            className="h-36 rounded-none border-x-0"
+                                        />
+                                    )}
                                 <div className="space-y-4 p-3 sm:p-4">
                                     <h3 className="line-clamp-2 font-semibold transition group-hover:text-primary">
                                         {branch.name}

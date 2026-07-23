@@ -208,7 +208,10 @@ class PointOfSalePageService
     private function services(): array
     {
         return Service::query()
-            ->with('category:category_ID,category_name')
+            ->with([
+                'category:category_ID,category_name,major_service_category_ID',
+                'category.majorServiceCategory:major_service_category_ID,name',
+            ])
             ->orderByRaw("CASE WHEN LOWER(name) LIKE '%consultation%' THEN 0 ELSE 1 END")
             ->orderBy('name')
             ->get()
@@ -216,7 +219,9 @@ class PointOfSalePageService
                 'service_ID' => $service->service_ID,
                 'name' => $service->name,
                 'description' => $service->description,
-                'category' => $service->category?->category_name,
+                'category' => $service->category === null
+                    ? null
+                    : $service->category->majorServiceCategory->name.' · '.$service->category->category_name,
                 'image_url' => $this->imageUrl($service->service_img),
             ])->all();
     }

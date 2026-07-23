@@ -513,7 +513,7 @@ export default function DistributionIndex({
                 </div>
 
                 <DataTableLayout>
-                    <div className="flex flex-col gap-3 border-b p-4 lg:flex-row lg:items-center lg:justify-between">
+                    <div className="flex flex-col gap-3 border-b p-4 lg:flex-row lg:flex-wrap lg:items-center lg:justify-start">
                         <div className="flex gap-1 rounded-lg bg-muted p-1">
                             {(['outbound', 'inbound'] as const).map((tab) => (
                                 <Button
@@ -1121,12 +1121,12 @@ export default function DistributionIndex({
                             </div>
                         </div>
 
-                        <DialogFooter className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                        <DialogFooter className="flex flex-col-reverse gap-3 border-t pt-4 sm:flex-row sm:justify-end">
                             <Button
                                 type="button"
+                                variant="outline"
                                 onClick={() => setCreateOpen(false)}
                                 disabled={createForm.processing}
-                                className="bg-black px-6 text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90"
                             >
                                 Cancel
                             </Button>

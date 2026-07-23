@@ -32,11 +32,17 @@ class ServiceController extends Controller
                 ->through(fn (Service $service): array => $this->serializeService($service)),
             'categories' => Category::query()
                 ->where('category_type', 'Service')
+                ->with('majorServiceCategory:major_service_category_ID,name')
+                ->orderBy('major_service_category_ID')
                 ->orderBy('category_name')
-                ->get(['category_ID', 'category_name'])
+                ->get(['category_ID', 'category_name', 'major_service_category_ID'])
                 ->map(fn (Category $category): array => [
                     'category_ID' => $category->category_ID,
                     'category_name' => $category->category_name,
+                    'major_service_category' => [
+                        'major_service_category_ID' => $category->majorServiceCategory->major_service_category_ID,
+                        'name' => $category->majorServiceCategory->name,
+                    ],
                 ]),
             'filters' => [
                 'search' => $search,
@@ -98,6 +104,10 @@ class ServiceController extends Controller
             'category' => [
                 'category_ID' => $service->category->category_ID,
                 'category_name' => $service->category->category_name,
+                'major_service_category' => [
+                    'major_service_category_ID' => $service->category->majorServiceCategory->major_service_category_ID,
+                    'name' => $service->category->majorServiceCategory->name,
+                ],
             ],
             'created_at' => $service->created_at?->toISOString(),
         ];

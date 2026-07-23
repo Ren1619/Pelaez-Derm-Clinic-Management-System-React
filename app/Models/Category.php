@@ -2,13 +2,15 @@
 
 namespace App\Models;
 
+use Database\Factories\CategoryFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Category extends Model
 {
-    /** @use HasFactory<\Database\Factories\CategoryFactory> */
+    /** @use HasFactory<CategoryFactory> */
     use HasFactory;
 
     protected $primaryKey = 'category_ID';
@@ -16,8 +18,19 @@ class Category extends Model
     protected $fillable = [
         'category_name',
         'category_type',
+        'major_service_category_ID',
         'description',
     ];
+
+    /** @return BelongsTo<MajorServiceCategory, $this> */
+    public function majorServiceCategory(): BelongsTo
+    {
+        return $this->belongsTo(
+            MajorServiceCategory::class,
+            'major_service_category_ID',
+            'major_service_category_ID',
+        );
+    }
 
     /** @return HasMany<Service, $this> */
     public function services(): HasMany

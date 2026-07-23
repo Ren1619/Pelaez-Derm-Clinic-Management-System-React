@@ -41,7 +41,11 @@ test('authenticated users can view and search services by name or category', fun
             ->has('categories', 2)
             ->has('services.data', 1)
             ->where('services.data.0.name', 'CO2 Resurfacing')
-            ->where('services.data.0.category.category_name', 'Laser Procedures'));
+            ->where('services.data.0.category.category_name', 'Laser Procedures')
+            ->where(
+                'services.data.0.category.major_service_category.name',
+                $laserCategory->majorServiceCategory->name,
+            ));
 });
 
 test('authenticated users can create a service with an image', function () {

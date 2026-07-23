@@ -43,20 +43,26 @@ import type {
     CategoryPaginator,
     CategorySummary,
     CategoryType,
+    MajorServiceCategory,
 } from '@/types';
 import { CategoryDeleteDialog } from './components/category-delete-dialog';
 import { CategoryDialog } from './components/category-dialog';
+import { MajorServiceCategoryManager } from './components/major-service-category-manager';
 
 type CategoriesIndexProps = {
     categories: CategoryPaginator;
     filters: CategoryFilters;
     summary: CategorySummary;
+    majorServiceCategories: MajorServiceCategory[];
+    can: { manage_major_service_categories: boolean };
 };
 
 export default function CategoriesIndex({
     categories,
     filters,
     summary,
+    majorServiceCategories,
+    can,
 }: CategoriesIndexProps) {
     const [search, setSearch] = useState(filters.search);
     const [dialogOpen, setDialogOpen] = useState(false);
@@ -70,6 +76,7 @@ export default function CategoriesIndex({
 
     const categoryType: CategoryType =
         filters.tab === 'products' ? 'Product' : 'Service';
+    const columnCount = filters.tab === 'services' ? 5 : 4;
 
     const visitWithFilters = (nextFilters: Partial<CategoryFilters>) => {
         const next = { ...filters, ...nextFilters };
@@ -90,6 +97,18 @@ export default function CategoriesIndex({
         );
     };
 
+    const changePage = (page: number) => {
+        router.get(
+            index.url(),
+            { ...filters, page },
+            {
+                only: ['categories', 'filters'],
+                preserveState: true,
+                preserveScroll: true,
+            },
+        );
+    };
+
     useEffect(() => {
         if (search === filters.search) {
             return;
@@ -103,10 +122,6 @@ export default function CategoriesIndex({
         // The current server-side filters intentionally define the next visit.
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [search, filters.search]);
-
-    const changeTab = (tab: CategoryFilters['tab']) => {
-        visitWithFilters({ tab });
-    };
 
     const openCreateDialog = () => {
         setSelectedCategory(null);
@@ -163,7 +178,9 @@ export default function CategoriesIndex({
                                     type="button"
                                     role="tab"
                                     aria-selected={filters.tab === 'products'}
-                                    onClick={() => changeTab('products')}
+                                    onClick={() =>
+                                        visitWithFilters({ tab: 'products' })
+                                    }
                                     className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
                                         filters.tab === 'products'
                                             ? 'bg-background text-foreground shadow-sm'
@@ -176,7 +193,9 @@ export default function CategoriesIndex({
                                     type="button"
                                     role="tab"
                                     aria-selected={filters.tab === 'services'}
-                                    onClick={() => changeTab('services')}
+                                    onClick={() =>
+                                        visitWithFilters({ tab: 'services' })
+                                    }
                                     className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
                                         filters.tab === 'services'
                                             ? 'bg-background text-foreground shadow-sm'
@@ -187,19 +206,17 @@ export default function CategoriesIndex({
                                 </button>
                             </div>
 
-                            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                                <div className="relative w-full sm:w-72">
-                                    <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-                                    <Input
-                                        value={search}
-                                        onChange={(event) =>
-                                            setSearch(event.target.value)
-                                        }
-                                        placeholder="Search categories..."
-                                        className="pl-9"
-                                        aria-label="Search categories"
-                                    />
-                                </div>
+                            <div className="relative w-full sm:w-72">
+                                <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+                                <Input
+                                    value={search}
+                                    onChange={(event) =>
+                                        setSearch(event.target.value)
+                                    }
+                                    placeholder="Search categories..."
+                                    className="pl-9"
+                                    aria-label="Search categories"
+                                />
                             </div>
                         </DataTableToolbar>
                     }
@@ -207,28 +224,28 @@ export default function CategoriesIndex({
                         <DataTablePagination
                             paginator={categories}
                             itemLabel="categories"
-                            onPageChange={(page) =>
-                                router.get(
-                                    index.url(),
-                                    { ...filters, page },
-                                    {
-                                        only: ['categories', 'filters'],
-                                        preserveState: true,
-                                        preserveScroll: true,
-                                    },
-                                )
-                            }
+                            onPageChange={changePage}
                             onPerPageChange={(perPage) =>
                                 visitWithFilters({ per_page: perPage })
                             }
                         />
                     }
                 >
+                    {filters.tab === 'services' &&
+                        can.manage_major_service_categories && (
+                            <MajorServiceCategoryManager
+                                categories={majorServiceCategories}
+                            />
+                        )}
+
                     <Table className="min-w-2xl">
                         <TableHeader>
                             <TableRow>
                                 <TableHead className="w-20">#</TableHead>
                                 <TableHead>Category name</TableHead>
+                                {filters.tab === 'services' && (
+                                    <TableHead>Parent category</TableHead>
+                                )}
                                 <TableHead>Description</TableHead>
                                 <TableHead className="text-right">
                                     Actions
@@ -249,10 +266,12 @@ export default function CategoriesIndex({
                                     }}
                                     className={newRecordRowClass(category)}
                                 >
+                            {categories.data.map((category, itemIndex) => (
+                                <TableRow key={category.category_ID}>
                                     <TableCell className="text-muted-foreground">
                                         {(categories.current_page - 1) *
                                             categories.per_page +
-                                            index +
+                                            itemIndex +
                                             1}
                                     </TableCell>
                                     <TableCell>
@@ -269,6 +288,12 @@ export default function CategoriesIndex({
                                             </Badge>
                                         </div>
                                     </TableCell>
+                                    {filters.tab === 'services' && (
+                                        <TableCell className="whitespace-nowrap text-muted-foreground">
+                                            {category.major_service_category
+                                                ?.name ?? 'Unassigned'}
+                                        </TableCell>
+                                    )}
                                     <TableCell className="max-w-xl text-muted-foreground">
                                         <p className="line-clamp-2">
                                             {category.description}
@@ -305,7 +330,7 @@ export default function CategoriesIndex({
                             ))}
                             {categories.data.length === 0 && (
                                 <DataTableEmptyState
-                                    colSpan={4}
+                                    colSpan={columnCount}
                                     icon={
                                         <Tags className="size-10 text-muted-foreground" />
                                     }
@@ -326,6 +351,7 @@ export default function CategoriesIndex({
                 key={`${selectedCategory?.category_ID ?? 'new'}-${categoryType}`}
                 category={selectedCategory}
                 categoryType={categoryType}
+                majorServiceCategories={majorServiceCategories}
                 open={dialogOpen}
                 onOpenChange={setDialogOpen}
             />

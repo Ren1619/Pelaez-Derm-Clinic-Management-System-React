@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Models\Category;
+use App\Models\MajorServiceCategory;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Str;
@@ -24,6 +25,12 @@ abstract class CategoryRequest extends FormRequest
                 $categoryNameRule,
             ],
             'category_type' => ['required', 'string', Rule::in(['Product', 'Service'])],
+            'major_service_category_ID' => [
+                'exclude_unless:category_type,Service',
+                'required',
+                'integer',
+                Rule::exists((new MajorServiceCategory)->getTable(), 'major_service_category_ID'),
+            ],
             'description' => ['required', 'string', 'max:1000'],
         ];
     }
@@ -65,6 +72,8 @@ abstract class CategoryRequest extends FormRequest
             'category_name.regex' => "The category name may only contain letters, numbers, spaces, and / - & ' ( ) [ ] % symbols.",
             'category_name.unique' => 'A category of this type already uses that name.',
             'category_type.in' => 'The category type must be Product or Service.',
+            'major_service_category_ID.required' => 'Select a parent category for this service category.',
+            'major_service_category_ID.exists' => 'Select a valid parent category.',
             'description.required' => 'The description cannot be empty or contain only whitespace.',
         ];
     }

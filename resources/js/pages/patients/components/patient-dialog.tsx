@@ -234,7 +234,7 @@ export function PatientDialog({
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="max-h-[calc(100dvh-1rem)] grid-rows-[auto_minmax(0,1fr)] gap-0 overflow-hidden p-0 sm:max-h-[90vh] sm:max-w-xl">
-                <DialogHeader className="border-b px-5 py-5 pr-12 text-left sm:px-6">
+                <DialogHeader className="px-5 py-5 pr-12 text-left sm:px-6">
                     <DialogTitle className="flex items-center gap-2">
                         <UserRound className="size-5" />
                         {title}
@@ -245,17 +245,22 @@ export function PatientDialog({
                         ) : isEdit ? (
                             'Update the patient record. Changing the email requires verification again.'
                         ) : (
-                            <>
-                                All fields with{' '}
-                                <span
-                                    className="text-primary"
-                                    aria-hidden="true"
-                                >
-                                    *
-                                </span>{' '}
-                                are required. An account setup link will be
-                                emailed to the patient.
-                            </>
+                            <span className="block">
+                                <span className="block text-foreground">
+                                    All fields with{' '}
+                                    <span
+                                        className="text-primary"
+                                        aria-hidden="true"
+                                    >
+                                        *
+                                    </span>{' '}
+                                    are required.
+                                </span>
+                                <span className="block">
+                                    An account setup link will be emailed to the
+                                    patient.
+                                </span>
+                            </span>
                         )}
                     </DialogDescription>
                 </DialogHeader>
@@ -510,19 +515,19 @@ export function PatientDialog({
                                     </div>
                                 </div>
 
-                                <DialogFooter className="grid grid-cols-1 gap-3 border-t bg-background px-5 py-4 min-[400px]:grid-cols-2 sm:px-6">
+                                <DialogFooter className="flex flex-col-reverse gap-3 border-t bg-background px-5 py-4 sm:flex-row sm:justify-end sm:px-6">
                                     <Button
                                         type="button"
+                                        variant="outline"
                                         onClick={() => onOpenChange(false)}
                                         disabled={processing}
-                                        className="w-full bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90"
                                     >
                                         Cancel
                                     </Button>
                                     <Button
                                         type="submit"
                                         disabled={processing}
-                                        className="w-full bg-pink-600 text-white hover:bg-pink-700"
+                                        className="bg-pink-600 text-white hover:bg-pink-700"
                                     >
                                         {processing
                                             ? 'Saving...'

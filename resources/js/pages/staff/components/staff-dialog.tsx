@@ -1,5 +1,5 @@
 import { Form } from '@inertiajs/react';
-import { Mail, Phone, ShieldCheck, UserRound } from 'lucide-react';
+import { UserRound } from 'lucide-react';
 import { useState } from 'react';
 import {
     store,
@@ -47,7 +47,7 @@ function Detail({ label, value }: { label: string; value: string }) {
             <span className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
                 {label}
             </span>
-            <span className="text-sm break-words">{value}</span>
+            <span className="text-sm wrap-break-word">{value}</span>
         </div>
     );
 }
@@ -106,9 +106,7 @@ export function StaffDialog({
     open,
     onOpenChange,
 }: StaffDialogProps) {
-    const [roleId, setRoleId] = useState(
-        String(staffAccount?.role_ID ?? roles[0]?.role_ID ?? ''),
-    );
+    const [roleId, setRoleId] = useState(String(staffAccount?.role_ID ?? ''));
     const selectedRole = roles.find((role) => String(role.role_ID) === roleId);
     const isView = mode === 'view';
     const isEdit = mode === 'edit';
@@ -116,40 +114,24 @@ export function StaffDialog({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
-                <DialogHeader>
+            <DialogContent className="max-h-[calc(100dvh-1rem)] gap-0 overflow-y-auto p-0 sm:max-h-[90vh] sm:max-w-xl">
+                <DialogHeader className="px-5 pt-5 pr-12 pb-2 text-left sm:px-6">
                     <DialogTitle className="flex items-center gap-2">
-                        <ShieldCheck className="size-5" />
+                        <UserRound className="size-5" />
                         {isView
                             ? 'Staff details'
                             : isEdit
                               ? 'Edit staff account'
-                              : 'Add staff account'}
+                              : 'Add staff'}
                     </DialogTitle>
                     <DialogDescription>
-                        {isView
-                            ? 'Review this staff member’s account information.'
-                            : isEdit
-                              ? 'Update the staff member’s assignment and account information.'
-                              : 'A secure temporary password and verification link will be emailed to the staff member.'}
-                    </DialogDescription>
-                </DialogHeader>
-
-                {isView && staffAccount ? (
-                    <StaffDetails staffAccount={staffAccount} />
-                ) : (
-                    <Form
-                        {...(isEdit && staffAccount
-                            ? update.form(staffAccount)
-                            : store.form())}
-                        options={{ preserveScroll: true }}
-                        onSuccess={() => onOpenChange(false)}
-                        resetOnSuccess={!isEdit}
-                        className="grid gap-5"
-                    >
-                        {({ errors, processing }) => (
-                            <>
-                                <p className="text-sm text-foreground">
+                        {isView ? (
+                            "Review this staff member's account information."
+                        ) : isEdit ? (
+                            "Update the staff member's assignment and account information."
+                        ) : (
+                            <span className="block">
+                                <span className="block text-foreground">
                                     All fields with{' '}
                                     <span
                                         className="text-primary"
@@ -158,11 +140,36 @@ export function StaffDialog({
                                         *
                                     </span>{' '}
                                     are required.
-                                </p>
+                                </span>
+                                <span className="block">
+                                    An account setup link will be emailed to the
+                                    staff member.
+                                </span>
+                            </span>
+                        )}
+                    </DialogDescription>
+                </DialogHeader>
+
+                {isView && staffAccount ? (
+                    <div className="px-5 pt-3 pb-5 sm:px-6">
+                        <StaffDetails staffAccount={staffAccount} />
+                    </div>
+                ) : (
+                    <Form
+                        {...(isEdit && staffAccount
+                            ? update.form(staffAccount)
+                            : store.form())}
+                        options={{ preserveScroll: true }}
+                        onSuccess={() => onOpenChange(false)}
+                        resetOnSuccess={!isEdit}
+                        className="grid gap-5 px-5 pt-3 pb-5 sm:px-6"
+                    >
+                        {({ errors, processing }) => (
+                            <>
                                 <div className="grid gap-4 sm:grid-cols-2">
-                                    <div className="grid gap-2">
+                                    <div className="grid gap-2 sm:col-span-2">
                                         <Label htmlFor="first_name">
-                                            First name
+                                            First Name
                                             <span
                                                 className="text-primary"
                                                 aria-hidden="true"
@@ -177,6 +184,7 @@ export function StaffDialog({
                                                 staffAccount?.first_name ?? ''
                                             }
                                             autoComplete="given-name"
+                                            placeholder="Enter First Name"
                                             required
                                             aria-invalid={Boolean(
                                                 errors.first_name,
@@ -187,9 +195,9 @@ export function StaffDialog({
                                         />
                                     </div>
 
-                                    <div className="grid gap-2">
+                                    <div className="grid gap-2 sm:col-span-2">
                                         <Label htmlFor="middle_name">
-                                            Middle name
+                                            Middle Name
                                         </Label>
                                         <Input
                                             id="middle_name"
@@ -198,6 +206,7 @@ export function StaffDialog({
                                                 staffAccount?.middle_name ?? ''
                                             }
                                             autoComplete="additional-name"
+                                            placeholder="Enter Middle Name (optional)"
                                             aria-invalid={Boolean(
                                                 errors.middle_name,
                                             )}
@@ -209,7 +218,7 @@ export function StaffDialog({
 
                                     <div className="grid gap-2 sm:col-span-2">
                                         <Label htmlFor="last_name">
-                                            Last name
+                                            Last Name
                                             <span
                                                 className="text-primary"
                                                 aria-hidden="true"
@@ -224,6 +233,7 @@ export function StaffDialog({
                                                 staffAccount?.last_name ?? ''
                                             }
                                             autoComplete="family-name"
+                                            placeholder="Enter Last Name"
                                             required
                                             aria-invalid={Boolean(
                                                 errors.last_name,
@@ -244,29 +254,24 @@ export function StaffDialog({
                                                 *
                                             </span>
                                         </Label>
-                                        <div className="relative">
-                                            <Mail className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-                                            <Input
-                                                id="email"
-                                                name="email"
-                                                type="email"
-                                                className="pl-9"
-                                                defaultValue={
-                                                    staffAccount?.email ?? ''
-                                                }
-                                                autoComplete="email"
-                                                required
-                                                aria-invalid={Boolean(
-                                                    errors.email,
-                                                )}
-                                            />
-                                        </div>
+                                        <Input
+                                            id="email"
+                                            name="email"
+                                            type="email"
+                                            defaultValue={
+                                                staffAccount?.email ?? ''
+                                            }
+                                            autoComplete="email"
+                                            placeholder="Enter Email Address"
+                                            required
+                                            aria-invalid={Boolean(errors.email)}
+                                        />
                                         <InputError message={errors.email} />
                                     </div>
 
                                     <div className="grid gap-2">
                                         <Label htmlFor="contact_number">
-                                            Contact number
+                                            Contact Number
                                             <span
                                                 className="text-primary"
                                                 aria-hidden="true"
@@ -274,32 +279,28 @@ export function StaffDialog({
                                                 *
                                             </span>
                                         </Label>
-                                        <div className="relative">
-                                            <Phone className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-                                            <Input
-                                                id="contact_number"
-                                                name="contact_number"
-                                                type="tel"
-                                                inputMode="numeric"
-                                                maxLength={11}
-                                                className="pl-9"
-                                                defaultValue={
-                                                    staffAccount?.contact_number ??
-                                                    ''
-                                                }
-                                                placeholder="09123456789"
-                                                required
-                                                aria-invalid={Boolean(
-                                                    errors.contact_number,
-                                                )}
-                                            />
-                                        </div>
+                                        <Input
+                                            id="contact_number"
+                                            name="contact_number"
+                                            type="tel"
+                                            inputMode="numeric"
+                                            maxLength={11}
+                                            defaultValue={
+                                                staffAccount?.contact_number ??
+                                                ''
+                                            }
+                                            placeholder="Enter Contact Number"
+                                            required
+                                            aria-invalid={Boolean(
+                                                errors.contact_number,
+                                            )}
+                                        />
                                         <InputError
                                             message={errors.contact_number}
                                         />
                                     </div>
 
-                                    <div className="grid gap-2">
+                                    <div className="grid gap-2 sm:col-start-2 sm:row-start-5">
                                         <Label htmlFor="role_ID">
                                             Role
                                             <span
@@ -322,6 +323,9 @@ export function StaffDialog({
                                                 errors.role_ID,
                                             )}
                                         >
+                                            <option value="" disabled>
+                                                Select Role
+                                            </option>
                                             {roles.map((role) => (
                                                 <option
                                                     key={role.role_ID}
@@ -336,7 +340,7 @@ export function StaffDialog({
                                         <InputError message={errors.role_ID} />
                                     </div>
 
-                                    <div className="grid gap-2">
+                                    <div className="grid gap-2 sm:col-start-1 sm:row-start-5">
                                         <Label htmlFor="branch_ID">
                                             Branch
                                             {!isSuperAdmin && (
@@ -364,7 +368,7 @@ export function StaffDialog({
                                             <option value="">
                                                 {isSuperAdmin
                                                     ? 'All branches'
-                                                    : 'Select a branch'}
+                                                    : 'Select Branch'}
                                             </option>
                                             {branches.map((branch) => (
                                                 <option
@@ -415,7 +419,7 @@ export function StaffDialog({
                                     )}
                                 </div>
 
-                                <DialogFooter>
+                                <DialogFooter className="border-t pt-4">
                                     <Button
                                         type="button"
                                         variant="outline"

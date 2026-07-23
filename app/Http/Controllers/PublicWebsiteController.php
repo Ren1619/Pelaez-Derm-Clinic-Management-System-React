@@ -56,7 +56,10 @@ class PublicWebsiteController extends Controller
     {
         return Service::query()
             ->select(['service_ID', 'category_ID', 'name', 'description', 'service_img'])
-            ->with('category:category_ID,category_name')
+            ->with([
+                'category:category_ID,category_name,major_service_category_ID',
+                'category.majorServiceCategory:major_service_category_ID,name',
+            ])
             ->whereHas('category', fn ($query) => $query->where('category_name', '!=', 'Consultations'))
             ->orderBy('name')
             ->when($limit, fn ($query, int $count) => $query->limit($count))
@@ -66,6 +69,7 @@ class PublicWebsiteController extends Controller
                 'name' => $service->name,
                 'description' => $service->description,
                 'category' => $service->category?->category_name,
+                'major_category' => $service->category?->majorServiceCategory?->name,
                 'image_url' => $service->service_img === null
                     ? null
                     : Storage::disk('public')->url($service->service_img),
@@ -81,6 +85,8 @@ class PublicWebsiteController extends Controller
                 'branch_ID',
                 'branch_name',
                 'branch_location',
+                'latitude',
+                'longitude',
                 'contact_number',
                 'map_link',
                 'fb_link',
@@ -93,6 +99,8 @@ class PublicWebsiteController extends Controller
                 'id' => $branch->branch_ID,
                 'name' => $branch->branch_name,
                 'location' => $branch->branch_location,
+                'latitude' => $branch->latitude,
+                'longitude' => $branch->longitude,
                 'contact_number' => $branch->contact_number,
                 'map_link' => $branch->map_link,
                 'facebook_link' => $branch->fb_link,

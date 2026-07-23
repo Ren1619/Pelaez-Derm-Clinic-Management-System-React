@@ -277,7 +277,7 @@ export function ProductDialog({
                                     id="product-new-image"
                                     label="Product image"
                                     accept=".jpg,.jpeg,.png,image/jpeg,image/png"
-                                    helpText="JPEG or PNG, up to 5 MB. Leave blank to keep the current image."
+                                    helpText="JPEG or PNG, up to 20 MB. Leave blank to keep the current image."
                                     existingImageUrl={product?.image_url}
                                     imageAlt={
                                         product?.name ?? 'Product image preview'
@@ -655,7 +655,7 @@ export function ProductDialog({
                                         </p>
                                     )}
 
-                                <DialogFooter>
+                                <DialogFooter className="border-t pt-4">
                                     <Button
                                         type="button"
                                         variant="outline"

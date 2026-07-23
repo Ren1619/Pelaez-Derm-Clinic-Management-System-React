@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreCategoryRequest;
 use App\Http\Requests\UpdateCategoryRequest;
 use App\Models\Category;
+use App\Models\MajorServiceCategory;
 use App\Services\CategoryService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -36,6 +37,16 @@ class CategoryController extends Controller
                 'tab' => $activeTab,
                 'search' => $search,
                 'per_page' => $perPage,
+            ],
+            'majorServiceCategories' => MajorServiceCategory::query()
+                ->withCount('categories')
+                ->orderBy('name')
+                ->get(['major_service_category_ID', 'name', 'description']),
+            'can' => [
+                'manage_major_service_categories' => $request->user()?->can(
+                    'create',
+                    MajorServiceCategory::class,
+                ) ?? false,
             ],
             'summary' => fn (): array => $this->categoryService->statistics(),
         ]);
@@ -70,7 +81,7 @@ class CategoryController extends Controller
         return back();
     }
 
-    /** @return array<string, int|string|null> */
+    /** @return array<string, array<string, int|string>|int|string|null> */
     private function serializeCategory(Category $category): array
     {
         return [
@@ -78,6 +89,13 @@ class CategoryController extends Controller
             'category_ID' => $category->category_ID,
             'category_name' => $category->category_name,
             'category_type' => $category->category_type,
+            'major_service_category_ID' => $category->major_service_category_ID,
+            'major_service_category' => $category->majorServiceCategory === null
+                ? null
+                : [
+                    'major_service_category_ID' => $category->majorServiceCategory->major_service_category_ID,
+                    'name' => $category->majorServiceCategory->name,
+                ],
             'description' => $category->description,
             'created_at' => $category->created_at?->toISOString(),
         ];

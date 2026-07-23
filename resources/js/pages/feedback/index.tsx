@@ -121,8 +121,8 @@ export default function FeedbackIndex({ feedbacks, branches, filters }: Props) {
                 />
 
                 <DataTableLayout>
-                    <div className="grid gap-3 border-b p-4 xl:grid-cols-[minmax(14rem,1fr)_9rem_11rem_12rem]">
-                        <div className="relative">
+                    <div className="flex flex-col gap-3 border-b p-4 sm:flex-row sm:flex-wrap sm:items-center">
+                        <div className="relative w-full sm:w-80">
                             <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
                             <Input
                                 value={search}
@@ -143,7 +143,7 @@ export default function FeedbackIndex({ feedbacks, branches, filters }: Props) {
                                 })
                             }
                         >
-                            <SelectTrigger>
+                            <SelectTrigger className="w-full sm:w-36">
                                 <SelectValue placeholder="All ratings" />
                             </SelectTrigger>
                             <SelectContent>
@@ -168,7 +168,7 @@ export default function FeedbackIndex({ feedbacks, branches, filters }: Props) {
                                 })
                             }
                         >
-                            <SelectTrigger>
+                            <SelectTrigger className="w-full sm:w-40">
                                 <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
@@ -193,7 +193,7 @@ export default function FeedbackIndex({ feedbacks, branches, filters }: Props) {
                                 })
                             }
                         >
-                            <SelectTrigger>
+                            <SelectTrigger className="w-full sm:w-48">
                                 <SelectValue placeholder="All clinics" />
                             </SelectTrigger>
                             <SelectContent>
@@ -210,7 +210,7 @@ export default function FeedbackIndex({ feedbacks, branches, filters }: Props) {
                         </Select>
                     </div>
 
-                    <div className="flex flex-col gap-3 border-b p-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex flex-col gap-3 border-b p-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-start">
                         <div className="flex flex-wrap items-center gap-2">
                             <FeedbackDateRangePicker
                                 key={`${filters.date_from ?? 'all'}:${filters.date_to ?? 'all'}`}

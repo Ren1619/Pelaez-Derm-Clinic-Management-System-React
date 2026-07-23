@@ -63,7 +63,10 @@ class AppointmentPageService
                     'account_ID' => $doctor->account_ID, 'full_name' => $doctor->full_name, 'branch_ID' => $doctor->branch_ID,
                 ])->all(),
             'services' => Service::query()
-                ->with('category:category_ID,category_name')
+                ->with([
+                    'category:category_ID,category_name,major_service_category_ID',
+                    'category.majorServiceCategory:major_service_category_ID,name',
+                ])
                 ->whereHas('category', fn (Builder $builder) => $builder->where('category_type', 'Service'))
                 ->orderBy(
                     fn ($query) => $query->select('category_name')
@@ -76,6 +79,7 @@ class AppointmentPageService
                     'service_ID' => $service->service_ID,
                     'name' => $service->name,
                     'category_name' => $service->category->category_name,
+                    'major_category_name' => $service->category->majorServiceCategory->name,
                 ])
                 ->all(),
             'timeSlots' => $this->scheduleService->slots(),

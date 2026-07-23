@@ -42,6 +42,7 @@ export type PublicService = {
     name: string;
     description: string;
     category: string | null;
+    major_category: string | null;
     image_url: string | null;
 };
 
@@ -49,6 +50,8 @@ export type PublicBranch = {
     id: number;
     name: string;
     location: string;
+    latitude: number | null;
+    longitude: number | null;
     contact_number: string;
     map_link: string;
     facebook_link: string | null;

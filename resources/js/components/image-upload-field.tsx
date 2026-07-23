@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils';
 
 type ImageUploadFieldProps = {
     id: string;
+    name?: string;
     label: string;
     accept: string;
     helpText: string;
@@ -20,6 +21,7 @@ type ImageUploadFieldProps = {
 /** Displays a clickable image upload area with an immediate local preview. */
 export default function ImageUploadField({
     id,
+    name = 'new_image',
     label,
     accept,
     helpText,
@@ -107,7 +109,7 @@ export default function ImageUploadField({
 
                 <input
                     id={id}
-                    name="new_image"
+                    name={name}
                     type="file"
                     accept={accept}
                     onChange={handleImageChange}

@@ -9,18 +9,18 @@ import { Button } from '@/components/ui/button';
 import {
     Dialog,
     DialogContent,
-    DialogDescription,
     DialogFooter,
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import type { Category, CategoryType } from '@/types';
+import type { Category, CategoryType, MajorServiceCategory } from '@/types';
 
 type CategoryDialogProps = {
     category: Category | null;
     categoryType: CategoryType;
+    majorServiceCategories: MajorServiceCategory[];
     open: boolean;
     onOpenChange: (open: boolean) => void;
 };
@@ -28,6 +28,7 @@ type CategoryDialogProps = {
 export function CategoryDialog({
     category,
     categoryType,
+    majorServiceCategories,
     open,
     onOpenChange,
 }: CategoryDialogProps) {
@@ -44,10 +45,6 @@ export function CategoryDialog({
                             ? 'Edit'
                             : 'Add'} {categoryType.toLowerCase()} category
                     </DialogTitle>
-                    <DialogDescription>
-                        Categories organize the clinic’s{' '}
-                        {categoryType.toLowerCase()} catalog.
-                    </DialogDescription>
                 </DialogHeader>
 
                 <Form
@@ -114,6 +111,53 @@ export function CategoryDialog({
                                 />
                                 <InputError message={errors.category_type} />
                             </div>
+
+                            {categoryType === 'Service' && (
+                                <div className="grid gap-2">
+                                    <Label htmlFor="major_service_category_ID">
+                                        Parent category
+                                    </Label>
+                                    <select
+                                        id="major_service_category_ID"
+                                        name="major_service_category_ID"
+                                        defaultValue={
+                                            category?.major_service_category_ID ??
+                                            ''
+                                        }
+                                        required
+                                        disabled={
+                                            majorServiceCategories.length === 0
+                                        }
+                                        aria-invalid={Boolean(
+                                            errors.major_service_category_ID,
+                                        )}
+                                        className="h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20"
+                                    >
+                                        <option value="" disabled>
+                                            Select a parent category
+                                        </option>
+                                        {majorServiceCategories.map(
+                                            (majorCategory) => (
+                                                <option
+                                                    key={
+                                                        majorCategory.major_service_category_ID
+                                                    }
+                                                    value={
+                                                        majorCategory.major_service_category_ID
+                                                    }
+                                                >
+                                                    {majorCategory.name}
+                                                </option>
+                                            ),
+                                        )}
+                                    </select>
+                                    <InputError
+                                        message={
+                                            errors.major_service_category_ID
+                                        }
+                                    />
+                                </div>
+                            )}
 
                             <div className="grid gap-2">
                                 <Label htmlFor="description">

@@ -86,6 +86,7 @@ export type AppointmentOptions = {
         service_ID: number;
         name: string;
         category_name: string;
+        major_category_name: string;
     }>;
     timeSlots: AppointmentTimeSlot[];
 };

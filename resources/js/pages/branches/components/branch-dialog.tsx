@@ -1,12 +1,14 @@
 import { Form } from '@inertiajs/react';
 import { Building2, ExternalLink, ImageIcon } from 'lucide-react';
+import { useState } from 'react';
 import { store, update } from '@/actions/App/Http/Controllers/BranchController';
+import BranchLocationMap from '@/components/branch-location-map';
+import ImageUploadField from '@/components/image-upload-field';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
     DialogContent,
-    DialogDescription,
     DialogFooter,
     DialogHeader,
     DialogTitle,
@@ -21,6 +23,77 @@ type BranchDialogProps = {
     open: boolean;
     onOpenChange: (open: boolean) => void;
 };
+
+type BranchLocationFieldsProps = {
+    branch: Branch | null;
+    locationError?: string;
+    latitudeError?: string;
+    longitudeError?: string;
+};
+
+/** Collects a plain-text address and an exact map pin. */
+function BranchLocationFields({
+    branch,
+    locationError,
+    latitudeError,
+    longitudeError,
+}: BranchLocationFieldsProps) {
+    const [coordinates, setCoordinates] = useState({
+        latitude: branch?.latitude ?? null,
+        longitude: branch?.longitude ?? null,
+    });
+
+    return (
+        <div className="grid gap-3">
+            <Label htmlFor="branch_location">
+                Branch location
+                <span className="text-primary" aria-hidden="true">
+                    *
+                </span>
+            </Label>
+            <Input
+                id="branch_location"
+                name="branch_location"
+                defaultValue={branch?.branch_location ?? ''}
+                placeholder="e.g. Manuel Roxas Street, Valencia City, Bukidnon"
+                maxLength={255}
+                required
+                aria-invalid={Boolean(locationError)}
+            />
+            <InputError message={locationError} />
+
+            <div className="grid gap-2">
+                <Label>
+                    Pin location
+                    <span className="text-primary" aria-hidden="true">
+                        *
+                    </span>
+                </Label>
+                <BranchLocationMap
+                    latitude={coordinates.latitude}
+                    longitude={coordinates.longitude}
+                    interactive
+                    onChange={setCoordinates}
+                />
+                <p className="text-xs text-muted-foreground">
+                    Click the map or drag the pink pin to mark the exact branch
+                    location.
+                </p>
+            </div>
+            <input
+                type="hidden"
+                name="latitude"
+                value={coordinates.latitude ?? ''}
+            />
+            <input
+                type="hidden"
+                name="longitude"
+                value={coordinates.longitude ?? ''}
+            />
+            <InputError message={latitudeError ?? longitudeError} />
+        </div>
+    );
+}
 
 function BranchImage({ branch }: { branch: Branch | null }) {
     if (branch?.image_url) {
@@ -57,8 +130,19 @@ function BranchDetails({ branch }: { branch: Branch }) {
                         value={branch.branch_location}
                     />
                 </div>
+                {branch.latitude !== null && branch.longitude !== null && (
+                    <div className="sm:col-span-2">
+                        <BranchLocationMap
+                            latitude={branch.latitude}
+                            longitude={branch.longitude}
+                            className="h-56"
+                        />
+                    </div>
+                )}
                 <DetailLink label="Map link" href={branch.map_link} />
-                <DetailLink label="Facebook link" href={branch.fb_link} />
+                <div className="sm:col-span-2">
+                    <DetailLink label="Facebook link" href={branch.fb_link} />
+                </div>
             </div>
         </div>
     );
@@ -70,7 +154,7 @@ function Detail({ label, value }: { label: string; value: string }) {
             <span className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
                 {label}
             </span>
-            <span className="text-sm break-words">{value}</span>
+            <span className="text-sm wrap-break-word">{value}</span>
         </div>
     );
 }
@@ -113,17 +197,12 @@ export function BranchDialog({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+            <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
                         <Building2 className="size-5" />
                         {title}
                     </DialogTitle>
-                    <DialogDescription>
-                        {isView
-                            ? 'Review the branch contact and location information.'
-                            : 'Provide the clinic branch information below.'}
-                    </DialogDescription>
                 </DialogHeader>
 
                 {isView && branch ? (
@@ -150,37 +229,23 @@ export function BranchDialog({
                                     </span>{' '}
                                     are required.
                                 </p>
-                                <BranchImage branch={branch} />
+                                <ImageUploadField
+                                    key={`${open}-${branch?.branch_ID ?? 'new'}`}
+                                    id="branch-image"
+                                    name="branch_img"
+                                    label="Branch image"
+                                    accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
+                                    helpText="JPEG, PNG, or WebP, up to 20 MB. Leave blank to keep the current image."
+                                    existingImageUrl={branch?.image_url}
+                                    imageAlt={
+                                        branch?.branch_name ??
+                                        'Branch image preview'
+                                    }
+                                    error={errors.branch_img}
+                                    progress={progress?.percentage}
+                                />
 
-                                <div className="grid gap-2">
-                                    <Label htmlFor="branch_img">
-                                        Branch image
-                                    </Label>
-                                    <Input
-                                        id="branch_img"
-                                        name="branch_img"
-                                        type="file"
-                                        accept="image/jpeg,image/png"
-                                        aria-invalid={Boolean(
-                                            errors.branch_img,
-                                        )}
-                                    />
-                                    <p className="text-xs text-muted-foreground">
-                                        JPG or PNG, up to 5 MB.
-                                    </p>
-                                    <InputError message={errors.branch_img} />
-                                    {progress && (
-                                        <progress
-                                            value={progress.percentage}
-                                            max="100"
-                                            className="h-2 w-full"
-                                        >
-                                            {progress.percentage}%
-                                        </progress>
-                                    )}
-                                </div>
-
-                                <div className="grid gap-4 sm:grid-cols-2">
+                                <div className="grid gap-4">
                                     <div className="grid gap-2">
                                         <Label htmlFor="branch_name">
                                             Branch name
@@ -238,75 +303,30 @@ export function BranchDialog({
                                         />
                                     </div>
 
-                                    <div className="grid gap-2 sm:col-span-2">
-                                        <Label htmlFor="branch_location">
-                                            Branch location
-                                            <span
-                                                className="text-primary"
-                                                aria-hidden="true"
-                                            >
-                                                *
-                                            </span>
-                                        </Label>
-                                        <Input
-                                            id="branch_location"
-                                            name="branch_location"
-                                            defaultValue={
-                                                branch?.branch_location ?? ''
-                                            }
-                                            placeholder="Street, city, province"
-                                            required
-                                            aria-invalid={Boolean(
-                                                errors.branch_location,
-                                            )}
-                                        />
-                                        <InputError
-                                            message={errors.branch_location}
-                                        />
-                                    </div>
+                                    <BranchLocationFields
+                                        key={`${open}-${branch?.branch_ID ?? 'new'}-location`}
+                                        branch={branch}
+                                        locationError={errors.branch_location}
+                                        latitudeError={errors.latitude}
+                                        longitudeError={errors.longitude}
+                                    />
+                                </div>
 
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="map_link">
-                                            Map link
-                                            <span
-                                                className="text-primary"
-                                                aria-hidden="true"
-                                            >
-                                                *
-                                            </span>
-                                        </Label>
-                                        <Input
-                                            id="map_link"
-                                            name="map_link"
-                                            type="url"
-                                            defaultValue={
-                                                branch?.map_link ?? ''
-                                            }
-                                            placeholder="https://maps.google.com/..."
-                                            required
-                                            aria-invalid={Boolean(
-                                                errors.map_link,
-                                            )}
-                                        />
-                                        <InputError message={errors.map_link} />
-                                    </div>
-
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="fb_link">
-                                            Facebook link
-                                        </Label>
-                                        <Input
-                                            id="fb_link"
-                                            name="fb_link"
-                                            type="url"
-                                            defaultValue={branch?.fb_link ?? ''}
-                                            placeholder="https://facebook.com/..."
-                                            aria-invalid={Boolean(
-                                                errors.fb_link,
-                                            )}
-                                        />
-                                        <InputError message={errors.fb_link} />
-                                    </div>
+                                <div className="grid w-full min-w-0 gap-2 self-stretch">
+                                    <Label htmlFor="fb_link">
+                                        Facebook link
+                                    </Label>
+                                    <Input
+                                        id="fb_link"
+                                        name="fb_link"
+                                        type="url"
+                                        defaultValue={branch?.fb_link ?? ''}
+                                        placeholder="https://facebook.com/..."
+                                        className="block w-full max-w-none"
+                                        style={{ width: '100%' }}
+                                        aria-invalid={Boolean(errors.fb_link)}
+                                    />
+                                    <InputError message={errors.fb_link} />
                                 </div>
 
                                 <DialogFooter>

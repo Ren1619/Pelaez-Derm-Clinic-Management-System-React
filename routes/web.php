@@ -14,6 +14,7 @@ use App\Http\Controllers\DistributionController;
 use App\Http\Controllers\DistributionStatusController;
 use App\Http\Controllers\FeedbackController;
 use App\Http\Controllers\InventoryController;
+use App\Http\Controllers\MajorServiceCategoryController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\NewRecordEventController;
 use App\Http\Controllers\PatientAllergyController;
@@ -148,6 +149,10 @@ Route::middleware(['auth', 'verified', RecordReadActivity::class])->group(functi
 
     Route::resource('categories', CategoryController::class)
         ->only(['index', 'store', 'update', 'destroy'])
+        ->middleware('staff.module:categories');
+
+    Route::resource('major-service-categories', MajorServiceCategoryController::class)
+        ->only(['store', 'update', 'destroy'])
         ->middleware('staff.module:categories');
 
     Route::middleware('staff.module:inventory')->group(function () {

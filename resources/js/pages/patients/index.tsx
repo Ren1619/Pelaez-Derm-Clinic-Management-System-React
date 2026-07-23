@@ -172,8 +172,8 @@ export default function PatientsIndex({
 
                 <DataTableLayout
                     toolbar={
-                        <DataTableToolbar className="grid sm:grid-cols-[minmax(14rem,1fr)_minmax(11rem,auto)] lg:grid">
-                            <div className="relative">
+                        <DataTableToolbar className="flex-wrap">
+                            <div className="relative w-full sm:w-72">
                                 <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
                                 <Input
                                     value={search}
@@ -199,7 +199,10 @@ export default function PatientsIndex({
                                     })
                                 }
                             >
-                                <SelectTrigger aria-label="Verification status">
+                                <SelectTrigger
+                                    className="w-full sm:w-48"
+                                    aria-label="Verification status"
+                                >
                                     <SelectValue placeholder="All verification" />
                                 </SelectTrigger>
                                 <SelectContent>

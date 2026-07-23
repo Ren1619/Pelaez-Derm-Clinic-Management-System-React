@@ -24,12 +24,17 @@ class ServiceManagementService
                 'service_img',
                 'created_at',
             ])
-            ->with('category:category_ID,category_name,category_type')
+            ->with([
+                'category:category_ID,category_name,category_type,major_service_category_ID',
+                'category.majorServiceCategory:major_service_category_ID,name',
+            ])
             ->when($search, fn (Builder $query, string $searchTerm): Builder => $query->where(
                 fn (Builder $serviceQuery): Builder => $serviceQuery
                     ->where('name', 'like', "%{$searchTerm}%")
                     ->orWhereHas('category', fn (Builder $categoryQuery): Builder => $categoryQuery
-                        ->where('category_name', 'like', "%{$searchTerm}%")),
+                        ->where('category_name', 'like', "%{$searchTerm}%")
+                        ->orWhereHas('majorServiceCategory', fn (Builder $majorCategoryQuery): Builder => $majorCategoryQuery
+                            ->where('name', 'like', "%{$searchTerm}%"))),
             ))
             ->orderBy('name')
             ->paginate($perPage)

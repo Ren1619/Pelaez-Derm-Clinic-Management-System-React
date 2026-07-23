@@ -182,8 +182,8 @@ export default function StaffIndex({
 
                 <DataTableLayout
                     toolbar={
-                        <DataTableToolbar className="grid lg:grid lg:grid-cols-[minmax(14rem,1fr)_repeat(4,minmax(9rem,auto))]">
-                            <div className="relative">
+                        <DataTableToolbar className="flex-wrap">
+                            <div className="relative w-full sm:w-72">
                                 <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
                                 <Input
                                     value={search}
@@ -487,7 +487,7 @@ function FilterSelect({
 }) {
     return (
         <Select value={value} onValueChange={onValueChange}>
-            <SelectTrigger aria-label={placeholder}>
+            <SelectTrigger className="w-full sm:w-44" aria-label={placeholder}>
                 <SelectValue placeholder={placeholder} />
             </SelectTrigger>
             <SelectContent>

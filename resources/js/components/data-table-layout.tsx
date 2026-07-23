@@ -31,7 +31,7 @@ export function DataTableToolbar({
     return (
         <div
             className={cn(
-                'flex flex-col gap-3 border-b p-4 lg:flex-row lg:items-center lg:justify-between',
+                'flex flex-col gap-3 border-b p-4 lg:flex-row lg:flex-wrap lg:items-center lg:justify-start',
                 className,
             )}
             {...props}
