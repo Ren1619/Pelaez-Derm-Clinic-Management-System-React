@@ -26,6 +26,7 @@ import type {
 type WelcomeProps = {
     settings: SystemSettings;
     services: PublicService[];
+    serviceCategories: string[];
     branches: PublicBranch[];
     contactBranches: PublicBranch[];
     stats: LandingStats;
@@ -34,6 +35,7 @@ type WelcomeProps = {
 export default function Welcome({
     settings,
     services,
+    serviceCategories,
     branches,
     contactBranches,
     stats,
@@ -52,6 +54,18 @@ export default function Welcome({
         settings.landing_about_image_url ?? '/images/mobile_img.jpg';
     const socialBranches = contactBranches.filter(
         (branch) => branch.facebook_link,
+    );
+    const [selectedServiceCategory, setSelectedServiceCategory] = useState<
+        string | null
+    >(null);
+    const activeServiceCategory = serviceCategories.includes(
+        selectedServiceCategory ?? '',
+    )
+        ? selectedServiceCategory
+        : (serviceCategories[0] ?? null);
+    const categoryServices = services.filter(
+        (service) =>
+            (service.major_category ?? 'Other Care') === activeServiceCategory,
     );
 
     useRevealAnimations();
@@ -98,7 +112,9 @@ export default function Welcome({
                 <div className="relative z-10 mx-auto w-full max-w-7xl px-4 pt-32 pb-12 sm:px-6 md:py-36 lg:px-8">
                     <div className="max-w-2xl">
                         <h1 className="text-5xl leading-[0.95] font-black tracking-tight text-white sm:text-6xl md:text-7xl">
-                            <span className="text-primary">{brandLead}</span>
+                            <span className="inline-block text-[1.18em] leading-none font-serif font-normal text-primary italic">
+                                {brandLead}
+                            </span>
                             {brandRest && (
                                 <span className="mt-2 block">{brandRest}</span>
                             )}
@@ -144,342 +160,386 @@ export default function Welcome({
                 </div>
             </section>
 
-            <section
-                id="about"
-                className="flex min-h-screen scroll-mt-20 items-center bg-gradient-to-r from-primary/5 via-primary/10 to-primary/20 py-20 lg:py-24"
-            >
-                <div className="mx-auto grid w-full max-w-7xl items-center gap-10 px-4 sm:px-6 lg:grid-cols-2 lg:gap-16 lg:px-8">
-                    <div data-reveal>
-                        <h2 className="text-4xl leading-tight font-black tracking-tight sm:text-5xl lg:text-6xl">
-                            About{' '}
-                            <span className="text-primary">
-                                {settings.business_name}
-                            </span>
-                        </h2>
+            <main className="flex flex-col">
+                <section
+                    id="about"
+                    className="order-2 scroll-mt-20 bg-linear-to-br from-background via-primary/5 to-background py-20 lg:py-28"
+                >
+                    <div className="mx-auto grid w-full max-w-7xl items-center gap-10 px-4 sm:px-6 lg:grid-cols-2 lg:gap-16 lg:px-8">
+                        <div data-reveal>
+                            <p className="text-sm font-semibold tracking-[0.2em] text-primary uppercase">
+                                Our philosophy
+                            </p>
+                            <h2 className="mt-4 text-4xl leading-tight font-black tracking-tight sm:text-5xl">
+                                The art of{' '}
+                                <span className="text-primary">
+                                    healthy skin.
+                                </span>
+                            </h2>
 
-                        <img
-                            src={aboutMobileImage}
-                            alt={`${settings.business_name} clinic`}
-                            className="mt-8 h-72 w-full rounded-3xl object-cover shadow-2xl sm:h-96 lg:hidden"
-                            loading="lazy"
-                        />
+                            <img
+                                src={aboutMobileImage}
+                                alt={`${settings.business_name} clinic`}
+                                className="mt-8 h-72 w-full rounded-2xl object-cover shadow-xl lg:hidden"
+                                loading="lazy"
+                            />
 
-                        <p className="mt-8 text-justify text-base leading-8 text-muted-foreground sm:text-lg">
-                            {settings.landing_about_description}
-                        </p>
-                        <ul className="mt-8 space-y-4">
-                            {settings.landing_specializations.map(
-                                (specialization) => (
-                                    <li
-                                        key={specialization}
-                                        className="flex items-center gap-3"
-                                    >
-                                        <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
-                                            <Check
-                                                className="size-3.5"
-                                                strokeWidth={3}
-                                            />
-                                        </span>
-                                        <span>{specialization}</span>
-                                    </li>
-                                ),
-                            )}
-                        </ul>
-                    </div>
+                            <p className="mt-8 text-justify text-base leading-8 text-muted-foreground sm:text-lg">
+                                {settings.landing_about_description}
+                            </p>
+                            <ul className="mt-8 space-y-4">
+                                {settings.landing_specializations.map(
+                                    (specialization) => (
+                                        <li
+                                            key={specialization}
+                                            className="flex items-center gap-3"
+                                        >
+                                            <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                                                <Check
+                                                    className="size-3.5"
+                                                    strokeWidth={3}
+                                                />
+                                            </span>
+                                            <span>{specialization}</span>
+                                        </li>
+                                    ),
+                                )}
+                            </ul>
+                        </div>
 
-                    <div
-                        data-reveal
-                        className="hidden overflow-hidden rounded-3xl shadow-2xl lg:block"
-                    >
-                        <img
-                            src={aboutDesktopImage}
-                            alt={`${settings.business_name} clinic`}
-                            className="h-[600px] w-full object-cover transition duration-500 hover:scale-105"
-                            loading="lazy"
-                        />
-                    </div>
-                </div>
-            </section>
-
-            <section
-                id="services"
-                className="relative min-h-screen scroll-mt-20 overflow-hidden bg-linear-to-br from-brand-soft via-brand-blush to-brand-mist py-20 lg:py-32 dark:from-background dark:via-accent/40 dark:to-background"
-            >
-                <DecorativeGlow className="-top-40 -right-40 size-80" />
-                <DecorativeGlow className="-bottom-40 -left-40 size-[30rem]" />
-                <div className="relative z-10 mx-auto max-w-7xl space-y-14 px-4 sm:px-6 lg:px-8">
-                    <SectionHeader
-                        lead="Our"
-                        accent="Services"
-                        description={settings.landing_services_description}
-                    />
-
-                    <div
-                        data-reveal
-                        className="grid grid-cols-2 gap-4 sm:gap-6 md:grid-cols-3 lg:grid-cols-4 lg:gap-8"
-                    >
-                        {services.map((service) => (
-                            <article
-                                key={service.id}
-                                className="group flex min-h-full flex-col overflow-hidden rounded-lg border bg-card shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl"
-                            >
-                                <figure className="flex h-36 items-center justify-center overflow-hidden bg-gradient-to-br from-primary/10 via-muted to-primary/5 sm:h-44 md:h-56">
-                                    <img
-                                        src={service.image_url ?? logoUrl}
-                                        alt={service.name}
-                                        className={
-                                            service.image_url
-                                                ? 'size-full object-cover transition duration-500 group-hover:scale-110'
-                                                : 'size-14 object-contain'
-                                        }
-                                        loading="lazy"
-                                    />
-                                </figure>
-                                <div className="flex flex-1 flex-col p-3 sm:p-4">
-                                    <p className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
-                                        {service.major_category ?? 'Service'}
-                                    </p>
-                                    {service.category && (
-                                        <p className="mt-1 text-xs text-muted-foreground">
-                                            {service.category}
-                                        </p>
-                                    )}
-                                    <h3 className="mt-2 line-clamp-2 leading-snug font-semibold transition group-hover:text-primary">
-                                        {service.name}
-                                    </h3>
-                                    {service.description && (
-                                        <p className="mt-2 line-clamp-3 text-xs leading-5 text-muted-foreground">
-                                            {service.description}
-                                        </p>
-                                    )}
-                                </div>
-                                <Link
-                                    href={servicesRoute()}
-                                    className="inline-flex items-center justify-center gap-2 bg-primary px-4 py-2.5 text-xs font-semibold text-primary-foreground transition hover:brightness-110"
-                                >
-                                    Learn More{' '}
-                                    <ArrowRight className="size-3.5" />
-                                </Link>
-                            </article>
-                        ))}
-                        {services.length === 0 && (
-                            <EmptyPreview message="Services will appear here once they are added." />
-                        )}
-                    </div>
-
-                    <div className="text-center">
-                        <Link
-                            href={servicesRoute()}
-                            className="inline-flex items-center gap-2 rounded-lg border border-primary px-6 py-4 font-semibold text-primary transition hover:bg-primary hover:text-primary-foreground"
+                        <div
+                            data-reveal
+                            className="hidden overflow-hidden rounded-2xl shadow-xl lg:block"
                         >
-                            View All Services <ArrowRight className="size-4" />
-                        </Link>
+                            <img
+                                src={aboutDesktopImage}
+                                alt={`${settings.business_name} clinic`}
+                                className="h-[520px] w-full object-cover transition duration-500 hover:scale-105"
+                                loading="lazy"
+                            />
+                        </div>
                     </div>
-                </div>
-            </section>
+                </section>
 
-            <section
-                id="branches"
-                className="relative min-h-screen scroll-mt-20 overflow-hidden bg-gradient-to-br from-muted/50 via-background to-primary/5 py-20 lg:py-32"
-            >
-                <DecorativeGlow className="-top-40 -right-40 size-80" />
-                <DecorativeGlow className="-bottom-40 -left-40 size-96" />
-                <div className="relative z-10 mx-auto max-w-7xl space-y-14 px-4 sm:px-6 lg:px-8">
-                    <SectionHeader
-                        lead="Our"
-                        accent="Branches"
-                        description={settings.landing_branches_description}
-                    />
+                <section
+                    id="services"
+                    className="relative order-1 scroll-mt-20 overflow-hidden bg-[#f8f8f6] py-20 lg:py-28 dark:bg-background"
+                >
+                    <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                        <div className="grid gap-8 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] lg:items-end">
+                            <div data-reveal>
+                                <h2 className="max-w-3xl text-5xl leading-[1.04] tracking-tight sm:text-6xl lg:text-[4rem]">
+                                    <span className="sm:whitespace-nowrap">
+                                        Exceptional treatments,
+                                    </span>{' '}
+                                    <span className="block font-serif font-normal italic">
+                                        designed for you.
+                                    </span>
+                                </h2>
+                            </div>
 
-                    <div
-                        data-reveal
-                        className="grid grid-cols-2 gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-4 lg:gap-8"
-                    >
-                        {branches.map((branch) => (
-                            <article
-                                key={branch.id}
-                                className="group overflow-hidden rounded-lg border bg-card shadow-md transition duration-300 hover:-translate-y-1 hover:shadow-xl"
+                            <div
+                                data-reveal
+                                className="border-b border-foreground/15 lg:self-end"
+                                role="tablist"
+                                aria-label="Service categories"
                             >
-                                <figure className="flex h-36 items-center justify-center overflow-hidden bg-gradient-to-br from-primary/10 via-muted to-primary/5 sm:h-44 md:h-56">
-                                    <img
-                                        src={branch.image_url ?? logoUrl}
-                                        alt={branch.name}
-                                        className={
-                                            branch.image_url
-                                                ? 'size-full object-cover transition duration-500 group-hover:scale-110'
-                                                : 'size-14 object-contain'
-                                        }
-                                        loading="lazy"
-                                    />
-                                </figure>
-                                <div className="space-y-4 p-3 sm:p-4">
-                                    <h3 className="line-clamp-2 font-semibold transition group-hover:text-primary">
-                                        {branch.name}
-                                    </h3>
-                                    <p className="flex items-start gap-2 text-xs leading-5 text-muted-foreground sm:text-sm">
-                                        <MapPin className="mt-0.5 size-4 shrink-0 text-primary" />{' '}
-                                        <span className="line-clamp-2">
-                                            {branch.location ||
-                                                'Location information coming soon'}
-                                        </span>
-                                    </p>
-                                    {branch.contact_number && (
+                                <div className="flex gap-12 overflow-x-auto pb-3 sm:justify-end lg:gap-16">
+                                    {serviceCategories.map((category) => (
+                                        <button
+                                            key={category}
+                                            type="button"
+                                            role="tab"
+                                            aria-selected={
+                                                activeServiceCategory ===
+                                                category
+                                            }
+                                            onClick={() =>
+                                                setSelectedServiceCategory(
+                                                    category,
+                                                )
+                                            }
+                                            className={`relative shrink-0 pb-3 font-serif text-2xl italic transition after:absolute after:inset-x-0 after:-bottom-3 after:h-1 ${activeServiceCategory === category ? 'text-foreground after:bg-primary' : 'text-muted-foreground hover:text-foreground'}`}
+                                        >
+                                            {category}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+
+
+                        <div
+                            data-reveal
+                            className="-mx-4 mt-8 overflow-x-auto pb-12 sm:-mx-6 md:mx-0 md:overflow-visible md:pb-28 lg:mx-0"
+                            role="tabpanel"
+                        >
+                            <div className="flex min-w-max items-start gap-12 px-3 py-8 sm:gap-16 sm:px-5 md:min-w-0 md:justify-center lg:gap-20 lg:px-8">
+                                {categoryServices.map((service, index) => (
+                                    <article
+                                        key={service.id}
+                                        className={`group flex w-[190px] shrink-0 flex-col overflow-hidden bg-card shadow-lg transition duration-300 hover:z-10 hover:shadow-2xl sm:w-[210px] lg:w-[220px] ${serviceCardRotation(index)}`}
+                                    >
+                                        <figure className="flex h-[170px] shrink-0 items-center justify-center overflow-hidden bg-gradient-to-br from-primary/10 via-muted to-primary/5 sm:h-48 lg:h-[200px]">
+                                            <img
+                                                src={
+                                                    service.image_url ?? logoUrl
+                                                }
+                                                alt={service.name}
+                                                className={
+                                                    service.image_url
+                                                        ? 'size-full object-cover transition duration-500 group-hover:scale-110'
+                                                        : 'size-20 object-contain'
+                                                }
+                                                loading="lazy"
+                                            />
+                                        </figure>
+                                        <div className="shrink-0 space-y-1 p-2">
+                                            <p className="min-h-4 text-xs font-semibold tracking-[0.16em] text-primary uppercase">
+                                                {service.category ??
+                                                    activeServiceCategory}
+                                            </p>
+                                            <h3 className="flex min-h-10 items-center font-serif text-lg leading-5 italic sm:text-xl">
+                                                <span className="line-clamp-2">
+                                                    {service.name}
+                                                </span>
+                                            </h3>
+                                            <p className="line-clamp-2 min-h-9 text-[0.6875rem] leading-[1.125rem] text-muted-foreground">
+                                                {service.description}
+                                            </p>
+                                        </div>
+                                        <Link
+                                            href={patientLogin()}
+                                            className="inline-flex h-10 w-full shrink-0 items-center justify-center gap-2 bg-primary px-4 text-xs font-semibold text-primary-foreground transition hover:brightness-110"
+                                        >
+                                            Book now{' '}
+                                            <ArrowRight className="size-4" />
+                                        </Link>
+                                    </article>
+                                ))}
+                                {categoryServices.length === 0 && (
+                                    <EmptyPreview message="Services will appear here once they are added." />
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="mt-12 text-center">
+                            <Link
+                                href={servicesRoute()}
+                                className="inline-flex items-center gap-2 rounded-full border border-primary px-6 py-3 font-semibold text-primary transition hover:bg-primary hover:text-primary-foreground"
+                            >
+                                Explore all services{' '}
+                                <ArrowRight className="size-4" />
+                            </Link>
+                        </div>
+                    </div>
+                </section>
+
+                <section
+                    id="branches"
+                    className="relative order-3 scroll-mt-20 overflow-hidden bg-gradient-to-br from-muted/50 via-background to-primary/5 py-20 lg:py-28"
+                >
+                    <DecorativeGlow className="-top-40 -right-40 size-80" />
+                    <DecorativeGlow className="-bottom-40 -left-40 size-96" />
+                    <div className="relative z-10 mx-auto max-w-7xl space-y-10 px-4 sm:px-6 lg:px-8">
+                        <SectionHeader
+                            lead="Our"
+                            accent="Branches"
+                            description={settings.landing_branches_description}
+                        />
+
+                        <div
+                            data-reveal
+                            className="grid grid-cols-2 gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-4 lg:gap-8"
+                        >
+                            {branches.map((branch) => (
+                                <article
+                                    key={branch.id}
+                                    className="group overflow-hidden rounded-lg border bg-card shadow-md transition duration-300 hover:-translate-y-1 hover:shadow-xl"
+                                >
+                                    <figure className="flex h-36 items-center justify-center overflow-hidden bg-gradient-to-br from-primary/10 via-muted to-primary/5 sm:h-44 md:h-56">
+                                        <img
+                                            src={branch.image_url ?? logoUrl}
+                                            alt={branch.name}
+                                            className={
+                                                branch.image_url
+                                                    ? 'size-full object-cover transition duration-500 group-hover:scale-110'
+                                                    : 'size-14 object-contain'
+                                            }
+                                            loading="lazy"
+                                        />
+                                    </figure>
+                                    <div className="space-y-4 p-3 sm:p-4">
+                                        <h3 className="line-clamp-2 font-semibold transition group-hover:text-primary">
+                                            {branch.name}
+                                        </h3>
+                                        <p className="flex items-start gap-2 text-xs leading-5 text-muted-foreground sm:text-sm">
+                                            <MapPin className="mt-0.5 size-4 shrink-0 text-primary" />{' '}
+                                            <span className="line-clamp-2">
+                                                {branch.location ||
+                                                    'Location information coming soon'}
+                                            </span>
+                                        </p>
+                                        {branch.contact_number && (
+                                            <a
+                                                href={`tel:${branch.contact_number}`}
+                                                className="flex items-center gap-2 text-xs hover:text-primary hover:underline sm:text-sm"
+                                            >
+                                                <Phone className="size-4 shrink-0 text-primary" />{' '}
+                                                {branch.contact_number}
+                                            </a>
+                                        )}
+                                        {branch.map_link ? (
+                                            <a
+                                                href={branch.map_link}
+                                                target="_blank"
+                                                rel="noreferrer"
+                                                className="block rounded-lg bg-primary px-3 py-2.5 text-center text-xs font-semibold text-primary-foreground transition hover:brightness-110"
+                                            >
+                                                View on Map
+                                            </a>
+                                        ) : (
+                                            <span className="block rounded-lg bg-muted px-3 py-2.5 text-center text-xs font-semibold text-muted-foreground">
+                                                Map unavailable
+                                            </span>
+                                        )}
+                                    </div>
+                                </article>
+                            ))}
+                            {branches.length === 0 && (
+                                <EmptyPreview message="Branch details will appear here once they are added." />
+                            )}
+                        </div>
+
+                        <div className="text-center">
+                            <Link
+                                href={branchesRoute()}
+                                className="inline-flex items-center gap-2 rounded-lg border border-primary px-6 py-4 font-semibold text-primary transition hover:bg-primary hover:text-primary-foreground"
+                            >
+                                View All Branches{' '}
+                                <ArrowRight className="size-4" />
+                            </Link>
+                        </div>
+                    </div>
+                </section>
+
+                <section
+                    id="contact"
+                    className="order-4 scroll-mt-20 bg-background py-20 lg:py-28"
+                >
+                    <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                        <SectionHeader
+                            lead="Contact"
+                            accent="Us"
+                            description={settings.landing_contact_description}
+                            accentFirst
+                        />
+
+                        <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 lg:gap-6">
+                            <ExpandableContactCard
+                                icon={<Phone />}
+                                title="Contact Numbers"
+                                expanded={contactsExpanded}
+                                onToggle={() =>
+                                    setContactsExpanded((expanded) => !expanded)
+                                }
+                                expandable={contactBranches.length > 2}
+                            >
+                                {(contactsExpanded
+                                    ? contactBranches
+                                    : contactBranches.slice(0, 2)
+                                ).map((branch) => (
+                                    <p
+                                        key={branch.id}
+                                        className="text-sm text-muted-foreground sm:text-base"
+                                    >
+                                        {branch.name}:{' '}
                                         <a
                                             href={`tel:${branch.contact_number}`}
-                                            className="flex items-center gap-2 text-xs hover:text-primary hover:underline sm:text-sm"
+                                            className="hover:text-primary hover:underline"
                                         >
-                                            <Phone className="size-4 shrink-0 text-primary" />{' '}
                                             {branch.contact_number}
                                         </a>
-                                    )}
-                                    {branch.map_link ? (
-                                        <a
-                                            href={branch.map_link}
-                                            target="_blank"
-                                            rel="noreferrer"
-                                            className="block rounded-lg bg-primary px-3 py-2.5 text-center text-xs font-semibold text-primary-foreground transition hover:brightness-110"
-                                        >
-                                            View on Map
-                                        </a>
-                                    ) : (
-                                        <span className="block rounded-lg bg-muted px-3 py-2.5 text-center text-xs font-semibold text-muted-foreground">
-                                            Map unavailable
-                                        </span>
-                                    )}
-                                </div>
-                            </article>
-                        ))}
-                        {branches.length === 0 && (
-                            <EmptyPreview message="Branch details will appear here once they are added." />
-                        )}
-                    </div>
+                                    </p>
+                                ))}
+                                {contactBranches.length === 0 && (
+                                    <p className="text-sm text-muted-foreground">
+                                        Contact numbers will be available soon.
+                                    </p>
+                                )}
+                            </ExpandableContactCard>
 
-                    <div className="text-center">
+                            <ContactCard icon={<Mail />} title="Email">
+                                <a
+                                    href={`mailto:${settings.business_email}`}
+                                    className="text-sm break-all text-muted-foreground hover:text-primary hover:underline sm:text-base"
+                                >
+                                    {settings.business_email}
+                                </a>
+                            </ContactCard>
+
+                            <ExpandableContactCard
+                                icon={<Facebook />}
+                                title="Follow Us"
+                                expanded={socialsExpanded}
+                                onToggle={() =>
+                                    setSocialsExpanded((expanded) => !expanded)
+                                }
+                                expandable={socialBranches.length > 2}
+                            >
+                                {(socialsExpanded
+                                    ? socialBranches
+                                    : socialBranches.slice(0, 2)
+                                ).map((branch) => (
+                                    <a
+                                        key={branch.id}
+                                        href={branch.facebook_link ?? '#'}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="block text-sm text-muted-foreground hover:text-primary hover:underline sm:text-base"
+                                    >
+                                        {branch.name}
+                                    </a>
+                                ))}
+                                {socialBranches.length === 0 && (
+                                    <p className="text-sm text-muted-foreground">
+                                        Social media links will be available
+                                        soon.
+                                    </p>
+                                )}
+                            </ExpandableContactCard>
+                        </div>
+                    </div>
+                </section>
+
+                <section className="relative order-5 overflow-hidden bg-linear-to-br from-brand-bright via-brand-mid to-brand-deep py-20 text-white lg:py-24">
+                    <div
+                        className="absolute top-10 left-10 size-32 rounded-full bg-white/10 blur-xl"
+                        aria-hidden="true"
+                    />
+                    <div
+                        className="absolute right-10 bottom-10 size-48 rounded-full bg-white/10 blur-xl"
+                        aria-hidden="true"
+                    />
+                    <div
+                        data-reveal
+                        className="relative z-10 mx-auto max-w-5xl px-4 text-center sm:px-6 lg:px-8"
+                    >
+                        <h2 className="text-4xl leading-tight font-black sm:text-5xl lg:text-6xl">
+                            {settings.landing_cta_title}
+                        </h2>
+                        <p className="mx-auto mt-6 max-w-3xl text-lg text-primary-foreground/85 sm:text-xl">
+                            {settings.landing_cta_description}
+                        </p>
                         <Link
-                            href={branchesRoute()}
-                            className="inline-flex items-center gap-2 rounded-lg border border-primary px-6 py-4 font-semibold text-primary transition hover:bg-primary hover:text-primary-foreground"
+                            href={patientLogin()}
+                            className="mt-10 inline-flex items-center gap-2 rounded-lg bg-background px-6 py-4 text-lg font-bold text-foreground shadow-lg transition hover:-translate-y-1 hover:shadow-2xl"
                         >
-                            View All Branches <ArrowRight className="size-4" />
+                            <CalendarDays /> Book Your Consultation
                         </Link>
                     </div>
-                </div>
-            </section>
-
-            <section
-                id="contact"
-                className="scroll-mt-20 bg-background py-20 lg:py-32"
-            >
-                <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-                    <SectionHeader
-                        lead="Contact"
-                        accent="Us"
-                        description={settings.landing_contact_description}
-                        accentFirst
-                    />
-
-                    <div className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 lg:gap-8">
-                        <ExpandableContactCard
-                            icon={<Phone />}
-                            title="Contact Numbers"
-                            expanded={contactsExpanded}
-                            onToggle={() =>
-                                setContactsExpanded((expanded) => !expanded)
-                            }
-                            expandable={contactBranches.length > 2}
-                        >
-                            {(contactsExpanded
-                                ? contactBranches
-                                : contactBranches.slice(0, 2)
-                            ).map((branch) => (
-                                <p
-                                    key={branch.id}
-                                    className="text-sm text-muted-foreground sm:text-base"
-                                >
-                                    {branch.name}:{' '}
-                                    <a
-                                        href={`tel:${branch.contact_number}`}
-                                        className="hover:text-primary hover:underline"
-                                    >
-                                        {branch.contact_number}
-                                    </a>
-                                </p>
-                            ))}
-                            {contactBranches.length === 0 && (
-                                <p className="text-sm text-muted-foreground">
-                                    Contact numbers will be available soon.
-                                </p>
-                            )}
-                        </ExpandableContactCard>
-
-                        <ContactCard icon={<Mail />} title="Email">
-                            <a
-                                href={`mailto:${settings.business_email}`}
-                                className="text-sm break-all text-muted-foreground hover:text-primary hover:underline sm:text-base"
-                            >
-                                {settings.business_email}
-                            </a>
-                        </ContactCard>
-
-                        <ExpandableContactCard
-                            icon={<Facebook />}
-                            title="Follow Us"
-                            expanded={socialsExpanded}
-                            onToggle={() =>
-                                setSocialsExpanded((expanded) => !expanded)
-                            }
-                            expandable={socialBranches.length > 2}
-                        >
-                            {(socialsExpanded
-                                ? socialBranches
-                                : socialBranches.slice(0, 2)
-                            ).map((branch) => (
-                                <a
-                                    key={branch.id}
-                                    href={branch.facebook_link ?? '#'}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="block text-sm text-muted-foreground hover:text-primary hover:underline sm:text-base"
-                                >
-                                    {branch.name}
-                                </a>
-                            ))}
-                            {socialBranches.length === 0 && (
-                                <p className="text-sm text-muted-foreground">
-                                    Social media links will be available soon.
-                                </p>
-                            )}
-                        </ExpandableContactCard>
-                    </div>
-                </div>
-            </section>
-
-            <section className="relative overflow-hidden bg-linear-to-br from-brand-bright via-brand-mid to-brand-deep py-20 text-white">
-                <div
-                    className="absolute top-10 left-10 size-32 rounded-full bg-white/10 blur-xl"
-                    aria-hidden="true"
-                />
-                <div
-                    className="absolute right-10 bottom-10 size-48 rounded-full bg-white/10 blur-xl"
-                    aria-hidden="true"
-                />
-                <div
-                    data-reveal
-                    className="relative z-10 mx-auto max-w-5xl px-4 text-center sm:px-6 lg:px-8"
-                >
-                    <h2 className="text-4xl leading-tight font-black sm:text-5xl lg:text-6xl">
-                        {settings.landing_cta_title}
-                    </h2>
-                    <p className="mx-auto mt-6 max-w-3xl text-lg text-primary-foreground/85 sm:text-xl">
-                        {settings.landing_cta_description}
-                    </p>
-                    <Link
-                        href={patientLogin()}
-                        className="mt-10 inline-flex items-center gap-2 rounded-lg bg-background px-6 py-4 text-lg font-bold text-foreground shadow-lg transition hover:-translate-y-1 hover:shadow-2xl"
-                    >
-                        <CalendarDays /> Book Your Consultation
-                    </Link>
-                </div>
-            </section>
+                </section>
+            </main>
         </PublicSiteLayout>
     );
 }
@@ -506,7 +566,10 @@ function SectionHeader({
 }) {
     return (
         <header data-reveal className="text-center">
-            <h2 className="text-4xl leading-tight font-black tracking-tight sm:text-5xl lg:text-6xl">
+            <p className="mb-3 text-xs font-semibold tracking-[0.22em] text-primary uppercase">
+                Curated care
+            </p>
+            <h2 className="text-4xl leading-tight font-black tracking-tight sm:text-5xl">
                 {accentFirst ? (
                     <>
                         <span className="text-primary">{lead}</span> {accent}
@@ -545,13 +608,19 @@ function ContactCard({
     return (
         <article
             data-reveal
-            className="rounded-lg border bg-gradient-to-br from-muted/50 to-card p-6 shadow-lg md:p-8"
+            className="relative overflow-hidden rounded-2xl border border-primary/15 bg-card p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-xl md:p-7"
         >
-            <div className="mb-5 flex items-center gap-3">
-                <span className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground">
+            <div className="absolute inset-x-0 top-0 h-1 bg-linear-to-r from-primary via-primary/50 to-transparent" />
+            <div className="mb-6 flex items-center gap-3">
+                <span className="flex size-11 shrink-0 items-center justify-center rounded-full border border-primary/20 bg-primary/10 text-primary">
                     {icon}
                 </span>
-                <h3 className="font-semibold sm:text-lg">{title}</h3>
+                <div>
+                    <p className="text-[0.65rem] font-semibold tracking-[0.18em] text-muted-foreground uppercase">
+                        {title === 'Email' ? 'Write to us' : 'Connect with us'}
+                    </p>
+                    <h3 className="mt-1 font-semibold sm:text-lg">{title}</h3>
+                </div>
             </div>
             <div className="space-y-2">{children}</div>
         </article>
@@ -576,19 +645,25 @@ function ExpandableContactCard({
     return (
         <article
             data-reveal
-            className="rounded-lg border bg-gradient-to-br from-muted/50 to-card p-6 shadow-lg md:p-8"
+            className="relative overflow-hidden rounded-2xl border border-primary/15 bg-card p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-xl md:p-7"
         >
+            <div className="absolute inset-x-0 top-0 h-1 bg-linear-to-r from-primary via-primary/50 to-transparent" />
             <button
                 type="button"
-                className="mb-5 flex w-full items-center gap-3 text-left"
+                className="mb-6 flex w-full items-center gap-3 text-left"
                 onClick={onToggle}
                 disabled={!expandable}
                 aria-expanded={expanded}
             >
-                <span className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground">
+                <span className="flex size-11 shrink-0 items-center justify-center rounded-full border border-primary/20 bg-primary/10 text-primary">
                     {icon}
                 </span>
-                <h3 className="flex-1 font-semibold sm:text-lg">{title}</h3>
+                <div className="flex-1">
+                    <p className="text-[0.65rem] font-semibold tracking-[0.18em] text-muted-foreground uppercase">
+                        Direct line
+                    </p>
+                    <h3 className="mt-1 font-semibold sm:text-lg">{title}</h3>
+                </div>
                 {expandable && (
                     <ChevronDown
                         className={`size-5 transition-transform ${expanded ? 'rotate-180' : ''}`}
@@ -606,6 +681,15 @@ function EmptyPreview({ message }: { message: string }) {
             {message}
         </div>
     );
+}
+
+function serviceCardRotation(index: number): string {
+    return [
+        'md:translate-y-24 md:rotate-[-16deg]',
+        'md:translate-y-6 md:rotate-[-5deg]',
+        'md:translate-y-6 md:rotate-[5deg]',
+        'md:translate-y-24 md:rotate-[16deg]',
+    ][index % 4];
 }
 
 function splitBusinessName(name: string): [string, string] {

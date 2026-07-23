@@ -3,6 +3,7 @@
 use App\Models\ActivityLog;
 use App\Models\Branch;
 use App\Models\Category;
+use App\Models\MajorServiceCategory;
 use App\Models\Service;
 use App\Models\StaffAccount;
 use App\Models\SystemSetting;
@@ -25,6 +26,41 @@ test('the public website uses the configured content without requiring a setting
         ->where('settings.services_title', 'Our Services'));
 
     $this->assertDatabaseEmpty((new SystemSetting)->getTable());
+});
+
+test('the landing page exposes services from every major category', function () {
+    Service::query()->delete();
+    Category::query()->delete();
+    MajorServiceCategory::query()->delete();
+
+    $categories = collect(['Aesthetic', 'Cosmetic', 'Pathological'])
+        ->map(fn (string $name) => MajorServiceCategory::factory()->create([
+            'name' => $name,
+        ]));
+
+    $categories->each(function (MajorServiceCategory $majorCategory): void {
+        $category = Category::factory()->service()->create([
+            'major_service_category_ID' => $majorCategory->major_service_category_ID,
+        ]);
+
+        Service::factory()->create([
+            'category_ID' => $category->category_ID,
+            'name' => $majorCategory->name.' treatment',
+        ]);
+    });
+
+    $this->get(route('home'))
+        ->assertSuccessful()
+        ->assertInertia(fn (Assert $page) => $page
+            ->has('services', 3)
+            ->where('serviceCategories', [
+                'Aesthetic',
+                'Cosmetic',
+                'Pathological',
+            ])
+            ->where('services.0.major_category', 'Aesthetic')
+            ->where('services.1.major_category', 'Cosmetic')
+            ->where('services.2.major_category', 'Pathological'));
 });
 
 test('the uploaded business logo is used for favicon and touch icon links', function () {

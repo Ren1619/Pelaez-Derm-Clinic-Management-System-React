@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Branch;
+use App\Models\MajorServiceCategory;
 use App\Models\Service;
 use App\Models\SystemSetting;
 use Illuminate\Support\Facades\Storage;
@@ -17,7 +18,11 @@ class PublicWebsiteController extends Controller
 
         return Inertia::render('welcome', [
             'settings' => $settings->toPublicArray(),
-            'services' => $this->serviceCards(4),
+            'services' => $this->serviceCards(),
+            'serviceCategories' => MajorServiceCategory::query()
+                ->orderBy('name')
+                ->pluck('name')
+                ->all(),
             'branches' => $this->branchCards(4),
             'contactBranches' => $this->branchCards(),
             'stats' => [

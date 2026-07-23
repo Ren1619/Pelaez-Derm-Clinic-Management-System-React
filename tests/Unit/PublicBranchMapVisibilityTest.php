@@ -36,3 +36,20 @@ test('the dedicated branch page uses image and detail columns without changing t
             'sm:[clip-path:ellipse(92%_115%_at_0%_50%)]',
         );
 });
+
+test('the landing page uses the requested luxury section sequence', function () {
+    $source = file_get_contents(
+        dirname(__DIR__, 2).DIRECTORY_SEPARATOR.'resources/js/pages/welcome.tsx',
+    );
+
+    expect($source)
+        ->toContain(
+            'className="relative order-1 scroll-mt-20',
+            'className="order-2 scroll-mt-20',
+            'The art of',
+            'className="relative order-3 scroll-mt-20',
+            'className="order-4 scroll-mt-20',
+            'className="relative order-5 overflow-hidden',
+            'rounded-2xl border border-primary/15 bg-card',
+        );
+});
