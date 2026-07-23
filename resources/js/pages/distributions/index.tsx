@@ -1104,12 +1104,12 @@ export default function DistributionIndex({
                             </div>
                         </div>
 
-                        <DialogFooter className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                        <DialogFooter className="flex flex-col-reverse gap-3 border-t pt-4 sm:flex-row sm:justify-end">
                             <Button
                                 type="button"
+                                variant="outline"
                                 onClick={() => setCreateOpen(false)}
                                 disabled={createForm.processing}
-                                className="bg-black px-6 text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90"
                             >
                                 Cancel
                             </Button>

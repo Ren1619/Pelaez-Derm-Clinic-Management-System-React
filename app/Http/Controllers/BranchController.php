@@ -31,6 +31,8 @@ class BranchController extends Controller
                 'branch_ID',
                 'branch_name',
                 'branch_location',
+                'latitude',
+                'longitude',
                 'contact_number',
                 'map_link',
                 'fb_link',
@@ -93,13 +95,15 @@ class BranchController extends Controller
         return back();
     }
 
-    /** @return array<string, int|string|null> */
+    /** @return array<string, int|float|string|null> */
     private function serializeBranch(Branch $branch): array
     {
         return [
             'branch_ID' => $branch->branch_ID,
             'branch_name' => $branch->branch_name,
             'branch_location' => $branch->branch_location,
+            'latitude' => $branch->latitude,
+            'longitude' => $branch->longitude,
             'contact_number' => $branch->contact_number,
             'map_link' => $branch->map_link,
             'fb_link' => $branch->fb_link,

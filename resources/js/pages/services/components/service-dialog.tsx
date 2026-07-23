@@ -314,12 +314,12 @@ export function ServiceDialog({
                                     </div>
                                 </div>
 
-                                <DialogFooter>
+                                <DialogFooter className="border-t pt-4">
                                     <Button
                                         type="button"
+                                        variant="outline"
                                         onClick={() => onOpenChange(false)}
                                         disabled={processing}
-                                        className="w-full bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90"
                                     >
                                         Cancel
                                     </Button>
@@ -329,7 +329,7 @@ export function ServiceDialog({
                                             processing ||
                                             categories.length === 0
                                         }
-                                        className="w-full bg-pink-600 text-white hover:bg-pink-700"
+                                        className="bg-pink-600 text-white hover:bg-pink-700"
                                     >
                                         {processing
                                             ? isEdit
