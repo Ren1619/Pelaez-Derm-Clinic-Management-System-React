@@ -1,3 +1,4 @@
+import type { NewRecordTracked } from './new-record';
 import type { MajorServiceCategory } from './category';
 
 export type ServiceCategoryOption = {
@@ -9,7 +10,7 @@ export type ServiceCategoryOption = {
     >;
 };
 
-export type ClinicService = {
+export type ClinicService = NewRecordTracked & {
     service_ID: number;
     category_ID: number;
     name: string;

@@ -85,6 +85,7 @@ class CategoryController extends Controller
     private function serializeCategory(Category $category): array
     {
         return [
+            ...app(\App\Services\NewRecordService::class)->metadata($category),
             'category_ID' => $category->category_ID,
             'category_name' => $category->category_name,
             'category_type' => $category->category_type,

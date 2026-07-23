@@ -7,6 +7,11 @@ import { DataTableEmptyState } from '@/components/data-table-empty-state';
 import { DataTableLayout } from '@/components/data-table-layout';
 import { DataTablePagination } from '@/components/data-table-pagination';
 import Heading from '@/components/heading';
+import {
+    markNewRecordSeen,
+    NewRecordBadge,
+    newRecordRowClass,
+} from '@/components/new-record-indicator';
 import { TooltipIconButton } from '@/components/tooltip-icon-button';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -100,6 +105,7 @@ export default function FeedbackIndex({ feedbacks, branches, filters }: Props) {
     }, [search]);
 
     const openDetails = (feedback: Feedback) => {
+        markNewRecordSeen(feedback, 'feedback');
         setSelectedFeedback(feedback);
         setDetailsOpen(true);
     };
@@ -376,7 +382,10 @@ function FeedbackTable({
                     const details = appointmentDetails(appointment);
 
                     return (
-                        <TableRow key={feedback.feedback_ID}>
+                        <TableRow
+                            key={feedback.feedback_ID}
+                            className={newRecordRowClass(feedback)}
+                        >
                             <TableCell>
                                 <button
                                     type="button"
@@ -385,6 +394,9 @@ function FeedbackTable({
                                 >
                                     {appointment.appointment_code}
                                 </button>
+                                {feedback.is_new && (
+                                    <NewRecordBadge className="ml-2" />
+                                )}
                                 <p className="text-xs text-muted-foreground">
                                     {appointment.patient_name} ·{' '}
                                     {appointment.branch_name}

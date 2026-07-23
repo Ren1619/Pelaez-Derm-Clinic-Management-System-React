@@ -1,3 +1,5 @@
+import type { NewRecordTracked } from './new-record';
+
 export type StaffBranchOption = {
     branch_ID: number;
     branch_name: string;
@@ -8,7 +10,7 @@ export type AccountRole = {
     role_name: string;
 };
 
-export type StaffAccount = {
+export type StaffAccount = NewRecordTracked & {
     account_ID: number;
     branch_ID: number | null;
     role_ID: number;

@@ -1,6 +1,10 @@
 import { ImageIcon, Pencil, Plus, Trash2 } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { ClickableTableRow } from '@/components/clickable-table-row';
+import {
+    NewRecordBadge,
+    newRecordRowClass,
+} from '@/components/new-record-indicator';
 import { TooltipIconButton } from '@/components/tooltip-icon-button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -56,6 +60,7 @@ export function DetailedInventoryTable({
                         key={product.product_ID}
                         accessibleLabel={`View ${product.name} batch ${product.batch_number ?? 'N/A'}`}
                         onActivate={() => onView(product)}
+                        className={newRecordRowClass(product)}
                     >
                         <TableCell>
                             <div className="flex items-center gap-3">
@@ -73,6 +78,7 @@ export function DetailedInventoryTable({
                                 <span className="font-medium">
                                     {product.name}
                                 </span>
+                                {product.is_new && <NewRecordBadge />}
                             </div>
                         </TableCell>
                         <TableCell>

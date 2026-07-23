@@ -25,16 +25,19 @@ class PatientClinicalRecordService
 
         return [
             'allergies' => $patient->allergies->map(fn ($allergy): array => [
+                ...app(NewRecordService::class)->metadata($allergy),
                 'allergy_ID' => $allergy->allergy_ID,
                 'allergy' => $allergy->allergy,
                 'note' => $allergy->note,
             ])->all(),
             'medical_conditions' => $patient->medicalConditions->map(fn ($condition): array => [
+                ...app(NewRecordService::class)->metadata($condition),
                 'medical_condition_ID' => $condition->medical_condition_ID,
                 'condition' => $condition->condition,
                 'note' => $condition->note,
             ])->all(),
             'medications' => $patient->medications->map(fn ($medication): array => [
+                ...app(NewRecordService::class)->metadata($medication),
                 'medication_ID' => $medication->medication_ID,
                 'medication' => $medication->medication,
                 'dosage' => $medication->dosage,
@@ -151,6 +154,7 @@ class PatientClinicalRecordService
     private function serializeVisit(PatientVisit $visit): array
     {
         return [
+            ...app(NewRecordService::class)->metadata($visit),
             'visit_ID' => $visit->visit_ID,
             'branch' => [
                 'branch_ID' => $visit->branch_ID,
@@ -171,6 +175,7 @@ class PatientClinicalRecordService
             'status' => $visit->status,
             'finalized_at' => $visit->finalized_at?->toISOString(),
             'services' => $visit->services->map(fn ($service): array => [
+                ...app(NewRecordService::class)->metadata($service),
                 'visit_service_ID' => $service->visit_service_ID,
                 'service_ID' => $service->service_ID,
                 'service_name' => $service->service_name,
@@ -178,6 +183,7 @@ class PatientClinicalRecordService
                 'note' => $service->note,
             ])->all(),
             'products' => $visit->products->map(fn ($product): array => [
+                ...app(NewRecordService::class)->metadata($product),
                 'visit_product_ID' => $product->visit_product_ID,
                 'product_ID' => $product->product_ID,
                 'product_name' => $product->product_name,
@@ -186,11 +192,13 @@ class PatientClinicalRecordService
                 'note' => $product->note,
             ])->all(),
             'diagnoses' => $visit->diagnoses->map(fn ($diagnosis): array => [
+                ...app(NewRecordService::class)->metadata($diagnosis),
                 'diagnosis_ID' => $diagnosis->diagnosis_ID,
                 'diagnosis' => $diagnosis->diagnosis,
                 'note' => $diagnosis->note,
             ])->all(),
             'prescriptions' => $visit->prescriptions->map(fn ($prescription): array => [
+                ...app(NewRecordService::class)->metadata($prescription),
                 'prescription_ID' => $prescription->prescription_ID,
                 'prescription' => $prescription->prescription,
                 'dosage' => $prescription->dosage,

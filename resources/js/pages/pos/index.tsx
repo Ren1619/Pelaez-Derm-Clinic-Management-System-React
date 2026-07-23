@@ -17,6 +17,11 @@ import { useMemo, useState } from 'react';
 import { ClickableTableRow } from '@/components/clickable-table-row';
 import { DataTableEmptyState } from '@/components/data-table-empty-state';
 import { DataTableLayout } from '@/components/data-table-layout';
+import {
+    markNewRecordSeen,
+    NewRecordBadge,
+    newRecordRowClass,
+} from '@/components/new-record-indicator';
 import { TooltipIconButton } from '@/components/tooltip-icon-button';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
@@ -472,6 +477,7 @@ export default function PosIndex({
                                     visitFilters({ sales_date })
                                 }
                                 onView={(sale) => {
+                                    markNewRecordSeen(sale, 'point_of_sale');
                                     setSelectedSale(sale);
                                     setSaleDialogOpen(true);
                                 }}
@@ -964,11 +970,15 @@ function DailySales({
                                 key={sale.sale_ID}
                                 accessibleLabel={`View invoice ${sale.invoice_number}`}
                                 onActivate={() => onView(sale)}
+                                className={newRecordRowClass(sale)}
                             >
                                 <TableCell>
-                                    <p className="font-medium">
-                                        {sale.customer_name}
-                                    </p>
+                                    <div className="flex items-center gap-2">
+                                        <p className="font-medium">
+                                            {sale.customer_name}
+                                        </p>
+                                        {sale.is_new && <NewRecordBadge />}
+                                    </div>
                                     <p className="text-xs text-muted-foreground">
                                         {sale.invoice_number}
                                     </p>
@@ -1183,9 +1193,24 @@ function Expenses({
                     </TableHeader>
                     <TableBody>
                         {expenses.map((expense) => (
-                            <TableRow key={expense.expense_ID}>
-                                <TableCell className="font-medium">
-                                    {expense.description}
+                            <ClickableTableRow
+                                key={expense.expense_ID}
+                                accessibleLabel={`Mark ${expense.description} expense as seen`}
+                                onActivate={() =>
+                                    markNewRecordSeen(
+                                        expense,
+                                        'point_of_sale',
+                                    )
+                                }
+                                className={newRecordRowClass(expense)}
+                            >
+                                <TableCell>
+                                    <div className="flex items-center gap-2 font-medium">
+                                        {expense.description}
+                                        {expense.is_new && (
+                                            <NewRecordBadge />
+                                        )}
+                                    </div>
                                 </TableCell>
                                 <TableCell>{expense.category}</TableCell>
                                 <TableCell>
@@ -1225,7 +1250,7 @@ function Expenses({
                                         <Trash2 />
                                     </TooltipIconButton>
                                 </TableCell>
-                            </TableRow>
+                            </ClickableTableRow>
                         ))}
                         {expenses.length === 0 && (
                             <DataTableEmptyState

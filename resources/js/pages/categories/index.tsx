@@ -16,7 +16,13 @@ import {
     DataTableToolbar,
 } from '@/components/data-table-layout';
 import { DataTablePagination } from '@/components/data-table-pagination';
+import { ClickableTableRow } from '@/components/clickable-table-row';
 import Heading from '@/components/heading';
+import {
+    markNewRecordSeen,
+    NewRecordBadge,
+    newRecordRowClass,
+} from '@/components/new-record-indicator';
 import { TooltipIconButton } from '@/components/tooltip-icon-button';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
@@ -247,7 +253,18 @@ export default function CategoriesIndex({
                         </TableHeader>
                         <TableBody>
                             {categories.data.map((category, itemIndex) => (
-                                <TableRow key={category.category_ID}>
+                                <ClickableTableRow
+                                    key={category.category_ID}
+                                    accessibleLabel={`Open ${category.category_name}`}
+                                    onActivate={() => {
+                                        markNewRecordSeen(
+                                            category,
+                                            'categories',
+                                        );
+                                        openEditDialog(category);
+                                    }}
+                                    className={newRecordRowClass(category)}
+                                >
                                     <TableCell className="text-muted-foreground">
                                         {(categories.current_page - 1) *
                                             categories.per_page +
@@ -260,6 +277,12 @@ export default function CategoriesIndex({
                                             <span className="font-medium">
                                                 {category.category_name}
                                             </span>
+                                            {category.is_new && (
+                                                <NewRecordBadge />
+                                            )}
+                                            <Badge variant="outline">
+                                                {category.category_type}
+                                            </Badge>
                                         </div>
                                     </TableCell>
                                     {filters.tab === 'services' && (
@@ -300,7 +323,7 @@ export default function CategoriesIndex({
                                             </TooltipIconButton>
                                         </div>
                                     </TableCell>
-                                </TableRow>
+                                </ClickableTableRow>
                             ))}
                             {categories.data.length === 0 && (
                                 <DataTableEmptyState

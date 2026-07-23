@@ -119,6 +119,7 @@ class PatientController extends Controller
     private function serializePatient(Patient $patient): array
     {
         return [
+            ...app(\App\Services\NewRecordService::class)->metadata($patient),
             'PID' => $patient->PID,
             'first_name' => $patient->first_name,
             'middle_name' => $patient->middle_name,

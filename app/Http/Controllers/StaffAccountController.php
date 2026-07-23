@@ -127,6 +127,7 @@ class StaffAccountController extends Controller
     private function serializeStaffAccount(StaffAccount $staffAccount): array
     {
         return [
+            ...app(\App\Services\NewRecordService::class)->metadata($staffAccount),
             'account_ID' => $staffAccount->account_ID,
             'branch_ID' => $staffAccount->branch_ID,
             'role_ID' => $staffAccount->role_ID,
