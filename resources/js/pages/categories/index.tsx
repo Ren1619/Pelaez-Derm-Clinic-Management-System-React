@@ -280,9 +280,6 @@ export default function CategoriesIndex({
                                             {category.is_new && (
                                                 <NewRecordBadge />
                                             )}
-                                            <Badge variant="outline">
-                                                {category.category_type}
-                                            </Badge>
                                         </div>
                                     </TableCell>
                                     {filters.tab === 'services' && (
