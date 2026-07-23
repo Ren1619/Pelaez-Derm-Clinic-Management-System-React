@@ -41,7 +41,7 @@ import { index as reportsIndex } from '@/routes/reports';
 import { index as servicesIndex } from '@/routes/services';
 import { index as staffIndex } from '@/routes/staff';
 import { index as systemSettingsIndex } from '@/routes/system-settings';
-import type { Auth, NavItem } from '@/types';
+import type { Auth, NavItem, NewRecordSummary } from '@/types';
 
 type StaffModule = Auth['permissions']['modules'][number];
 type ModuleNavItem = NavItem & { module: StaffModule };
@@ -147,7 +147,10 @@ const mainNavItems: ModuleNavItem[] = [
 // ];
 
 export function AppSidebar() {
-    const { auth } = usePage<{ auth: Auth }>().props;
+    const { auth, newRecordSummary } = usePage<{
+        auth: Auth;
+        newRecordSummary: NewRecordSummary;
+    }>().props;
     const allowedItems = mainNavItems.filter((item) =>
         auth.permissions.modules.includes(item.module),
     );
@@ -168,7 +171,7 @@ export function AppSidebar() {
             </SidebarHeader>
 
             <SidebarContent>
-                <NavMain items={allowedItems} />
+                <NavMain items={allowedItems} counts={newRecordSummary.counts} />
             </SidebarContent>
 
             <SidebarFooter>

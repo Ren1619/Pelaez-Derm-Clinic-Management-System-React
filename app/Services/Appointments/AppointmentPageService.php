@@ -87,6 +87,7 @@ class AppointmentPageService
     public function serialize(Appointment $appointment): array
     {
         return [
+            ...app(\App\Services\NewRecordService::class)->metadata($appointment),
             'appointment_ID' => $appointment->appointment_ID,
             'PID' => $appointment->PID,
             'patient_name' => $appointment->patient->full_name,

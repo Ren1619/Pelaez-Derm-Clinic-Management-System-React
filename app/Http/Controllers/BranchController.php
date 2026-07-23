@@ -97,6 +97,7 @@ class BranchController extends Controller
     private function serializeBranch(Branch $branch): array
     {
         return [
+            ...app(\App\Services\NewRecordService::class)->metadata($branch),
             'branch_ID' => $branch->branch_ID,
             'branch_name' => $branch->branch_name,
             'branch_location' => $branch->branch_location,

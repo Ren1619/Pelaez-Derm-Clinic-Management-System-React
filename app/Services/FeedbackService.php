@@ -66,6 +66,7 @@ class FeedbackService
     private function serializeFeedback(Feedback $feedback): array
     {
         return [
+            ...app(NewRecordService::class)->metadata($feedback),
             'feedback_ID' => $feedback->feedback_ID,
             'rating' => $feedback->rating,
             'description' => $feedback->description,

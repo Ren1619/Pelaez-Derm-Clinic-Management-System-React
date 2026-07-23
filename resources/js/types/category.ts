@@ -1,6 +1,8 @@
 export type CategoryType = 'Product' | 'Service';
 
-export type Category = {
+import type { NewRecordTracked } from './new-record';
+
+export type Category = NewRecordTracked & {
     category_ID: number;
     category_name: string;
     category_type: CategoryType;

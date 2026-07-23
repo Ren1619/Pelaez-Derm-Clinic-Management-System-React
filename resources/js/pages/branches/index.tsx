@@ -17,6 +17,11 @@ import {
 } from '@/components/data-table-layout';
 import { DataTablePagination } from '@/components/data-table-pagination';
 import Heading from '@/components/heading';
+import {
+    markNewRecordSeen,
+    NewRecordBadge,
+    newRecordRowClass,
+} from '@/components/new-record-indicator';
 import { TooltipIconButton } from '@/components/tooltip-icon-button';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
@@ -90,6 +95,10 @@ export default function BranchesIndex({
         mode: BranchDialogMode,
         branch: Branch | null = null,
     ) => {
+        if (mode === 'view' && branch !== null) {
+            markNewRecordSeen(branch, 'branches');
+        }
+
         setDialogMode(mode);
         setSelectedBranch(branch);
         setDialogOpen(true);
@@ -204,6 +213,7 @@ export default function BranchesIndex({
                                     onActivate={() =>
                                         openBranchDialog('view', branch)
                                     }
+                                    className={newRecordRowClass(branch)}
                                 >
                                     <TableCell>
                                         <div className="flex items-center gap-3">
@@ -221,6 +231,9 @@ export default function BranchesIndex({
                                             <span className="font-medium">
                                                 {branch.branch_name}
                                             </span>
+                                            {branch.is_new && (
+                                                <NewRecordBadge />
+                                            )}
                                         </div>
                                     </TableCell>
                                     <TableCell className="max-w-sm text-muted-foreground">

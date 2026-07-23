@@ -17,6 +17,11 @@ import {
 } from '@/components/data-table-layout';
 import { DataTablePagination } from '@/components/data-table-pagination';
 import Heading from '@/components/heading';
+import {
+    markNewRecordSeen,
+    NewRecordBadge,
+    newRecordRowClass,
+} from '@/components/new-record-indicator';
 import { TooltipIconButton } from '@/components/tooltip-icon-button';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
@@ -96,6 +101,10 @@ export default function ServicesIndex({
         mode: ServiceDialogMode,
         service: ClinicService | null = null,
     ) => {
+        if (mode === 'view' && service !== null) {
+            markNewRecordSeen(service, 'services');
+        }
+
         setDialogMode(mode);
         setSelectedService(service);
         setDialogOpen(true);
@@ -221,6 +230,7 @@ export default function ServicesIndex({
                                     onActivate={() =>
                                         openServiceDialog('view', service)
                                     }
+                                    className={newRecordRowClass(service)}
                                 >
                                     <TableCell>
                                         <div className="flex items-center gap-3">
@@ -238,6 +248,9 @@ export default function ServicesIndex({
                                             <span className="font-medium">
                                                 {service.name}
                                             </span>
+                                            {service.is_new && (
+                                                <NewRecordBadge />
+                                            )}
                                         </div>
                                     </TableCell>
                                     <TableCell className="whitespace-nowrap text-muted-foreground">

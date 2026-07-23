@@ -9,6 +9,7 @@ use App\Models\StaffAccount;
 use App\Models\SystemSetting;
 use App\Models\User;
 use App\Services\AppointmentNotificationService;
+use App\Services\NewRecordService;
 use App\Services\SystemNotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -60,6 +61,7 @@ class HandleInertiaRequests extends Middleware
                 'permissions' => $this->serializePermissions($user),
             ],
             'notificationSummary' => fn (): array => $this->notificationSummary($user, $patient),
+            'newRecordSummary' => fn (): array => app(NewRecordService::class)->summary($user),
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
         ];
     }

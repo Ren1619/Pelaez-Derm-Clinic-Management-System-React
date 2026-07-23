@@ -1,9 +1,11 @@
+import type { NewRecordTracked } from './new-record';
+
 export type ServiceCategoryOption = {
     category_ID: number;
     category_name: string;
 };
 
-export type ClinicService = {
+export type ClinicService = NewRecordTracked & {
     service_ID: number;
     category_ID: number;
     name: string;

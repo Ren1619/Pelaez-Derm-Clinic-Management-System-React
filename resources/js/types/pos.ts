@@ -1,5 +1,7 @@
 export type PosBranch = { branch_ID: number; branch_name: string };
 
+import type { NewRecordTracked } from './new-record';
+
 export type PosProduct = {
     product_ID: number;
     name: string;
@@ -49,7 +51,7 @@ export type PosSaleReturn = {
     created_at: string;
 };
 
-export type PosSale = {
+export type PosSale = NewRecordTracked & {
     sale_ID: number;
     invoice_number: string;
     branch_ID: number | null;
@@ -81,7 +83,7 @@ export type PosSale = {
 
 export type PosExpenseCategory = { category_ID: number; category_name: string };
 
-export type PosExpense = {
+export type PosExpense = NewRecordTracked & {
     expense_ID: number;
     description: string;
     amount: string;

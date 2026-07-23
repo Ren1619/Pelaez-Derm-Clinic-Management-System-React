@@ -13,7 +13,9 @@ export type InventoryBranchOption = {
     branch_name: string;
 };
 
-export type ProductBatch = {
+import type { NewRecordTracked } from './new-record';
+
+export type ProductBatch = NewRecordTracked & {
     product_ID: number;
     category_ID: number;
     branch_ID: number;

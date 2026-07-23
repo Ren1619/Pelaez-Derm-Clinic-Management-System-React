@@ -15,6 +15,7 @@ use App\Http\Controllers\DistributionStatusController;
 use App\Http\Controllers\FeedbackController;
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\NewRecordEventController;
 use App\Http\Controllers\PatientAllergyController;
 use App\Http\Controllers\PatientAppointmentController;
 use App\Http\Controllers\PatientAuthController;
@@ -122,6 +123,8 @@ Route::prefix('patient')->name('patient.')->group(function () {
 Route::middleware(['auth', 'verified', RecordReadActivity::class])->group(function () {
     Route::patch('notifications/{systemNotification}/read', [NotificationController::class, 'read'])->name('notifications.read');
     Route::patch('notifications/read-all', [NotificationController::class, 'readAll'])->name('notifications.read-all');
+    Route::patch('new-record-events/{newRecordEvent}/read', NewRecordEventController::class)
+        ->name('new-record-events.read');
 
     Route::get('dashboard', DashboardController::class)
         ->middleware('staff.module:dashboard')

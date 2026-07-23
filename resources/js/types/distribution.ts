@@ -16,7 +16,9 @@ export type DistributionItem = {
     expiration_date: string | null;
 };
 
-export type Distribution = {
+import type { NewRecordTracked } from './new-record';
+
+export type Distribution = NewRecordTracked & {
     distribution_ID: number;
     status: DistributionStatus;
     from_branch: DistributionBranch;

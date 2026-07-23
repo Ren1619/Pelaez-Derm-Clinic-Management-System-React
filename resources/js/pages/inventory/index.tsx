@@ -15,6 +15,7 @@ import { DataTableEmptyState } from '@/components/data-table-empty-state';
 import { DataTableLayout } from '@/components/data-table-layout';
 import { DataTablePagination } from '@/components/data-table-pagination';
 import Heading from '@/components/heading';
+import { markNewRecordSeen } from '@/components/new-record-indicator';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -147,6 +148,10 @@ export default function InventoryIndex({
         mode: ProductDialogMode,
         product: ProductBatch | null = null,
     ) => {
+        if (mode === 'view' && product !== null) {
+            markNewRecordSeen(product, 'inventory');
+        }
+
         setDialogMode(mode);
         setSelectedProduct(product);
         setDialogOpen(true);

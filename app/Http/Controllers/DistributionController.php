@@ -143,6 +143,7 @@ class DistributionController extends Controller
     private function serializeDistribution(Distribution $distribution): array
     {
         return [
+            ...app(\App\Services\NewRecordService::class)->metadata($distribution),
             'distribution_ID' => $distribution->distribution_ID,
             'status' => $distribution->status,
             'from_branch' => $distribution->fromBranch,

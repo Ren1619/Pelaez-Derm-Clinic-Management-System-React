@@ -16,7 +16,9 @@ export type AppointmentTimeSlot = {
     is_available?: boolean;
 };
 
-export type Appointment = {
+import type { NewRecordTracked } from './new-record';
+
+export type Appointment = NewRecordTracked & {
     appointment_ID: number;
     PID: number;
     patient_name: string;

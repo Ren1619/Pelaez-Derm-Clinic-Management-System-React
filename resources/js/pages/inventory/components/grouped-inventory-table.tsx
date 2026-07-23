@@ -2,6 +2,10 @@ import { ChevronRight, ImageIcon, Pencil, Plus, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { ClickableTableRow } from '@/components/clickable-table-row';
+import {
+    NewRecordBadge,
+    newRecordRowClass,
+} from '@/components/new-record-indicator';
 import { TooltipIconButton } from '@/components/tooltip-icon-button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -112,12 +116,29 @@ function GroupRows({
     onRestock,
     onDelete,
 }: GroupRowsProps) {
+    const newBatchCount = group.batches.filter(
+        (batch) => batch.is_new,
+    ).length;
+
     return (
         <>
             <ClickableTableRow
-                accessibleLabel={`${expanded ? 'Collapse' : 'Expand'} ${group.name} batches`}
-                onActivate={onToggle}
+                accessibleLabel={
+                    group.batch_count === 1
+                        ? `View ${group.name}`
+                        : `${expanded ? 'Collapse' : 'Expand'} ${group.name} batches`
+                }
+                onActivate={() =>
+                    group.batch_count === 1
+                        ? onView(group.primary_batch)
+                        : onToggle()
+                }
                 aria-expanded={expanded}
+                className={
+                    newBatchCount > 0
+                        ? 'border-l-4 border-l-primary bg-primary/5 dark:bg-primary/10'
+                        : undefined
+                }
             >
                 <TableCell>
                     <TooltipIconButton
@@ -147,6 +168,11 @@ function GroupRows({
                             </div>
                         )}
                         <span className="font-medium">{group.name}</span>
+                        {newBatchCount > 0 && (
+                            <NewRecordBadge>
+                                {newBatchCount} New
+                            </NewRecordBadge>
+                        )}
                     </div>
                 </TableCell>
                 <TableCell>
@@ -206,7 +232,7 @@ function GroupRows({
                 group.batches.map((batch) => (
                     <ClickableTableRow
                         key={batch.product_ID}
-                        className="bg-muted/20"
+                        className={newRecordRowClass(batch, 'bg-muted/20')}
                         accessibleLabel={`View ${batch.name} batch ${batch.batch_number}`}
                         onActivate={() => onView(batch)}
                     >
@@ -217,6 +243,7 @@ function GroupRows({
                                     Batch {batch.batch_number}
                                 </Badge>
                                 {batch.is_primary && <Badge>Primary</Badge>}
+                                {batch.is_new && <NewRecordBadge />}
                             </div>
                         </TableCell>
                         <TableCell className="text-muted-foreground">
