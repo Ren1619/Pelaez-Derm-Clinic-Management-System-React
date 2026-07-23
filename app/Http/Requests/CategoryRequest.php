@@ -72,8 +72,8 @@ abstract class CategoryRequest extends FormRequest
             'category_name.regex' => "The category name may only contain letters, numbers, spaces, and / - & ' ( ) [ ] % symbols.",
             'category_name.unique' => 'A category of this type already uses that name.',
             'category_type.in' => 'The category type must be Product or Service.',
-            'major_service_category_ID.required' => 'Select a major category for this service category.',
-            'major_service_category_ID.exists' => 'Select a valid major service category.',
+            'major_service_category_ID.required' => 'Select a parent category for this service category.',
+            'major_service_category_ID.exists' => 'Select a valid parent category.',
             'description.required' => 'The description cannot be empty or contain only whitespace.',
         ];
     }

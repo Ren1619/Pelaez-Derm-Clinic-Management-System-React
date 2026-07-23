@@ -120,7 +120,7 @@ export function CategoryDialog({
                             {categoryType === 'Service' && (
                                 <div className="grid gap-2">
                                     <Label htmlFor="major_service_category_ID">
-                                        Major category
+                                        Parent category
                                     </Label>
                                     <select
                                         id="major_service_category_ID"
@@ -139,7 +139,7 @@ export function CategoryDialog({
                                         className="h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20"
                                     >
                                         <option value="" disabled>
-                                            Select a major category
+                                            Select a parent category
                                         </option>
                                         {majorServiceCategories.map(
                                             (majorCategory) => (

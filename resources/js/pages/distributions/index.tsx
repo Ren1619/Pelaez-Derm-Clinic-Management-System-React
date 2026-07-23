@@ -508,7 +508,7 @@ export default function DistributionIndex({
                 </div>
 
                 <DataTableLayout>
-                    <div className="flex flex-col gap-3 border-b p-4 lg:flex-row lg:items-center lg:justify-between">
+                    <div className="flex flex-col gap-3 border-b p-4 lg:flex-row lg:flex-wrap lg:items-center lg:justify-start">
                         <div className="flex gap-1 rounded-lg bg-muted p-1">
                             {(['outbound', 'inbound'] as const).map((tab) => (
                                 <Button

@@ -174,7 +174,7 @@ export default function AppointmentsIndex(props: Props) {
                 </div>
 
                 <DataTableLayout>
-                    <div className="flex flex-col gap-3 border-b p-4 lg:flex-row lg:items-center lg:justify-between">
+                    <div className="flex flex-col gap-3 border-b p-4 lg:flex-row lg:flex-wrap lg:items-center lg:justify-start">
                         <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
                             <div className="relative w-full sm:w-72">
                                 <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />

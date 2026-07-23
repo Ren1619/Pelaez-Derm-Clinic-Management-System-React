@@ -191,7 +191,7 @@ export default function InventoryIndex({
                 <InventoryStatisticCards statistics={statistics} />
 
                 <DataTableLayout>
-                    <div className="flex flex-col gap-3 border-b p-4 xl:flex-row xl:items-center xl:justify-between">
+                    <div className="flex flex-col gap-3 border-b p-4 xl:flex-row xl:flex-wrap xl:items-center xl:justify-start">
                         <div className="relative w-full xl:max-w-sm">
                             <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
                             <Input

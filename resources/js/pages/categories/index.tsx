@@ -160,13 +160,6 @@ export default function CategoriesIndex({
                     />
                 </div>
 
-                {filters.tab === 'services' &&
-                    can.manage_major_service_categories && (
-                        <MajorServiceCategoryManager
-                            categories={majorServiceCategories}
-                        />
-                    )}
-
                 <DataTableLayout
                     toolbar={
                         <DataTableToolbar>
@@ -232,13 +225,20 @@ export default function CategoriesIndex({
                         />
                     }
                 >
+                    {filters.tab === 'services' &&
+                        can.manage_major_service_categories && (
+                            <MajorServiceCategoryManager
+                                categories={majorServiceCategories}
+                            />
+                        )}
+
                     <Table className="min-w-2xl">
                         <TableHeader>
                             <TableRow>
                                 <TableHead className="w-20">#</TableHead>
                                 <TableHead>Category name</TableHead>
                                 {filters.tab === 'services' && (
-                                    <TableHead>Major category</TableHead>
+                                    <TableHead>Parent category</TableHead>
                                 )}
                                 <TableHead>Description</TableHead>
                                 <TableHead className="text-right">

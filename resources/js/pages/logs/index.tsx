@@ -32,6 +32,7 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
+import { cn } from '@/lib/utils';
 import { exportMethod, index } from '@/routes/logs';
 import type {
     ActivityLog,
@@ -98,8 +99,11 @@ export default function LogsIndex({
                 </div>
 
                 <DataTableLayout>
-                    <div className="grid gap-4 border-b p-4 sm:grid-cols-2 xl:grid-cols-[minmax(14rem,1.5fr)_repeat(4,minmax(8.5rem,1fr))] xl:items-end">
-                        <FilterField label="Search logs">
+                    <div className="flex flex-col gap-3 border-b p-4 sm:flex-row sm:flex-wrap sm:items-end">
+                        <FilterField
+                            label="Search logs"
+                            className="w-full sm:w-80"
+                        >
                             <div className="relative">
                                 <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
                                 <Input
@@ -113,7 +117,10 @@ export default function LogsIndex({
                             </div>
                         </FilterField>
 
-                        <FilterField label="Log type">
+                        <FilterField
+                            label="Log type"
+                            className="w-full sm:w-44"
+                        >
                             <Select
                                 value={filters.context}
                                 onValueChange={(context) => visit({ context })}
@@ -149,7 +156,10 @@ export default function LogsIndex({
                             </Select>
                         </FilterField>
 
-                        <FilterField label="Time period">
+                        <FilterField
+                            label="Time period"
+                            className="w-full sm:w-44"
+                        >
                             <Select
                                 value={filters.time_period}
                                 onValueChange={(value) => {
@@ -201,7 +211,10 @@ export default function LogsIndex({
                             </Select>
                         </FilterField>
 
-                        <FilterField label="Performed by">
+                        <FilterField
+                            label="Performed by"
+                            className="w-full sm:w-44"
+                        >
                             <Select
                                 value={filters.actor_type}
                                 onValueChange={(value) =>
@@ -229,7 +242,7 @@ export default function LogsIndex({
                             </Select>
                         </FilterField>
 
-                        <FilterField label="Action">
+                        <FilterField label="Action" className="w-full sm:w-44">
                             <Select
                                 value={filters.action}
                                 onValueChange={(value) =>
@@ -266,8 +279,11 @@ export default function LogsIndex({
                     </div>
 
                     {filters.time_period === 'custom' && (
-                        <div className="grid gap-4 border-b bg-muted/20 p-4 sm:grid-cols-2 sm:justify-end lg:grid-cols-[12rem_12rem]">
-                            <FilterField label="From date">
+                        <div className="flex flex-col gap-3 border-b bg-muted/20 p-4 sm:flex-row sm:flex-wrap sm:items-end">
+                            <FilterField
+                                label="From date"
+                                className="w-full sm:w-48"
+                            >
                                 <Input
                                     type="date"
                                     value={filters.date_from ?? ''}
@@ -285,7 +301,10 @@ export default function LogsIndex({
                                     }}
                                 />
                             </FilterField>
-                            <FilterField label="To date">
+                            <FilterField
+                                label="To date"
+                                className="w-full sm:w-48"
+                            >
                                 <Input
                                     type="date"
                                     value={filters.date_to ?? ''}
@@ -403,12 +422,14 @@ export default function LogsIndex({
 function FilterField({
     label,
     children,
+    className,
 }: {
     label: string;
     children: React.ReactNode;
+    className?: string;
 }) {
     return (
-        <div className="grid gap-1.5">
+        <div className={cn('grid gap-1.5', className)}>
             <Label>{label}</Label>
             {children}
         </div>

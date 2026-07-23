@@ -4,7 +4,7 @@ use App\Models\Category;
 use App\Models\MajorServiceCategory;
 use App\Models\StaffAccount;
 
-test('only superadmins can create major service categories', function () {
+test('only superadmins can create parent categories', function () {
     $superAdmin = StaffAccount::factory()->superAdmin()->create();
     $admin = StaffAccount::factory()->admin()->create();
 
@@ -27,7 +27,7 @@ test('only superadmins can create major service categories', function () {
         ->description->toBe('Medical dermatology services.');
 });
 
-test('only superadmins can update and delete major service categories', function () {
+test('only superadmins can update and delete parent categories', function () {
     $superAdmin = StaffAccount::factory()->superAdmin()->create();
     $admin = StaffAccount::factory()->admin()->create();
     $majorCategory = MajorServiceCategory::factory()->create();
@@ -59,7 +59,7 @@ test('only superadmins can update and delete major service categories', function
     $this->assertModelMissing($majorCategory);
 });
 
-test('a major category in use cannot be deleted', function () {
+test('a parent category in use cannot be deleted', function () {
     $superAdmin = StaffAccount::factory()->superAdmin()->create();
     $majorCategory = MajorServiceCategory::factory()->create();
     Category::factory()->service()->create([
@@ -68,12 +68,14 @@ test('a major category in use cannot be deleted', function () {
 
     $this->actingAs($superAdmin)
         ->delete(route('major-service-categories.destroy', $majorCategory))
-        ->assertSessionHasErrors('major_service_category');
+        ->assertSessionHasErrors([
+            'major_service_category' => 'Move or delete its service categories before deleting this parent category.',
+        ]);
 
     $this->assertModelExists($majorCategory);
 });
 
-test('service categories require a valid major category while product categories do not', function () {
+test('service categories require a valid parent category while product categories do not', function () {
     $superAdmin = StaffAccount::factory()->superAdmin()->create();
 
     $this->actingAs($superAdmin)
@@ -82,7 +84,9 @@ test('service categories require a valid major category while product categories
             'category_type' => 'Service',
             'description' => 'Laser services.',
         ])
-        ->assertSessionHasErrors('major_service_category_ID');
+        ->assertSessionHasErrors([
+            'major_service_category_ID' => 'Select a parent category for this service category.',
+        ]);
 
     $this->actingAs($superAdmin)
         ->post(route('categories.store'), [
