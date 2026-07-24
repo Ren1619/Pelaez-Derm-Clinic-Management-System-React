@@ -38,6 +38,10 @@ class PublicWebsiteController extends Controller
         return Inertia::render('public/services', [
             'settings' => SystemSetting::current()->toPublicArray(),
             'services' => $this->serviceCards(),
+            'majorCategories' => MajorServiceCategory::query()
+                ->orderBy('name')
+                ->pluck('name')
+                ->all(),
         ]);
     }
 

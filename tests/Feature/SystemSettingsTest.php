@@ -106,6 +106,28 @@ test('the landing page provides the original service branch contact and clinic s
             ->where('stats.service_count', 2));
 });
 
+test('the public service catalogue excludes consultations', function () {
+    $treatmentCategory = Category::factory()->service()->create([
+        'category_name' => 'Laser Procedures',
+    ]);
+    $consultationCategory = Category::factory()->service()->create([
+        'category_name' => 'Consultations',
+    ]);
+    Service::factory()->for($treatmentCategory, 'category')->create([
+        'name' => 'Laser Toning',
+    ]);
+    Service::factory()->for($consultationCategory, 'category')->create([
+        'name' => 'Initial Consultation',
+    ]);
+
+    $this->get(route('public.services'))
+        ->assertSuccessful()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('public/services')
+            ->has('services', 1)
+            ->where('services.0.name', 'Laser Toning'));
+});
+
 test('only super admins can open system settings', function () {
     $superAdmin = StaffAccount::factory()->superAdmin()->create();
     $admin = StaffAccount::factory()->admin()->create();

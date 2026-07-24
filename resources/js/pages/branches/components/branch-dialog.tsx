@@ -1,8 +1,6 @@
 import { Form } from '@inertiajs/react';
 import { Building2, ExternalLink, ImageIcon } from 'lucide-react';
-import { useState } from 'react';
 import { store, update } from '@/actions/App/Http/Controllers/BranchController';
-import BranchLocationMap from '@/components/branch-location-map';
 import ImageUploadField from '@/components/image-upload-field';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
@@ -27,22 +25,13 @@ type BranchDialogProps = {
 type BranchLocationFieldsProps = {
     branch: Branch | null;
     locationError?: string;
-    latitudeError?: string;
-    longitudeError?: string;
 };
 
-/** Collects a plain-text address and an exact map pin. */
+/** Collects the branch's plain-text address. */
 function BranchLocationFields({
     branch,
     locationError,
-    latitudeError,
-    longitudeError,
 }: BranchLocationFieldsProps) {
-    const [coordinates, setCoordinates] = useState({
-        latitude: branch?.latitude ?? null,
-        longitude: branch?.longitude ?? null,
-    });
-
     return (
         <div className="grid gap-3">
             <Label htmlFor="branch_location">
@@ -61,36 +50,6 @@ function BranchLocationFields({
                 aria-invalid={Boolean(locationError)}
             />
             <InputError message={locationError} />
-
-            <div className="grid gap-2">
-                <Label>
-                    Pin location
-                    <span className="text-primary" aria-hidden="true">
-                        *
-                    </span>
-                </Label>
-                <BranchLocationMap
-                    latitude={coordinates.latitude}
-                    longitude={coordinates.longitude}
-                    interactive
-                    onChange={setCoordinates}
-                />
-                <p className="text-xs text-muted-foreground">
-                    Click the map or drag the pink pin to mark the exact branch
-                    location.
-                </p>
-            </div>
-            <input
-                type="hidden"
-                name="latitude"
-                value={coordinates.latitude ?? ''}
-            />
-            <input
-                type="hidden"
-                name="longitude"
-                value={coordinates.longitude ?? ''}
-            />
-            <InputError message={latitudeError ?? longitudeError} />
         </div>
     );
 }
@@ -130,15 +89,6 @@ function BranchDetails({ branch }: { branch: Branch }) {
                         value={branch.branch_location}
                     />
                 </div>
-                {branch.latitude !== null && branch.longitude !== null && (
-                    <div className="sm:col-span-2">
-                        <BranchLocationMap
-                            latitude={branch.latitude}
-                            longitude={branch.longitude}
-                            className="h-56"
-                        />
-                    </div>
-                )}
                 <DetailLink label="Map link" href={branch.map_link} />
                 <div className="sm:col-span-2">
                     <DetailLink label="Facebook link" href={branch.fb_link} />
@@ -307,9 +257,29 @@ export function BranchDialog({
                                         key={`${open}-${branch?.branch_ID ?? 'new'}-location`}
                                         branch={branch}
                                         locationError={errors.branch_location}
-                                        latitudeError={errors.latitude}
-                                        longitudeError={errors.longitude}
                                     />
+                                </div>
+
+                                <div className="grid w-full min-w-0 gap-2 self-stretch">
+                                    <Label htmlFor="map_link">
+                                        Map link
+                                        <span
+                                            className="text-primary"
+                                            aria-hidden="true"
+                                        >
+                                            *
+                                        </span>
+                                    </Label>
+                                    <Input
+                                        id="map_link"
+                                        name="map_link"
+                                        type="url"
+                                        defaultValue={branch?.map_link ?? ''}
+                                        placeholder="https://maps.google.com/..."
+                                        required
+                                        aria-invalid={Boolean(errors.map_link)}
+                                    />
+                                    <InputError message={errors.map_link} />
                                 </div>
 
                                 <div className="grid w-full min-w-0 gap-2 self-stretch">

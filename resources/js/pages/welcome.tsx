@@ -112,7 +112,7 @@ export default function Welcome({
                 <div className="relative z-10 mx-auto w-full max-w-7xl px-4 pt-32 pb-12 sm:px-6 md:py-36 lg:px-8">
                     <div className="max-w-2xl">
                         <h1 className="text-5xl leading-[0.95] font-black tracking-tight text-white sm:text-6xl md:text-7xl">
-                            <span className="inline-block text-[1.18em] leading-none font-serif font-normal text-primary italic">
+                            <span className="inline-block font-serif text-[1.18em] leading-none font-normal text-primary italic">
                                 {brandLead}
                             </span>
                             {brandRest && (
@@ -214,7 +214,7 @@ export default function Welcome({
                             <img
                                 src={aboutDesktopImage}
                                 alt={`${settings.business_name} clinic`}
-                                className="h-[520px] w-full object-cover transition duration-500 hover:scale-105"
+                                className="h-130 w-full object-cover transition duration-500 hover:scale-105"
                                 loading="lazy"
                             />
                         </div>
@@ -268,7 +268,6 @@ export default function Welcome({
                             </div>
                         </div>
 
-
                         <div
                             data-reveal
                             className="-mx-4 mt-8 overflow-x-auto pb-12 sm:-mx-6 md:mx-0 md:overflow-visible md:pb-28 lg:mx-0"
@@ -278,9 +277,9 @@ export default function Welcome({
                                 {categoryServices.map((service, index) => (
                                     <article
                                         key={service.id}
-                                        className={`group flex w-[190px] shrink-0 flex-col overflow-hidden bg-card shadow-lg transition duration-300 hover:z-10 hover:shadow-2xl sm:w-[210px] lg:w-[220px] ${serviceCardRotation(index)}`}
+                                        className={`group flex w-47.5 shrink-0 flex-col overflow-hidden bg-card shadow-lg transition duration-300 hover:z-10 hover:shadow-2xl sm:w-52.5 lg:w-55 ${serviceCardRotation(index)}`}
                                     >
-                                        <figure className="flex h-[170px] shrink-0 items-center justify-center overflow-hidden bg-gradient-to-br from-primary/10 via-muted to-primary/5 sm:h-48 lg:h-[200px]">
+                                        <figure className="flex h-42.5 shrink-0 items-center justify-center overflow-hidden bg-linear-to-br from-primary/10 via-muted to-primary/5 sm:h-48 lg:h-50">
                                             <img
                                                 src={
                                                     service.image_url ?? logoUrl
@@ -304,7 +303,7 @@ export default function Welcome({
                                                     {service.name}
                                                 </span>
                                             </h3>
-                                            <p className="line-clamp-2 min-h-9 text-[0.6875rem] leading-[1.125rem] text-muted-foreground">
+                                            <p className="line-clamp-2 min-h-9 text-[0.6875rem] leading-4.5 text-muted-foreground">
                                                 {service.description}
                                             </p>
                                         </div>
@@ -318,7 +317,7 @@ export default function Welcome({
                                     </article>
                                 ))}
                                 {categoryServices.length === 0 && (
-                                    <EmptyPreview message="Services will appear here once they are added." />
+                                    <AvailableSoonTag />
                                 )}
                             </div>
                         </div>
@@ -337,7 +336,7 @@ export default function Welcome({
 
                 <section
                     id="branches"
-                    className="relative order-3 scroll-mt-20 overflow-hidden bg-gradient-to-br from-muted/50 via-background to-primary/5 py-20 lg:py-28"
+                    className="relative order-3 scroll-mt-20 overflow-hidden bg-linear-to-br from-muted/50 via-background to-primary/5 py-20 lg:py-28"
                 >
                     <DecorativeGlow className="-top-40 -right-40 size-80" />
                     <DecorativeGlow className="-bottom-40 -left-40 size-96" />
@@ -357,7 +356,7 @@ export default function Welcome({
                                     key={branch.id}
                                     className="group overflow-hidden rounded-lg border bg-card shadow-md transition duration-300 hover:-translate-y-1 hover:shadow-xl"
                                 >
-                                    <figure className="flex h-36 items-center justify-center overflow-hidden bg-gradient-to-br from-primary/10 via-muted to-primary/5 sm:h-44 md:h-56">
+                                    <figure className="flex h-36 items-center justify-center overflow-hidden bg-linear-to-br from-primary/10 via-muted to-primary/5 sm:h-44 md:h-56">
                                         <img
                                             src={branch.image_url ?? logoUrl}
                                             alt={branch.name}
@@ -679,6 +678,63 @@ function EmptyPreview({ message }: { message: string }) {
     return (
         <div className="col-span-full rounded-xl border border-dashed bg-card/50 p-10 text-center text-sm text-muted-foreground">
             {message}
+        </div>
+    );
+}
+
+function AvailableSoonTag() {
+    return (
+        <div
+            role="status"
+            className="relative flex w-64 shrink-0 justify-center pt-16 sm:w-72"
+        >
+            <span
+                aria-hidden="true"
+                className="absolute top-0 left-[46%] h-16 w-px -rotate-12 bg-black"
+            />
+            <span
+                aria-hidden="true"
+                className="absolute top-1 left-[52%] h-14 w-px rotate-12 bg-black"
+            />
+            <span
+                aria-hidden="true"
+                className="absolute top-7 left-1/2 z-10 size-20 -translate-x-1/2 rounded-full bg-primary shadow-md"
+            >
+                <span className="absolute top-5 left-1/2 size-4 -translate-x-1/2 rounded-full bg-black" />
+            </span>
+            <div className="relative flex min-h-72 w-full flex-col items-center justify-center border border-primary/30 bg-[#ede1b9] px-6 pt-24 pb-8 text-center text-foreground shadow-xl">
+                <span
+                    aria-hidden="true"
+                    className="absolute top-7 left-4 h-px w-5 -rotate-12 bg-primary/70"
+                />
+                <span
+                    aria-hidden="true"
+                    className="absolute top-12 left-7 h-px w-4 -rotate-45 bg-primary/70"
+                />
+                <span
+                    aria-hidden="true"
+                    className="absolute top-16 left-4 h-px w-5 rotate-12 bg-primary/70"
+                />
+                <span
+                    aria-hidden="true"
+                    className="absolute top-7 right-4 h-px w-5 rotate-12 bg-primary/70"
+                />
+                <span
+                    aria-hidden="true"
+                    className="absolute top-12 right-7 h-px w-4 rotate-45 bg-primary/70"
+                />
+                <span
+                    aria-hidden="true"
+                    className="absolute top-16 right-4 h-px w-5 -rotate-12 bg-primary/70"
+                />
+                <p className="font-serif text-2xl font-bold tracking-wide text-primary uppercase">
+                    Available
+                </p>
+                <p className="mt-1 text-5xl leading-none font-light text-primary italic sm:text-6xl">
+                    Soon
+                </p>
+                <p className="mt-2 font-serif text-2xl italic">Stay tuned</p>
+            </div>
         </div>
     );
 }

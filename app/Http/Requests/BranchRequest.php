@@ -26,8 +26,8 @@ abstract class BranchRequest extends FormRequest
                 'max:255',
                 "regex:/^[\\pL\\pN\\s.,\\-\\/#']+$/u",
             ],
-            'latitude' => ['required', 'numeric', 'between:-90,90'],
-            'longitude' => ['required', 'numeric', 'between:-180,180'],
+            'latitude' => ['nullable', 'numeric', 'between:-90,90'],
+            'longitude' => ['nullable', 'numeric', 'between:-180,180'],
             'contact_number' => ['required', 'string', 'regex:/^09[0-9]{9}$/'],
             'map_link' => ['required', 'string', 'url:http,https'],
             'fb_link' => ['nullable', 'string', 'url:http,https'],
@@ -49,16 +49,11 @@ abstract class BranchRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
-        $latitude = $this->input('latitude');
-        $longitude = $this->input('longitude');
-
         $this->merge([
             'branch_name' => Str::of($this->input('branch_name', ''))->squish()->toString(),
             'branch_location' => Str::of($this->input('branch_location', ''))->squish()->toString(),
             'contact_number' => Str::of($this->input('contact_number', ''))->trim()->toString(),
-            'map_link' => is_numeric($latitude) && is_numeric($longitude)
-                ? "https://www.google.com/maps/search/?api=1&query={$latitude},{$longitude}"
-                : '',
+            'map_link' => Str::of($this->input('map_link', ''))->trim()->toString(),
             'fb_link' => Str::of($this->input('fb_link', ''))->trim()->toString() ?: null,
         ]);
     }

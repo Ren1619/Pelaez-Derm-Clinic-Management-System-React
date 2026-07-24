@@ -78,9 +78,8 @@ test('authenticated users can create a branch with an image', function () {
         ->post(route('branches.store'), [
             'branch_name' => 'Valencia City',
             'branch_location' => 'Roxas Street, Valencia City, Bukidnon',
-            'latitude' => 7.9075,
-            'longitude' => 125.0942,
             'contact_number' => '09353719162',
+            'map_link' => 'https://maps.google.com/?q=Valencia+City',
             'fb_link' => 'https://facebook.com/valencia-clinic',
             'branch_img' => $image,
         ])
@@ -90,10 +89,10 @@ test('authenticated users can create a branch with an image', function () {
     $branch = Branch::query()->where('branch_name', 'Valencia City')->firstOrFail();
 
     expect($branch->branch_location)->toBe('Roxas Street, Valencia City, Bukidnon');
-    expect($branch->latitude)->toBe(7.9075)
-        ->and($branch->longitude)->toBe(125.0942)
+    expect($branch->latitude)->toBeNull()
+        ->and($branch->longitude)->toBeNull()
         ->and($branch->map_link)->toBe(
-            'https://www.google.com/maps/search/?api=1&query=7.9075,125.0942',
+            'https://maps.google.com/?q=Valencia+City',
         );
     Storage::disk('public')->assertExists($branch->branch_img);
 });
@@ -107,9 +106,8 @@ test('branch images allow up to twenty megabytes', function () {
         ->post(route('branches.store'), [
             'branch_name' => 'Twenty MB Branch',
             'branch_location' => 'Roxas Street, Valencia City, Bukidnon',
-            'latitude' => 7.9075,
-            'longitude' => 125.0942,
             'contact_number' => '09353719162',
+            'map_link' => 'https://maps.google.com/?q=Valencia+City',
             'branch_img' => UploadedFile::fake()->image('branch.jpg')->size(20 * 1024),
         ])
         ->assertSessionHasNoErrors();
@@ -119,9 +117,8 @@ test('branch images allow up to twenty megabytes', function () {
         ->post(route('branches.store'), [
             'branch_name' => 'Oversized Branch',
             'branch_location' => 'Fortich Street, Malaybalay City, Bukidnon',
-            'latitude' => 8.1575,
-            'longitude' => 125.1277,
             'contact_number' => '09353719163',
+            'map_link' => 'https://maps.google.com/?q=Malaybalay+City',
             'branch_img' => UploadedFile::fake()->image('oversized.jpg')->size((20 * 1024) + 1),
         ])
         ->assertRedirect(route('branches.index'))
@@ -148,6 +145,7 @@ test('branch input is validated', function () {
             'latitude',
             'longitude',
             'contact_number',
+            'map_link',
         ]);
 });
 
@@ -167,9 +165,8 @@ test('authenticated users can update a branch and replace its image', function (
         ->put(route('branches.update', $branch), [
             'branch_name' => 'Updated Branch',
             'branch_location' => 'Roxas Street, Valencia City, Bukidnon',
-            'latitude' => 7.9075,
-            'longitude' => 125.0942,
             'contact_number' => '09353719162',
+            'map_link' => 'https://maps.google.com/?q=Valencia+City',
             'fb_link' => null,
             'branch_img' => $newImage,
         ])
