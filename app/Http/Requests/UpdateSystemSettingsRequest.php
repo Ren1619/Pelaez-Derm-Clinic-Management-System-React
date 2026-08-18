@@ -4,25 +4,11 @@ namespace App\Http\Requests;
 
 use App\Enums\StaffModule;
 use App\Models\StaffAccount;
-use App\Models\User;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rules\File;
 
 class UpdateSystemSettingsRequest extends FormRequest
 {
-    protected function prepareForValidation(): void
-    {
-        if (is_array($this->input('landing_specializations'))) {
-            $this->merge([
-                'landing_specializations' => collect($this->input('landing_specializations'))
-                    ->filter(fn (mixed $value): bool => is_string($value) && trim($value) !== '')
-                    ->map(fn (string $value): string => trim($value))
-                    ->values()
-                    ->all(),
-            ]);
-        }
-    }
-
     /**
      * Determine if the user is authorized to make this request.
      */
@@ -30,10 +16,9 @@ class UpdateSystemSettingsRequest extends FormRequest
     {
         $user = $this->user();
 
-        return $user instanceof User
-            || ($user instanceof StaffAccount
-                && $user->is_active
-                && $user->canAccessModule(StaffModule::SystemSettings));
+        return $user instanceof StaffAccount
+            && $user->is_active
+            && $user->canAccessModule(StaffModule::SystemSettings);
     }
 
     /**
@@ -43,55 +28,48 @@ class UpdateSystemSettingsRequest extends FormRequest
      */
     public function rules(): array
     {
-        $text = ['nullable', 'string', 'max:1000', 'regex:/^[^<>{}]*$/u'];
-        $requiredText = ['required', 'string', 'max:255', 'regex:/^[^<>{}]*$/u'];
+        $safeTextPattern = 'regex:/^[^<>{}]*$/u';
+        $title = ['required', 'string', 'max:80', $safeTextPattern];
         $image = ['nullable', File::types(['jpg', 'jpeg', 'png', 'webp', 'svg'])->max('5mb')];
 
         return match ($this->route('section')) {
             'landing' => [
-                'landing_primary_tagline' => $requiredText,
-                'landing_secondary_tagline' => $requiredText,
+                'landing_primary_tagline' => ['required', 'string', 'max:80', $safeTextPattern],
+                'landing_secondary_tagline' => ['required', 'string', 'max:140', $safeTextPattern],
+                'landing_services_title' => $title,
+                'landing_about_title' => $title,
+                'landing_branches_title' => $title,
+                'landing_contact_title' => $title,
                 'landing_year_started' => ['required', 'integer', 'min:1900', 'max:'.now()->year],
                 'landing_hero_image_file' => $image,
                 'remove_landing_hero_image' => ['sometimes', 'boolean'],
                 'landing_about_image_file' => $image,
                 'remove_landing_about_image' => ['sometimes', 'boolean'],
-                'landing_about_description' => ['required', ...$text],
-                'landing_specializations' => ['required', 'array', 'min:1', 'max:3'],
-                'landing_specializations.*' => $requiredText,
-                'landing_services_description' => ['required', ...$text],
-                'landing_branches_description' => ['required', ...$text],
-                'landing_contact_description' => ['required', ...$text],
+                'landing_about_description' => ['required', 'string', 'max:449', $safeTextPattern],
+                'landing_branches_image_file' => $image,
+                'remove_landing_branches_image' => ['sometimes', 'boolean'],
+                'landing_contact_description' => ['required', 'string', 'max:240', $safeTextPattern],
                 'business_email' => ['required', 'email', 'max:255'],
-                'landing_cta_title' => $requiredText,
-                'landing_cta_description' => ['required', ...$text],
-                'footer_days' => ['required', 'string', 'max:255', 'regex:/^[\pL\s,\-–]+$/u'],
+                'landing_cta_title' => $title,
+                'landing_cta_description' => ['required', 'string', 'max:240', $safeTextPattern],
+                'footer_days' => ['required', 'string', 'max:60', 'regex:/^[\pL\s,\-–]+$/u'],
                 'footer_opens_at' => ['required', 'date_format:H:i'],
                 'footer_closes_at' => ['required', 'date_format:H:i', 'after:footer_opens_at'],
             ],
             'services' => [
-                'services_hero_image_file' => $image,
-                'remove_services_hero_image' => ['sometimes', 'boolean'],
-                'services_hero_description' => $text,
-                'services_title' => $requiredText,
-                'services_description' => $text,
+                'services_title' => $title,
             ],
             'branches' => [
-                'branches_hero_image_file' => $image,
-                'remove_branches_hero_image' => ['sometimes', 'boolean'],
-                'branches_hero_description' => $text,
-                'branches_title' => $requiredText,
-                'branches_description' => $text,
+                'branches_title' => $title,
             ],
             'privacy' => [
-                'privacy_hero_image_file' => $image,
-                'remove_privacy_hero_image' => ['sometimes', 'boolean'],
-                'privacy_hero_description' => $text,
-                'privacy_title' => $requiredText,
-                'privacy_description' => ['required', ...$text],
+                'privacy_title' => $title,
+                'privacy_sections' => ['required', 'array', 'min:1', 'max:12'],
+                'privacy_sections.*.title' => ['required', 'string', 'max:120', $safeTextPattern],
+                'privacy_sections.*.content' => ['required', 'string', 'max:2000', $safeTextPattern],
             ],
             'business' => [
-                'business_name' => $requiredText,
+                'business_name' => ['required', 'string', 'max:80', $safeTextPattern],
                 'business_logo_file' => $image,
                 'remove_business_logo' => ['sometimes', 'boolean'],
             ],

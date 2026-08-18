@@ -15,9 +15,7 @@ class UpdateSystemSettings
         'business_logo' => 'system-settings/business',
         'landing_hero_image' => 'system-settings/landing/hero',
         'landing_about_image' => 'system-settings/landing/about',
-        'services_hero_image' => 'system-settings/services',
-        'branches_hero_image' => 'system-settings/branches',
-        'privacy_hero_image' => 'system-settings/privacy',
+        'landing_branches_image' => 'system-settings/landing/branches',
     ];
 
     /** @param array<string, mixed> $validated */

@@ -4,15 +4,18 @@ export type SystemSettings = {
     business_logo_url: string | null;
     landing_primary_tagline: string;
     landing_secondary_tagline: string;
+    landing_services_title: string;
+    landing_about_title: string;
+    landing_branches_title: string;
+    landing_contact_title: string;
     landing_year_started: number;
     landing_hero_image: string | null;
     landing_hero_image_url: string | null;
     landing_about_image: string | null;
     landing_about_image_url: string | null;
     landing_about_description: string;
-    landing_specializations: string[];
-    landing_services_description: string;
-    landing_branches_description: string;
+    landing_branches_image: string | null;
+    landing_branches_image_url: string | null;
     landing_contact_description: string;
     business_email: string;
     landing_cta_title: string;
@@ -20,21 +23,15 @@ export type SystemSettings = {
     footer_days: string;
     footer_opens_at: string;
     footer_closes_at: string;
-    services_hero_image: string | null;
-    services_hero_image_url: string | null;
-    services_hero_description: string | null;
     services_title: string;
-    services_description: string | null;
-    branches_hero_image: string | null;
-    branches_hero_image_url: string | null;
-    branches_hero_description: string | null;
     branches_title: string;
-    branches_description: string | null;
-    privacy_hero_image: string | null;
-    privacy_hero_image_url: string | null;
-    privacy_hero_description: string | null;
     privacy_title: string;
-    privacy_description: string | null;
+    privacy_sections: PrivacySection[];
+};
+
+export type PrivacySection = {
+    title: string;
+    content: string;
 };
 
 export type PublicService = {
