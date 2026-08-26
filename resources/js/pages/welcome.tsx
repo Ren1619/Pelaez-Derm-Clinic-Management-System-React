@@ -1,6 +1,14 @@
 import { Head, Link } from '@inertiajs/react';
+import {
+    AnimatePresence,
+    domAnimation,
+    LazyMotion,
+    m,
+    MotionConfig,
+} from 'framer-motion';
+import type { HTMLMotionProps, Variants } from 'framer-motion';
 import { ArrowRight, CalendarDays, Facebook, Mail, Phone } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { PublicSiteLayout } from '@/components/public-site-layout';
 import { login as patientLogin } from '@/routes/patient';
 import {
@@ -21,6 +29,77 @@ type WelcomeProps = {
     branches: PublicBranch[];
     contactBranches: PublicBranch[];
     stats: LandingStats;
+};
+
+const sectionVariants: Variants = {
+    hidden: {},
+    visible: {
+        transition: {
+            delayChildren: 0.03,
+            staggerChildren: 0.06,
+        },
+    },
+};
+
+const createRevealVariants = (
+    hidden: {
+        x?: number;
+        y?: number;
+        scale?: number;
+        rotate?: number;
+    },
+    duration = 0.7,
+): Variants => ({
+    hidden: { opacity: 0, ...hidden },
+    visible: {
+        opacity: 1,
+        ...(hidden.x === undefined ? {} : { x: 0 }),
+        ...(hidden.y === undefined ? {} : { y: 0 }),
+        ...(hidden.scale === undefined ? {} : { scale: 1 }),
+        ...(hidden.rotate === undefined ? {} : { rotate: 0 }),
+        transition: {
+            duration,
+            ease: [0.22, 1, 0.36, 1],
+        },
+    },
+});
+
+const heroItemVariants = createRevealVariants({ y: 24 }, 0.55);
+const servicesHeadingVariants = createRevealVariants({ x: -28 }, 0.5);
+const servicesNavigationVariants = createRevealVariants({ x: 28 }, 0.5);
+const serviceTabVariants = createRevealVariants({ y: 10 }, 0.35);
+const servicesPanelVariants = createRevealVariants({ y: 20 }, 0.5);
+const serviceCardVariants = createRevealVariants({ y: 24, scale: 0.98 }, 0.45);
+const aboutHeadingVariants = createRevealVariants({ y: 18 }, 0.5);
+const aboutImageVariants = createRevealVariants({ x: 30 }, 0.55);
+const aboutCopyVariants = createRevealVariants({ x: -28 }, 0.5);
+const aboutStatVariants = createRevealVariants({ y: 16 }, 0.4);
+const branchesHeadingVariants = createRevealVariants({ x: 28 }, 0.5);
+const branchesImageVariants = createRevealVariants({ x: -30 }, 0.55);
+const branchCardVariants = createRevealVariants({ y: 20, scale: 0.98 }, 0.45);
+const contactHeadingVariants = createRevealVariants({ y: 18 }, 0.5);
+const contactIntroVariants = createRevealVariants({ x: -24 }, 0.5);
+const contactCardVariants = createRevealVariants({ y: 20 }, 0.45);
+const ctaTitleVariants = createRevealVariants({ scale: 0.97 }, 0.5);
+const ctaCopyVariants = createRevealVariants({ y: 16 }, 0.45);
+const ctaButtonVariants = createRevealVariants({ y: 14 }, 0.4);
+
+const serviceListVariants: Variants = {
+    hidden: { opacity: 0, y: 18 },
+    visible: {
+        opacity: 1,
+        y: 0,
+        transition: {
+            duration: 0.28,
+            ease: [0.22, 1, 0.36, 1],
+            staggerChildren: 0.045,
+        },
+    },
+    exit: {
+        opacity: 0,
+        y: -14,
+        transition: { duration: 0.14, ease: 'easeOut' },
+    },
 };
 
 export default function Welcome({
@@ -74,8 +153,6 @@ export default function Welcome({
     );
     const previewServices = categoryServices.slice(0, 4);
 
-    useRevealAnimations();
-
     return (
         <PublicSiteLayout
             settings={settings}
@@ -87,11 +164,25 @@ export default function Welcome({
                     name="description"
                     content={settings.landing_secondary_tagline}
                 />
+                <link
+                    rel="preload"
+                    as="image"
+                    href={heroMobileImage}
+                    media="(max-width: 767px)"
+                    fetchPriority="high"
+                />
+                <link
+                    rel="preload"
+                    as="image"
+                    href={heroDesktopImage}
+                    media="(min-width: 768px)"
+                    fetchPriority="high"
+                />
             </Head>
 
             {/* Hero Section */}
 
-            <section
+            <RevealSection
                 id="home"
                 className="relative flex min-h-svh scroll-mt-20 items-center overflow-hidden"
             >
@@ -105,6 +196,7 @@ export default function Welcome({
                         alt="Dermatology patient"
                         className="size-full object-cover object-center"
                         fetchPriority="high"
+                        decoding="async"
                     />
                 </picture>
                 <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/65 to-black/20 md:bg-gradient-to-r md:from-black/90 md:via-black/70 md:to-black/10" />
@@ -119,22 +211,34 @@ export default function Welcome({
 
                 <div className="relative z-10 mx-auto w-full max-w-7xl px-4 pt-28 pb-8 sm:px-6 sm:pt-32 sm:pb-12 md:py-36 lg:px-8">
                     <div className="max-w-2xl">
-                        <h1 className="text-4xl leading-[0.95] font-black tracking-tight text-white sm:text-6xl md:text-7xl">
+                        <m.h1
+                            variants={heroItemVariants}
+                            className="text-4xl leading-[0.95] font-black tracking-tight text-white sm:text-6xl md:text-7xl"
+                        >
                             <span className="inline-block font-serif text-[1.18em] leading-none font-normal text-primary italic">
                                 {brandLead}
                             </span>
                             {brandRest && (
                                 <span className="mt-2 block">{brandRest}</span>
                             )}
-                        </h1>
-                        <p className="mt-5 text-base leading-6 text-zinc-200 sm:mt-7 sm:text-lg md:text-xl">
+                        </m.h1>
+                        <m.p
+                            variants={heroItemVariants}
+                            className="mt-5 text-base leading-6 text-zinc-200 sm:mt-7 sm:text-lg md:text-xl"
+                        >
                             {settings.landing_primary_tagline}
-                        </p>
-                        <p className="mt-2 text-sm leading-6 text-zinc-400 sm:text-base">
+                        </m.p>
+                        <m.p
+                            variants={heroItemVariants}
+                            className="mt-2 text-sm leading-6 text-zinc-400 sm:text-base"
+                        >
                             {settings.landing_secondary_tagline}
-                        </p>
+                        </m.p>
 
-                        <div className="mt-6 grid max-w-sm grid-cols-1 gap-3 sm:mt-8 sm:flex sm:max-w-none sm:flex-wrap sm:gap-4">
+                        <m.div
+                            variants={heroItemVariants}
+                            className="mt-6 grid max-w-sm grid-cols-1 gap-3 sm:mt-8 sm:flex sm:max-w-none sm:flex-wrap sm:gap-4"
+                        >
                             <Link
                                 href={patientLogin()}
                                 className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-linear-to-br from-brand-bright via-brand-mid to-brand-deep px-5 py-3 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:shadow-xl sm:w-auto sm:px-7 sm:py-4 sm:text-base"
@@ -148,19 +252,19 @@ export default function Welcome({
                             >
                                 Explore Services
                             </a>
-                        </div>
+                        </m.div>
                     </div>
                 </div>
-            </section>
+            </RevealSection>
 
             {/* Services */}
-            <section
+            <RevealSection
                 id="services"
                 className="relative order-1 flex min-h-[calc(100svh-5rem)] scroll-mt-20 items-center overflow-hidden bg-[#f8f8f6] py-12 sm:py-16 lg:py-28 dark:bg-background"
             >
                 <div className="relative z-10 mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
                     <div className="grid min-w-0 gap-6 sm:gap-8 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] lg:items-end">
-                        <div data-reveal>
+                        <m.div variants={servicesHeadingVariants}>
                             <h2 className="max-w-3xl text-3xl leading-[1.08] tracking-tight sm:text-5xl lg:text-[4rem]">
                                 <span className="sm:whitespace-nowrap">
                                     {servicesTitleLead}
@@ -169,18 +273,19 @@ export default function Welcome({
                                     {servicesTitleAccent}
                                 </span>
                             </h2>
-                        </div>
+                        </m.div>
 
-                        <div
-                            data-reveal
+                        <m.div
+                            variants={servicesNavigationVariants}
                             className="min-w-0 border-b border-foreground/15 lg:self-end"
                             role="tablist"
                             aria-label="Service categories"
                         >
                             <div className="flex [scrollbar-width:none] gap-6 overflow-x-auto pb-3 sm:justify-end sm:gap-12 lg:gap-16 [&::-webkit-scrollbar]:hidden">
                                 {serviceCategories.map((category) => (
-                                    <button
+                                    <m.button
                                         key={category}
+                                        variants={serviceTabVariants}
                                         type="button"
                                         role="tab"
                                         aria-selected={
@@ -192,65 +297,87 @@ export default function Welcome({
                                         className={`relative shrink-0 pb-3 font-serif text-lg italic transition after:absolute after:inset-x-0 after:-bottom-3 after:h-1 sm:text-2xl ${activeServiceCategory === category ? 'text-foreground after:bg-primary' : 'text-muted-foreground hover:text-foreground'}`}
                                     >
                                         {category}
-                                    </button>
+                                    </m.button>
                                 ))}
                             </div>
-                        </div>
+                        </m.div>
                     </div>
 
-                    <div
-                        data-reveal
+                    <m.div
+                        variants={servicesPanelVariants}
                         className="mt-6 min-w-0 pb-4 sm:mt-8 md:pb-8"
                         role="tabpanel"
+                        aria-live="polite"
                     >
-                        <div className="grid min-w-0 grid-cols-2 items-start gap-2 py-4 sm:gap-4 md:flex md:justify-center md:gap-16 md:px-5 md:py-8 lg:gap-20 lg:px-8">
-                            {previewServices.map((service, index) => (
-                                <article
-                                    key={service.id}
-                                    className={`group flex min-w-0 flex-col overflow-hidden bg-card shadow-lg transition duration-300 hover:z-10 hover:shadow-2xl md:w-52.5 md:shrink-0 lg:w-55 ${serviceCardRotation(index)}`}
-                                >
-                                    <figure className="flex aspect-square w-full shrink-0 items-center justify-center overflow-hidden bg-linear-to-br from-primary/10 via-muted to-primary/5 md:aspect-auto md:h-48 lg:h-50">
-                                        <img
-                                            src={service.image_url ?? logoUrl}
-                                            alt={service.name}
-                                            className={
-                                                service.image_url
-                                                    ? 'size-full object-cover transition duration-500 group-hover:scale-110'
-                                                    : 'size-20 object-contain'
-                                            }
-                                            loading="lazy"
-                                        />
-                                    </figure>
-                                    <div className="min-w-0 shrink-0 space-y-1 p-2">
-                                        <p className="min-h-4 truncate text-[0.6rem] font-semibold tracking-[0.12em] text-primary uppercase sm:text-xs sm:tracking-[0.16em]">
-                                            {service.category ??
-                                                activeServiceCategory}
-                                        </p>
-                                        <h3 className="flex min-h-8 items-center font-serif text-sm leading-4 italic sm:min-h-10 sm:text-xl sm:leading-5">
-                                            <span className="line-clamp-2">
-                                                {service.name}
-                                            </span>
-                                        </h3>
-                                        <p className="line-clamp-2 min-h-8 text-[0.625rem] leading-4 text-muted-foreground sm:min-h-9 sm:text-[0.6875rem] sm:leading-4.5">
-                                            {service.description}
-                                        </p>
-                                    </div>
-                                    <Link
-                                        href={patientLogin()}
-                                        className="inline-flex h-9 w-full shrink-0 items-center justify-center gap-1 bg-primary px-2 text-[0.7rem] font-semibold text-primary-foreground transition hover:brightness-110 sm:h-10 sm:gap-2 sm:px-4 sm:text-xs"
+                        <AnimatePresence initial={false} mode="sync">
+                            <m.div
+                                key={activeServiceCategory ?? 'available-soon'}
+                                variants={serviceListVariants}
+                                initial="hidden"
+                                animate="visible"
+                                exit="exit"
+                                className="grid min-w-0 grid-cols-2 items-start gap-2 py-4 sm:gap-4 md:flex md:justify-center md:gap-16 md:px-5 md:py-8 lg:gap-20 lg:px-8"
+                            >
+                                {previewServices.map((service, index) => (
+                                    <m.div
+                                        key={service.id}
+                                        variants={serviceCardVariants}
+                                        className="min-w-0 md:w-52.5 md:shrink-0 lg:w-55"
                                     >
-                                        Book now{' '}
-                                        <ArrowRight className="size-4" />
-                                    </Link>
-                                </article>
-                            ))}
-                            {previewServices.length === 0 && (
-                                <AvailableSoonTag />
-                            )}
-                        </div>
-                    </div>
+                                        <article
+                                            className={`group flex w-full min-w-0 flex-col overflow-hidden bg-card shadow-lg transition duration-300 hover:z-10 hover:shadow-2xl ${serviceCardRotation(index)}`}
+                                        >
+                                            <figure className="flex aspect-square w-full shrink-0 items-center justify-center overflow-hidden bg-linear-to-br from-primary/10 via-muted to-primary/5 md:aspect-auto md:h-48 lg:h-50">
+                                                <img
+                                                    src={
+                                                        service.image_url ??
+                                                        logoUrl
+                                                    }
+                                                    alt={service.name}
+                                                    className={
+                                                        service.image_url
+                                                            ? 'size-full object-cover transition duration-500 group-hover:scale-110'
+                                                            : 'size-20 object-contain'
+                                                    }
+                                                    loading="eager"
+                                                    decoding="async"
+                                                />
+                                            </figure>
+                                            <div className="min-w-0 shrink-0 space-y-1 p-2">
+                                                <p className="min-h-4 truncate text-[0.6rem] font-semibold tracking-[0.12em] text-primary uppercase sm:text-xs sm:tracking-[0.16em]">
+                                                    {service.category ??
+                                                        activeServiceCategory}
+                                                </p>
+                                                <h3 className="flex min-h-8 items-center font-serif text-sm leading-4 italic sm:min-h-10 sm:text-xl sm:leading-5">
+                                                    <span className="line-clamp-2">
+                                                        {service.name}
+                                                    </span>
+                                                </h3>
+                                                <p className="line-clamp-2 min-h-8 text-[0.625rem] leading-4 text-muted-foreground sm:min-h-9 sm:text-[0.6875rem] sm:leading-4.5">
+                                                    {service.description}
+                                                </p>
+                                            </div>
+                                            <Link
+                                                href={patientLogin()}
+                                                className="inline-flex h-9 w-full shrink-0 items-center justify-center gap-1 bg-primary px-2 text-[0.7rem] font-semibold text-primary-foreground transition hover:brightness-110 sm:h-10 sm:gap-2 sm:px-4 sm:text-xs"
+                                            >
+                                                Book now{' '}
+                                                <ArrowRight className="size-4" />
+                                            </Link>
+                                        </article>
+                                    </m.div>
+                                ))}
+                                {previewServices.length === 0 && (
+                                    <AvailableSoonTag />
+                                )}
+                            </m.div>
+                        </AnimatePresence>
+                    </m.div>
 
-                    <div className="mt-4 text-center sm:mt-6">
+                    <m.div
+                        variants={servicesPanelVariants}
+                        className="mt-4 text-center sm:mt-6"
+                    >
                         <Link
                             href={servicesRoute()}
                             className="group inline-flex items-center gap-3 rounded-full bg-background py-2 pr-2 pl-6 text-[0.7rem] font-semibold tracking-[0.12em] text-primary uppercase shadow-sm ring-1 ring-primary/25 transition duration-300 hover:-translate-y-0.5 hover:shadow-md hover:ring-primary/45"
@@ -260,19 +387,19 @@ export default function Welcome({
                                 <ArrowRight className="size-4 transition-transform duration-300 group-hover:translate-x-0.5" />
                             </span>
                         </Link>
-                    </div>
+                    </m.div>
                 </div>
-            </section>
+            </RevealSection>
 
             {/* About Section */}
             <main className="flex flex-col">
-                <section
+                <RevealSection
                     id="about"
                     className="relative order-2 flex min-h-[calc(100svh-5rem)] scroll-mt-20 items-center overflow-hidden bg-background py-12 sm:py-16 lg:py-28"
                 >
                     <div className="relative z-10 mx-auto grid w-full max-w-7xl gap-7 px-4 sm:gap-9 sm:px-6 lg:min-h-[30rem] lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:grid-rows-[auto_auto] lg:content-center lg:items-start lg:gap-x-12 lg:gap-y-12 lg:px-8 xl:min-h-[33rem]">
-                        <header
-                            data-reveal
+                        <m.header
+                            variants={aboutHeadingVariants}
                             className="mx-auto w-full max-w-5xl text-center lg:col-span-2 lg:col-start-1 lg:row-start-1"
                         >
                             <h2 className="flex flex-col text-3xl leading-[1.06] tracking-tight sm:text-5xl lg:text-[4rem] lg:whitespace-nowrap xl:text-[4.5rem]">
@@ -283,10 +410,10 @@ export default function Welcome({
                                     {aboutTitleAccent}
                                 </span>
                             </h2>
-                        </header>
+                        </m.header>
 
-                        <figure
-                            data-reveal
+                        <m.figure
+                            variants={aboutImageVariants}
                             className="relative lg:col-start-2 lg:row-start-2 lg:self-start"
                         >
                             <picture className="relative block aspect-[3/2] overflow-hidden bg-background shadow-xl ring-1 ring-foreground/10 lg:rounded-2xl">
@@ -299,12 +426,13 @@ export default function Welcome({
                                     alt={`${settings.business_name} clinic`}
                                     className="size-full object-cover transition duration-500 hover:scale-105"
                                     loading="lazy"
+                                    decoding="async"
                                 />
                             </picture>
-                        </figure>
+                        </m.figure>
 
-                        <div
-                            data-reveal
+                        <m.div
+                            variants={aboutCopyVariants}
                             className="flex flex-col gap-10 lg:col-start-1 lg:row-start-2 lg:justify-between lg:self-stretch"
                         >
                             <p className="text-justify text-sm leading-6 sm:text-base sm:leading-7 lg:text-lg lg:leading-8">
@@ -325,19 +453,19 @@ export default function Welcome({
                                     label="Treatments"
                                 />
                             </dl>
-                        </div>
+                        </m.div>
                     </div>
-                </section>
+                </RevealSection>
 
                 {/* Branches Section */}
-                <section
+                <RevealSection
                     id="branches"
                     className="order-3 flex min-h-[calc(100svh-5rem)] scroll-mt-20 items-center bg-[#f8f8f6] py-12 sm:py-16 lg:py-28 dark:bg-background"
                 >
                     <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
                         <div className="grid gap-7 sm:gap-9 lg:min-h-[34rem] lg:grid-cols-12 lg:grid-rows-[auto_1fr_auto] lg:gap-0">
-                            <header
-                                data-reveal
+                            <m.header
+                                variants={branchesHeadingVariants}
                                 className="text-center lg:col-span-7 lg:col-start-5 lg:row-start-1 lg:pt-8 lg:text-left xl:pt-10"
                             >
                                 <h2 className="flex flex-col text-3xl leading-[1.06] tracking-tight sm:text-5xl lg:text-[4rem]">
@@ -346,10 +474,10 @@ export default function Welcome({
                                         {branchesTitleAccent}
                                     </span>
                                 </h2>
-                            </header>
+                            </m.header>
 
-                            <figure
-                                data-reveal
+                            <m.figure
+                                variants={branchesImageVariants}
                                 className={`flex aspect-[4/5] items-center justify-center overflow-hidden sm:aspect-[3/4] lg:col-span-4 lg:col-start-1 lg:row-span-2 lg:row-start-1 lg:aspect-[5/8] lg:w-full lg:max-w-[22rem] lg:self-start ${landingBranchesImage ? 'bg-[#f8f8f6]' : 'bg-white'}`}
                             >
                                 <img
@@ -365,48 +493,60 @@ export default function Welcome({
                                             : 'size-28 object-contain opacity-70'
                                     }
                                     loading="lazy"
+                                    decoding="async"
                                 />
-                            </figure>
+                            </m.figure>
 
-                            <div
-                                data-reveal
-                                className="grid grid-cols-3 gap-2 self-end sm:gap-4 lg:z-10 lg:col-span-10 lg:col-start-3 lg:row-start-2 lg:gap-4 lg:self-center"
-                            >
+                            <div className="grid grid-cols-3 gap-2 self-end sm:gap-4 lg:z-10 lg:col-span-10 lg:col-start-3 lg:row-start-2 lg:gap-4 lg:self-center">
                                 {branches.map((branch) => (
-                                    <Link
+                                    <m.div
                                         key={branch.id}
-                                        href={branchesRoute()}
-                                        aria-label={`View ${branch.name} branch`}
-                                        className={`group relative flex aspect-[3/2] items-center justify-center overflow-hidden shadow-md shadow-foreground/10 ${branch.image_url ? 'bg-[#f8f8f6]' : 'bg-white'}`}
+                                        variants={branchCardVariants}
+                                        className="min-w-0"
                                     >
-                                        <img
-                                            src={branch.image_url ?? logoUrl}
-                                            alt={branch.name}
-                                            className={
-                                                branch.image_url
-                                                    ? 'size-full object-cover transition duration-500 group-hover:scale-105 group-focus-visible:scale-105'
-                                                    : 'size-12 object-contain opacity-70 sm:size-16'
-                                            }
-                                            loading="lazy"
-                                        />
-                                        <span
-                                            aria-hidden="true"
-                                            className="absolute inset-x-0 bottom-0 h-2/3 bg-linear-to-t from-primary/80 via-primary/35 to-transparent opacity-80 transition duration-300 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-visible:opacity-100"
-                                        />
-                                        <span className="lg:text-md absolute inset-x-3 bottom-2 z-10 line-clamp-2 text-left text-xs text-primary-foreground opacity-100 transition duration-300 sm:bottom-3 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-visible:opacity-100">
-                                            {branch.name}
-                                        </span>
-                                    </Link>
+                                        <Link
+                                            href={branchesRoute()}
+                                            aria-label={`View ${branch.name} branch`}
+                                            className={`group relative flex aspect-[3/2] items-center justify-center overflow-hidden shadow-md shadow-foreground/10 ${branch.image_url ? 'bg-[#f8f8f6]' : 'bg-white'}`}
+                                        >
+                                            <img
+                                                src={
+                                                    branch.image_url ?? logoUrl
+                                                }
+                                                alt={branch.name}
+                                                className={
+                                                    branch.image_url
+                                                        ? 'size-full object-cover transition duration-500 group-hover:scale-105 group-focus-visible:scale-105'
+                                                        : 'size-12 object-contain opacity-70 sm:size-16'
+                                                }
+                                                loading="lazy"
+                                                decoding="async"
+                                            />
+                                            <span
+                                                aria-hidden="true"
+                                                className="absolute inset-x-0 bottom-0 h-2/3 bg-linear-to-t from-primary/80 via-primary/35 to-transparent opacity-80 transition duration-300 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-visible:opacity-100"
+                                            />
+                                            <span className="lg:text-md absolute inset-x-3 bottom-2 z-10 line-clamp-2 text-left text-xs text-primary-foreground opacity-100 transition duration-300 sm:bottom-3 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-visible:opacity-100">
+                                                {branch.name}
+                                            </span>
+                                        </Link>
+                                    </m.div>
                                 ))}
                                 {branches.length === 0 && (
-                                    <div className="col-span-3 flex aspect-[3/1] items-center justify-center border border-dashed px-6 text-center text-sm text-muted-foreground">
+                                    <m.div
+                                        variants={branchCardVariants}
+                                        className="col-span-3 flex aspect-[3/1] items-center justify-center border border-dashed px-6 text-center text-sm text-muted-foreground"
+                                    >
                                         Branch images will appear here once they
                                         are added.
-                                    </div>
+                                    </m.div>
                                 )}
                             </div>
 
-                            <div className="flex justify-center lg:col-span-10 lg:col-start-3 lg:row-start-3 lg:pt-8">
+                            <m.div
+                                variants={branchesHeadingVariants}
+                                className="flex justify-center lg:col-span-10 lg:col-start-3 lg:row-start-3 lg:pt-8"
+                            >
                                 <Link
                                     href={branchesRoute()}
                                     className="group inline-flex items-center gap-3 rounded-full bg-background py-2 pr-2 pl-6 text-[0.7rem] font-semibold tracking-[0.12em] text-primary uppercase shadow-sm ring-1 ring-primary/25 transition duration-300 hover:-translate-y-0.5 hover:shadow-md hover:ring-primary/45"
@@ -416,19 +556,19 @@ export default function Welcome({
                                         <ArrowRight className="size-4 transition-transform duration-300 group-hover:translate-x-0.5" />
                                     </span>
                                 </Link>
-                            </div>
+                            </m.div>
                         </div>
                     </div>
-                </section>
+                </RevealSection>
 
                 {/* Contact Section */}
-                <section
+                <RevealSection
                     id="contact"
                     className="order-4 flex min-h-[calc(100svh-5rem)] scroll-mt-20 items-center bg-white py-14 sm:py-20 lg:py-24 dark:bg-background"
                 >
                     <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
-                        <header
-                            data-reveal
+                        <m.header
+                            variants={contactHeadingVariants}
                             className="mx-auto max-w-3xl text-center"
                         >
                             <h2 className="text-3xl leading-[1.08] tracking-tight sm:text-5xl lg:text-[4rem]">
@@ -437,12 +577,9 @@ export default function Welcome({
                                     {contactTitleAccent}
                                 </span>
                             </h2>
-                        </header>
+                        </m.header>
 
-                        <div
-                            data-reveal
-                            className="relative mx-auto mt-9 max-w-6xl overflow-hidden border border-black/8 bg-white shadow-[0_28px_70px_-35px_rgba(18,18,18,0.38)] md:mt-12 dark:border-white/10 dark:bg-card"
-                        >
+                        <div className="relative mx-auto mt-9 max-w-6xl overflow-hidden border border-black/8 bg-white shadow-[0_28px_70px_-35px_rgba(18,18,18,0.38)] md:mt-12 dark:border-white/10 dark:bg-card">
                             <span
                                 aria-hidden="true"
                                 className="absolute top-0 right-0 h-16 w-24 bg-primary [clip-path:polygon(48%_0,100%_0,100%_100%)] sm:h-24 sm:w-36"
@@ -457,11 +594,16 @@ export default function Welcome({
                             />
 
                             <div className="relative grid pb-2 lg:grid-cols-[0.9fr_2.1fr]">
-                                <div className="flex flex-col justify-center border-b border-foreground/10 px-6 py-9 sm:px-10 sm:py-11 lg:border-r lg:border-b-0 lg:px-12">
+                                <m.div
+                                    variants={contactIntroVariants}
+                                    className="flex flex-col justify-center border-b border-foreground/10 px-6 py-9 sm:px-10 sm:py-11 lg:border-r lg:border-b-0 lg:px-12"
+                                >
                                     <img
                                         src={logoUrl}
                                         alt=""
                                         className="size-14 object-contain sm:size-16"
+                                        loading="lazy"
+                                        decoding="async"
                                     />
                                     <p className="mt-5 max-w-xs text-lg leading-tight font-semibold tracking-tight text-foreground">
                                         {settings.business_name}
@@ -470,7 +612,7 @@ export default function Welcome({
                                     <p className="mt-5 max-w-sm text-sm leading-6 text-muted-foreground">
                                         {settings.landing_contact_description}
                                     </p>
-                                </div>
+                                </m.div>
 
                                 <div className="grid items-start sm:grid-cols-2 lg:grid-cols-3">
                                     <ExpandableContactCard
@@ -564,10 +706,10 @@ export default function Welcome({
                             </div>
                         </div>
                     </div>
-                </section>
+                </RevealSection>
 
                 {/* Call to Action Section */}
-                <section className="relative order-5 overflow-hidden bg-brand-deep py-20 text-white sm:py-24 lg:py-28">
+                <RevealSection className="relative order-5 overflow-hidden bg-brand-deep py-20 text-white sm:py-24 lg:py-28">
                     <span
                         aria-hidden="true"
                         className="absolute top-0 right-0 h-full w-28 bg-primary/12 [clip-path:polygon(58%_0,100%_0,100%_100%,0_100%)] sm:w-48 lg:w-64"
@@ -580,46 +722,72 @@ export default function Welcome({
                         aria-hidden="true"
                         className="absolute bottom-8 left-1/4 h-px w-16 -skew-x-[35deg] bg-primary"
                     />
-                    <div
-                        data-reveal
-                        className="relative z-10 mx-auto w-full max-w-7xl px-4 text-center sm:px-6 lg:px-8"
-                    >
-                        <h2 className="mx-auto max-w-5xl text-3xl leading-[1.08] tracking-tight sm:text-5xl lg:text-[4rem]">
+                    <div className="relative z-10 mx-auto w-full max-w-7xl px-4 text-center sm:px-6 lg:px-8">
+                        <m.h2
+                            variants={ctaTitleVariants}
+                            className="mx-auto max-w-5xl text-3xl leading-[1.08] tracking-tight sm:text-5xl lg:text-[4rem]"
+                        >
                             {ctaLead && <span>{ctaLead} </span>}
                             <span className="font-serif font-normal text-primary italic">
                                 {ctaAccent}
                             </span>
-                        </h2>
-                        <p className="mx-auto mt-5 max-w-2xl text-sm leading-6 text-white/70 sm:mt-6 sm:text-base sm:leading-7">
-                            {settings.landing_cta_description}
-                        </p>
-                        <Link
-                            href={patientLogin()}
-                            className="group mt-8 inline-flex items-center gap-3 rounded-full bg-white py-2 pr-2 pl-5 text-xs font-semibold tracking-[0.1em] text-brand-deep uppercase shadow-[0_14px_35px_-20px_rgba(0,0,0,0.65)] transition duration-300 hover:-translate-y-0.5 hover:shadow-lg sm:mt-10 sm:pl-6"
+                        </m.h2>
+                        <m.p
+                            variants={ctaCopyVariants}
+                            className="mx-auto mt-5 max-w-2xl text-sm leading-6 text-white/70 sm:mt-6 sm:text-base sm:leading-7"
                         >
-                            <CalendarDays className="size-4 text-primary" />
-                            Book Your Consultation
-                            <span className="flex size-8 items-center justify-center rounded-full bg-primary text-primary-foreground">
-                                <ArrowRight className="size-4 transition-transform duration-300 group-hover:translate-x-0.5" />
-                            </span>
-                        </Link>
+                            {settings.landing_cta_description}
+                        </m.p>
+                        <m.div
+                            variants={ctaButtonVariants}
+                            className="mt-8 sm:mt-10"
+                        >
+                            <Link
+                                href={patientLogin()}
+                                className="group inline-flex items-center gap-3 rounded-full bg-white py-2 pr-2 pl-5 text-xs font-semibold tracking-[0.1em] text-brand-deep uppercase shadow-[0_14px_35px_-20px_rgba(0,0,0,0.65)] transition duration-300 hover:-translate-y-0.5 hover:shadow-lg sm:pl-6"
+                            >
+                                <CalendarDays className="size-4 text-primary" />
+                                Book Your Consultation
+                                <span className="flex size-8 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                                    <ArrowRight className="size-4 transition-transform duration-300 group-hover:translate-x-0.5" />
+                                </span>
+                            </Link>
+                        </m.div>
                     </div>
-                </section>
+                </RevealSection>
             </main>
         </PublicSiteLayout>
     );
 }
 
+function RevealSection({ children, ...props }: HTMLMotionProps<'section'>) {
+    return (
+        <LazyMotion features={domAnimation} strict>
+            <MotionConfig reducedMotion="user">
+                <m.section
+                    {...props}
+                    variants={sectionVariants}
+                    initial="hidden"
+                    whileInView="visible"
+                    viewport={{ once: false, amount: 0.45 }}
+                >
+                    {children}
+                </m.section>
+            </MotionConfig>
+        </LazyMotion>
+    );
+}
+
 function ClinicStat({ value, label }: { value: number; label: string }) {
     return (
-        <div className="min-w-0 py-2">
+        <m.div variants={aboutStatVariants} className="min-w-0 py-2">
             <dt className="font-serif text-3xl font-normal tracking-tight after:mx-auto after:mt-2 after:block after:h-px after:w-6 after:bg-primary/50 sm:text-4xl lg:text-[2.75rem]">
                 {value}
             </dt>
             <dd className="mt-2 text-[0.625rem] leading-4 text-muted-foreground sm:text-sm">
                 {label}
             </dd>
-        </div>
+        </m.div>
     );
 }
 
@@ -635,8 +803,8 @@ function ContactCard({
     children: React.ReactNode;
 }) {
     return (
-        <article
-            data-reveal
+        <m.article
+            variants={contactCardVariants}
             className={`w-full self-start px-5 py-6 font-sans sm:px-6 lg:px-7 lg:py-7 ${className}`}
         >
             <div className="flex items-center gap-3">
@@ -648,7 +816,7 @@ function ContactCard({
                 </h3>
             </div>
             <div className="mt-4 space-y-2.5 pl-11">{children}</div>
-        </article>
+        </m.article>
     );
 }
 
@@ -670,8 +838,8 @@ function ExpandableContactCard({
     onToggle: () => void;
 }) {
     return (
-        <article
-            data-reveal
+        <m.article
+            variants={contactCardVariants}
             className={`w-full self-start px-5 py-6 font-sans sm:px-6 lg:px-7 lg:py-7 ${className}`}
         >
             <div className="flex items-center gap-3">
@@ -693,13 +861,14 @@ function ExpandableContactCard({
                     {expanded ? 'Show less' : 'Show more'}
                 </button>
             )}
-        </article>
+        </m.article>
     );
 }
 
 function AvailableSoonTag() {
     return (
-        <div
+        <m.div
+            variants={serviceCardVariants}
             role="status"
             className="relative col-span-2 mx-auto flex w-64 max-w-full shrink-0 justify-center pt-16 sm:w-72"
         >
@@ -750,7 +919,7 @@ function AvailableSoonTag() {
                 </p>
                 <p className="mt-2 font-serif text-2xl italic">Stay tuned</p>
             </div>
-        </div>
+        </m.div>
     );
 }
 
@@ -793,36 +962,3 @@ function splitSectionTitle(text: string): [string, string] {
     return splitClosingWords(normalizedText);
 }
 
-function useRevealAnimations() {
-    useEffect(() => {
-        const elements =
-            document.querySelectorAll<HTMLElement>('[data-reveal]');
-
-        if (!('IntersectionObserver' in window)) {
-            elements.forEach((element) =>
-                element.classList.add('landing-reveal-visible'),
-            );
-
-            return;
-        }
-
-        const observer = new IntersectionObserver(
-            (entries) => {
-                entries.forEach((entry) => {
-                    if (entry.isIntersecting) {
-                        entry.target.classList.add('landing-reveal-visible');
-                        observer.unobserve(entry.target);
-                    }
-                });
-            },
-            { threshold: 0.1, rootMargin: '0px 0px -50px 0px' },
-        );
-
-        elements.forEach((element) => {
-            element.classList.add('landing-reveal');
-            observer.observe(element);
-        });
-
-        return () => observer.disconnect();
-    }, []);
-}

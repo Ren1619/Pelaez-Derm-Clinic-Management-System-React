@@ -104,6 +104,7 @@ export default function ResetPassword({
 
             <Form
                 {...update.form()}
+                noValidate
                 // Hidden routing values keep the visible form simple and read-only.
                 transform={(data) => ({
                     ...data,
@@ -118,7 +119,10 @@ export default function ResetPassword({
                     <div className="grid gap-6">
                         <p className="text-sm text-foreground">
                             All fields with{' '}
-                            <span className="text-primary" aria-hidden="true">
+                            <span
+                                className="text-destructive"
+                                aria-hidden="true"
+                            >
                                 *
                             </span>{' '}
                             are required.
@@ -144,7 +148,7 @@ export default function ResetPassword({
                             <Label htmlFor="password">
                                 Password
                                 <span
-                                    className="text-primary"
+                                    className="text-destructive"
                                     aria-hidden="true"
                                 >
                                     *
@@ -171,7 +175,7 @@ export default function ResetPassword({
                             <Label htmlFor="password_confirmation">
                                 Confirm password
                                 <span
-                                    className="text-primary"
+                                    className="text-destructive"
                                     aria-hidden="true"
                                 >
                                     *

@@ -15,8 +15,8 @@ use App\Http\Controllers\DistributionStatusController;
 use App\Http\Controllers\FeedbackController;
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\MajorServiceCategoryController;
-use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\NewRecordEventController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PatientAllergyController;
 use App\Http\Controllers\PatientAppointmentController;
 use App\Http\Controllers\PatientAuthController;
@@ -27,6 +27,7 @@ use App\Http\Controllers\PatientHealthRecordController;
 use App\Http\Controllers\PatientMedicalConditionController;
 use App\Http\Controllers\PatientMedicationController;
 use App\Http\Controllers\PatientNotificationController;
+use App\Http\Controllers\PatientRegistrationController;
 use App\Http\Controllers\PatientServiceCatalogController;
 use App\Http\Controllers\PatientVisitController;
 use App\Http\Controllers\PatientVisitDiagnosisController;
@@ -66,8 +67,13 @@ Route::get('patients/verify-email/{patient}/{hash}', PatientEmailVerificationCon
 
 Route::middleware(['guest:web', 'guest:patient'])->group(function () {
     Route::post('account/login', [AccountAuthenticationController::class, 'store'])
-        ->middleware('throttle:login')
         ->name('account.login.store');
+
+    Route::get('register', [PatientRegistrationController::class, 'create'])
+        ->name('register');
+    Route::post('register', [PatientRegistrationController::class, 'store'])
+        ->middleware('throttle:6,1')
+        ->name('register.store');
 
     Route::get('resend-verification', [AccountEmailVerificationController::class, 'create'])
         ->name('account.verification.request');
@@ -89,7 +95,6 @@ Route::middleware(['guest:web', 'guest:patient'])->group(function () {
 Route::prefix('patient')->name('patient.')->group(function () {
     Route::redirect('login', '/login')->name('login');
     Route::post('login', [AccountAuthenticationController::class, 'store'])
-        ->middleware('throttle:patient-login')
         ->name('login.store');
 
     Route::middleware(['patient.auth', RecordReadActivity::class])->group(function () {

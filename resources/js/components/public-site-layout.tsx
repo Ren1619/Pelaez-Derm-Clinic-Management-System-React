@@ -31,7 +31,8 @@ export function PublicSiteLayout({
     landing = false,
     branches = [],
 }: PublicSiteLayoutProps) {
-    const { auth } = usePage<{ auth: Auth }>().props;
+    const page = usePage<{ auth: Auth }>();
+    const { auth } = page.props;
     const [menuOpen, setMenuOpen] = useState(false);
     const [scrolled, setScrolled] = useState(!landing);
     const [activeSection, setActiveSection] = useState('home');
@@ -40,6 +41,20 @@ export function PublicSiteLayout({
         ? dashboard()
         : patientsIndex();
     const homeUrl = home().url;
+    const currentPath = page.url.split(/[?#]/)[0];
+    const servicesActive = landing
+        ? activeSection === 'services'
+        : currentPath === servicesRoute().url;
+    const branchesActive = landing
+        ? activeSection === 'branches'
+        : currentPath === branchesRoute().url;
+
+    useEffect(() => {
+        document.documentElement.classList.add('public-site-scrollbar');
+
+        return () =>
+            document.documentElement.classList.remove('public-site-scrollbar');
+    }, []);
 
     useEffect(() => {
         if (!landing) {
@@ -104,7 +119,10 @@ export function PublicSiteLayout({
                     <a
                         href={anchorUrl('home')}
                         className="flex min-w-0 items-center gap-3"
-                        onClick={() => setMenuOpen(false)}
+                        onClick={() => {
+                            setActiveSection('home');
+                            setMenuOpen(false);
+                        }}
                     >
                         <img
                             src={logoUrl}
@@ -135,23 +153,25 @@ export function PublicSiteLayout({
                             label="Home"
                             active={landing && activeSection === 'home'}
                             className={navigationText}
+                            onClick={() => setActiveSection('home')}
                         />
                         <PublicAnchor
                             href={anchorUrl('about')}
                             label="About"
                             active={landing && activeSection === 'about'}
                             className={navigationText}
+                            onClick={() => setActiveSection('about')}
                         />
                         <PublicRouteLink
                             href={servicesRoute()}
                             label="Services"
-                            active={landing && activeSection === 'services'}
+                            active={servicesActive}
                             className={navigationText}
                         />
                         <PublicRouteLink
                             href={branchesRoute()}
                             label="Branches"
-                            active={landing && activeSection === 'branches'}
+                            active={branchesActive}
                             className={navigationText}
                         />
                         <PublicAnchor
@@ -159,6 +179,7 @@ export function PublicSiteLayout({
                             label="Contact"
                             active={landing && activeSection === 'contact'}
                             className={navigationText}
+                            onClick={() => setActiveSection('contact')}
                         />
                         <Link
                             href={
@@ -201,31 +222,40 @@ export function PublicSiteLayout({
                             href={anchorUrl('home')}
                             label="Home"
                             active={landing && activeSection === 'home'}
-                            onClick={() => setMenuOpen(false)}
+                            onClick={() => {
+                                setActiveSection('home');
+                                setMenuOpen(false);
+                            }}
                         />
                         <MobileAnchor
                             href={anchorUrl('about')}
                             label="About"
                             active={landing && activeSection === 'about'}
-                            onClick={() => setMenuOpen(false)}
+                            onClick={() => {
+                                setActiveSection('about');
+                                setMenuOpen(false);
+                            }}
                         />
                         <MobileRouteLink
                             href={servicesRoute()}
                             label="Services"
-                            active={landing && activeSection === 'services'}
+                            active={servicesActive}
                             onClick={() => setMenuOpen(false)}
                         />
                         <MobileRouteLink
                             href={branchesRoute()}
                             label="Branches"
-                            active={landing && activeSection === 'branches'}
+                            active={branchesActive}
                             onClick={() => setMenuOpen(false)}
                         />
                         <MobileAnchor
                             href={anchorUrl('contact')}
                             label="Contact"
                             active={landing && activeSection === 'contact'}
-                            onClick={() => setMenuOpen(false)}
+                            onClick={() => {
+                                setActiveSection('contact');
+                                setMenuOpen(false);
+                            }}
                         />
                         <Link
                             href={
@@ -360,15 +390,19 @@ function PublicAnchor({
     label,
     active,
     className,
+    onClick,
 }: {
     href: string;
     label: string;
     active: boolean;
     className: string;
+    onClick: () => void;
 }) {
     return (
         <a
             href={href}
+            aria-current={active ? 'page' : undefined}
+            onClick={onClick}
             className={`relative py-2 text-sm font-medium transition after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 after:origin-left after:bg-primary after:transition-transform ${active ? 'text-primary after:scale-x-100' : `${className} after:scale-x-0`}`}
         >
             {label}
@@ -390,6 +424,7 @@ function PublicRouteLink({
     return (
         <Link
             href={href}
+            aria-current={active ? 'page' : undefined}
             className={`relative py-2 text-sm font-medium transition after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 after:origin-left after:bg-primary after:transition-transform ${active ? 'text-primary after:scale-x-100' : `${className} after:scale-x-0`}`}
         >
             {label}
@@ -411,6 +446,7 @@ function MobileAnchor({
     return (
         <a
             href={href}
+            aria-current={active ? 'page' : undefined}
             onClick={onClick}
             className={`block rounded-r-md border-l-4 px-3 py-2.5 font-medium ${active ? 'border-primary bg-primary/10 text-primary' : 'border-transparent text-muted-foreground hover:bg-muted hover:text-foreground'}`}
         >
@@ -433,6 +469,7 @@ function MobileRouteLink({
     return (
         <Link
             href={href}
+            aria-current={active ? 'page' : undefined}
             onClick={onClick}
             className={`block rounded-r-md border-l-4 px-3 py-2.5 font-medium ${active ? 'border-primary bg-primary/10 text-primary' : 'border-transparent text-muted-foreground hover:bg-muted hover:text-foreground'}`}
         >

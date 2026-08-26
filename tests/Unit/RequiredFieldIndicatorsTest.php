@@ -6,9 +6,10 @@ test('data entry forms use the required field convention', function (string $rel
     expect($source)
         ->toContain('All fields with')
         ->toContain('are required.')
-        ->toMatch('/<span\s+className="text-primary"\s+aria-hidden="true"\s*>/s');
+        ->toMatch('/<span\s+className="text-(?:primary|destructive)"\s+aria-hidden="true"\s*>/s');
 })->with([
     'login' => 'resources/js/pages/auth/login.tsx',
+    'register' => 'resources/js/pages/auth/register.tsx',
     'forgot password' => 'resources/js/pages/auth/forgot-password.tsx',
     'reset password' => 'resources/js/pages/auth/reset-password.tsx',
     'confirm password' => 'resources/js/pages/auth/confirm-password.tsx',

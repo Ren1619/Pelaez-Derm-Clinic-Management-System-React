@@ -1,90 +1,85 @@
-// Components
 import { Form, Head } from '@inertiajs/react';
-import { LoaderCircle } from 'lucide-react';
+import { ArrowLeft, Mail } from 'lucide-react';
 import InputError from '@/components/input-error';
 import TextLink from '@/components/text-link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Spinner } from '@/components/ui/spinner';
 import { login } from '@/routes';
 import { email } from '@/routes/password';
 
-/**
- * Requests a password reset without revealing whether an account exists.
- */
 export default function ForgotPassword({ status }: { status?: string }) {
     return (
         <>
             <Head title="Forgot password" />
-
             {status && (
-                <div className="mb-4 text-center text-sm font-medium text-green-600">
+                <div
+                    role="status"
+                    className="mb-5 border border-emerald-600/20 bg-emerald-500/10 px-4 py-3 text-sm leading-6 text-emerald-700 dark:text-emerald-300"
+                >
                     {status}
                 </div>
             )}
-
-            <div className="space-y-6">
-                <Form {...email.form()}>
-                    {({ processing, errors }) => (
-                        <>
-                            <p className="mb-5 text-sm text-foreground">
-                                All fields with{' '}
+            <Form {...email.form()} noValidate className="mx-auto max-w-md">
+                {({ processing, errors }) => (
+                    <div className="grid gap-5">
+                        <p className="text-sm text-foreground">
+                            All fields with{' '}
+                            <span
+                                className="text-destructive"
+                                aria-hidden="true"
+                            >
+                                *
+                            </span>{' '}
+                            are required.
+                        </p>
+                        <div className="grid gap-2">
+                            <Label htmlFor="email">
+                                Email{' '}
                                 <span
-                                    className="text-primary"
+                                    className="text-destructive"
                                     aria-hidden="true"
                                 >
                                     *
-                                </span>{' '}
-                                are required.
-                            </p>
-                            <div className="grid gap-2">
-                                <Label htmlFor="email">
-                                    Email address
-                                    <span
-                                        className="text-primary"
-                                        aria-hidden="true"
-                                    >
-                                        *
-                                    </span>
-                                </Label>
+                                </span>
+                            </Label>
+                            <div className="relative">
+                                <Mail className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
                                 <Input
                                     id="email"
                                     type="email"
                                     name="email"
-                                    autoComplete="off"
+                                    autoComplete="email"
                                     autoFocus
                                     placeholder="email@example.com"
+                                    className="h-11 pl-10"
                                 />
-
-                                <InputError message={errors.email} />
                             </div>
-
-                            <div className="my-6 flex items-center justify-start">
-                                <Button
-                                    className="w-full"
-                                    disabled={processing}
-                                    data-test="email-password-reset-link-button"
-                                >
-                                    {processing && (
-                                        <LoaderCircle className="h-4 w-4 animate-spin" />
-                                    )}
-                                    Email password reset link
-                                </Button>
-                            </div>
-                        </>
-                    )}
-                </Form>
-
-                <div className="space-x-1 text-center text-sm text-muted-foreground">
-                    <span>Or, return to</span>
-                    <TextLink href={login()}>log in</TextLink>
-                </div>
-            </div>
+                            <InputError message={errors.email} />
+                        </div>
+                        <Button
+                            type="submit"
+                            className="h-11 w-full font-semibold"
+                            disabled={processing}
+                            data-test="email-password-reset-link-button"
+                        >
+                            {processing && <Spinner />}Send reset link
+                        </Button>
+                        <TextLink
+                            href={login()}
+                            className="mx-auto inline-flex items-center gap-2 text-sm"
+                        >
+                            <ArrowLeft className="size-4" />
+                            Return to login
+                        </TextLink>
+                    </div>
+                )}
+            </Form>
         </>
     );
 }
-
 ForgotPassword.layout = {
-    title: 'Forgot password',
-    description: 'Enter your email to receive a password reset link',
+    title: 'Forgot password?',
+    description: 'Enter your email address and we will send a reset link.',
 };

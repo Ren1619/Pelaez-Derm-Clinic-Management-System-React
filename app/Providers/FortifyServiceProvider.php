@@ -8,16 +8,15 @@ use App\Http\Responses\LoginResponse;
 use App\Models\StaffAccount;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\RateLimiter;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password;
 use Inertia\Inertia;
-use Laravel\Fortify\Features;
-use Laravel\Fortify\Fortify;
 use Laravel\Fortify\Contracts\LoginResponse as LoginResponseContract;
+use Laravel\Fortify\Fortify;
 
 class FortifyServiceProvider extends ServiceProvider
 {
@@ -52,7 +51,9 @@ class FortifyServiceProvider extends ServiceProvider
                 ->where('is_active', true)
                 ->first();
 
-            return $staffAccount !== null && Hash::check($request->string('password')->toString(), $staffAccount->password)
+            return $staffAccount !== null
+                && $staffAccount->hasVerifiedEmail()
+                && Hash::check($request->string('password')->toString(), $staffAccount->password)
                 ? $staffAccount
                 : null;
         });
@@ -104,13 +105,13 @@ class FortifyServiceProvider extends ServiceProvider
         RateLimiter::for('login', function (Request $request) {
             $throttleKey = Str::transliterate(Str::lower($request->input(Fortify::username())).'|'.$request->ip());
 
-            return Limit::perMinute(5)->by($throttleKey);
+            return Limit::perMinutes(5, 5)->by($throttleKey);
         });
 
         RateLimiter::for('patient-login', function (Request $request) {
             $throttleKey = Str::transliterate(Str::lower($request->string('email')->toString()).'|'.$request->ip());
 
-            return Limit::perMinute(5)->by($throttleKey);
+            return Limit::perMinutes(5, 5)->by($throttleKey);
         });
 
     }

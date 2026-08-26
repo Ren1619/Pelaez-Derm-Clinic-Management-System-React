@@ -1,38 +1,18 @@
-import { Link } from '@inertiajs/react';
-import AppLogoIcon from '@/components/app-logo-icon';
-import { home } from '@/routes';
 import type { AuthLayoutProps } from '@/types';
 
-export default function AuthSimpleLayout({
-    children,
-    title,
-    description,
-}: AuthLayoutProps) {
+export default function AuthSimpleLayout({ children, title }: AuthLayoutProps) {
     return (
-        <div className="flex min-h-svh flex-col items-center justify-center gap-6 bg-linear-to-br from-brand-soft via-background to-brand-mist p-6 md:p-10 dark:from-background dark:via-accent/40 dark:to-background">
-            <div className="w-full max-w-sm">
-                <div className="flex flex-col gap-8">
-                    <div className="flex flex-col items-center gap-4">
-                        <Link
-                            href={home()}
-                            className="flex flex-col items-center gap-2 font-medium"
-                        >
-                            <div className="mb-1 flex h-9 w-9 items-center justify-center rounded-md">
-                                <AppLogoIcon className="size-9 fill-current text-primary" />
-                            </div>
-                            <span className="sr-only">{title}</span>
-                        </Link>
-
-                        <div className="space-y-2 text-center">
-                            <h1 className="text-xl font-medium">{title}</h1>
-                            <p className="text-center text-sm text-muted-foreground">
-                                {description}
-                            </p>
-                        </div>
-                    </div>
-                    {children}
+        <main className="flex min-h-svh items-center justify-center bg-[#fcfaf7] px-3 py-5 text-foreground sm:px-4 sm:py-8 dark:bg-background">
+            <section className="w-full max-w-md bg-background/95 shadow-[0_24px_70px_-42px_rgba(24,19,16,0.45)] backdrop-blur dark:bg-card">
+                <div className="px-4 pt-6 sm:px-5 sm:pt-7">
+                    <h1 className="font-serif text-3xl font-normal tracking-tight sm:text-4xl">
+                        {title}
+                    </h1>
                 </div>
-            </div>
-        </div>
+                <div className="px-4 py-5 sm:px-5 sm:py-6">{children}</div>
+            </section>
+        </main>
     );
 }
+
+

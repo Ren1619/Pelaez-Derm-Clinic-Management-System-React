@@ -11,12 +11,15 @@ export default function ConfirmPassword() {
         <>
             <Head title="Confirm password" />
 
-            <Form {...store.form()} resetOnSuccess={['password']}>
+            <Form {...store.form()} noValidate resetOnSuccess={['password']}>
                 {({ processing, errors }) => (
                     <div className="space-y-6">
                         <p className="text-sm text-foreground">
                             All fields with{' '}
-                            <span className="text-primary" aria-hidden="true">
+                            <span
+                                className="text-destructive"
+                                aria-hidden="true"
+                            >
                                 *
                             </span>{' '}
                             are required.
@@ -25,7 +28,7 @@ export default function ConfirmPassword() {
                             <Label htmlFor="password">
                                 Password
                                 <span
-                                    className="text-primary"
+                                    className="text-destructive"
                                     aria-hidden="true"
                                 >
                                     *

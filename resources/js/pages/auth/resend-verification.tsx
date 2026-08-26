@@ -9,43 +9,40 @@ import { Spinner } from '@/components/ui/spinner';
 import { login } from '@/routes';
 import { send } from '@/routes/account/verification';
 
-type ResendVerificationProps = {
-    /** Generic status text that does not reveal whether an account exists. */
-    status?: string;
-};
-
-/**
- * Shows the shared verification-email form for staff and patient accounts.
- */
+type ResendVerificationProps = { status?: string };
 export default function ResendVerification({
     status,
 }: ResendVerificationProps) {
     return (
         <>
-            <Head title="Resend verification email" />
-
+            <Head title="Resend verification" />
             {status && (
-                <div className="flex items-start gap-3 rounded-md border border-green-200 bg-green-50 p-3 text-sm text-green-800 dark:border-green-900 dark:bg-green-950 dark:text-green-200">
+                <div
+                    role="status"
+                    className="mb-5 flex items-start gap-3 border border-emerald-600/20 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-700 dark:text-emerald-300"
+                >
                     <MailCheck className="mt-0.5 size-4 shrink-0" />
-                    <span>{status}</span>
+                    {status}
                 </div>
             )}
-
-            <Form {...send.form()} className="mt-6 space-y-6">
+            <Form {...send.form()} noValidate className="grid gap-5">
                 {({ processing, errors }) => (
                     <>
                         <p className="text-sm text-foreground">
                             All fields with{' '}
-                            <span className="text-primary" aria-hidden="true">
+                            <span
+                                className="text-destructive"
+                                aria-hidden="true"
+                            >
                                 *
                             </span>{' '}
                             are required.
                         </p>
                         <div className="grid gap-2">
                             <Label htmlFor="email">
-                                Email address
+                                Email{' '}
                                 <span
-                                    className="text-primary"
+                                    className="text-destructive"
                                     aria-hidden="true"
                                 >
                                     *
@@ -57,30 +54,25 @@ export default function ResendVerification({
                                 name="email"
                                 autoComplete="email"
                                 autoFocus
-                                required
                                 placeholder="email@example.com"
                             />
                             <InputError message={errors.email} />
                         </div>
-
-                        <Button className="w-full" disabled={processing}>
-                            {processing && <Spinner />}
-                            Resend verification email
+                        <Button type="submit" disabled={processing}>
+                            {processing && <Spinner />}Resend verification
                         </Button>
                     </>
                 )}
             </Form>
-
-            <div className="mt-6 text-center text-sm text-muted-foreground">
-                <span>Already verified? </span>
+            <p className="mt-6 text-center text-sm text-muted-foreground">
+                Already verified?{' '}
                 <TextLink href={login()}>Return to log in</TextLink>
-            </div>
+            </p>
         </>
     );
 }
-
 ResendVerification.layout = {
-    title: 'Resend verification email',
+    title: 'Resend verification',
     description:
-        'Enter your staff or patient email address to receive a fresh secure setup link.',
+        'Enter your email address to receive another verification link.',
 };

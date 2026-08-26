@@ -24,6 +24,7 @@ use Illuminate\Support\Carbon;
  * @property string $first_name
  * @property string|null $middle_name
  * @property string $last_name
+ * @property string|null $name_extension
  * @property string $address
  * @property string $sex
  * @property Carbon $date_of_birth
@@ -46,6 +47,7 @@ class Patient extends Authenticatable implements MustVerifyEmail
         'first_name',
         'middle_name',
         'last_name',
+        'name_extension',
         'address',
         'sex',
         'date_of_birth',
@@ -59,7 +61,7 @@ class Patient extends Authenticatable implements MustVerifyEmail
 
     public function getFullNameAttribute(): string
     {
-        return collect([$this->first_name, $this->middle_name, $this->last_name])
+        return collect([$this->first_name, $this->middle_name, $this->last_name, $this->name_extension])
             ->filter()
             ->implode(' ');
     }

@@ -27,21 +27,33 @@ class AccountAuthenticationController extends Controller
      */
     public function store(AccountLoginRequest $request): RedirectResponse
     {
+        $request->ensureIsNotRateLimited();
+
         $email = $request->string('email')->lower()->toString();
         $account = $this->accountLocator->findByEmail($email);
 
         if ($account === null
             || ($account instanceof StaffAccount && ! $account->is_active)
             || ! Hash::check($request->string('password')->toString(), $account->password)) {
+            $request->hitRateLimiter();
+
+            if ($request->isRateLimited()) {
+                $request->throwLockoutValidationException();
+            }
+
             throw ValidationException::withMessages(['email' => trans('auth.failed')]);
         }
 
         if (! $account->hasVerifiedEmail()) {
+            $request->clearRateLimiter();
+
             throw ValidationException::withMessages([
-                'email' => 'Please verify your email address before logging in. You can resend the verification email below.',
+                'email' => 'Your email is not yet verified.',
+                'unverified' => '1',
             ]);
         }
 
+        $request->clearRateLimiter();
         $accountType = $this->accountLocator->typeOf($account);
         Auth::guard($accountType->guard())->login($account, $request->boolean('remember'));
         $request->session()->regenerate();

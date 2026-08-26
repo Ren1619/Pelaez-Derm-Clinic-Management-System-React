@@ -3,7 +3,6 @@
 use App\Models\Patient;
 use App\Models\StaffAccount;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\RateLimiter;
 use Laravel\Fortify\Features;
 
 test('login screen can be rendered', function () {
@@ -68,14 +67,44 @@ test('users can logout', function () {
 test('users are rate limited', function () {
     $user = StaffAccount::factory()->staff()->create();
 
-    RateLimiter::increment(md5('login'.implode('|', [$user->email, '127.0.0.1'])), amount: 5);
+    foreach (range(1, 4) as $attempt) {
+        $this->post(route('account.login.store'), [
+            'email' => $user->email,
+            'password' => 'wrong-password',
+        ])->assertSessionHasErrors('email');
+    }
 
     $response = $this->post(route('account.login.store'), [
         'email' => $user->email,
         'password' => 'wrong-password',
     ]);
 
-    $response->assertTooManyRequests();
+    $response->assertSessionHasErrors(['email', 'lockout_seconds']);
+
+    $seconds = (int) session('errors')->get('lockout_seconds')[0];
+
+    expect($seconds)->toBeGreaterThanOrEqual(299)
+        ->and($seconds)->toBeLessThanOrEqual(300);
+
+    $this->post(route('account.login.store'), [
+        'email' => $user->email,
+        'password' => 'password',
+    ])->assertSessionHasErrors('lockout_seconds');
+
+    $this->assertGuest();
+});
+
+test('unverified patients cannot authenticate', function () {
+    $patient = Patient::factory()->unverified()->create([
+        'password' => 'password',
+    ]);
+
+    $this->post(route('account.login.store'), [
+        'email' => $patient->email,
+        'password' => 'password',
+    ])->assertSessionHasErrors('email');
+
+    $this->assertGuest('patient');
 });
 
 test('verified patients authenticate from the shared login screen', function () {

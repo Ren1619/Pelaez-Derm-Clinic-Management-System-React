@@ -55,6 +55,8 @@ class HandleInertiaRequests extends Middleware
             'branding' => [
                 'name' => $systemSettings['business_name'],
                 'logo_url' => $systemSettings['business_logo_url'],
+                'hero_image_url' => $systemSettings['landing_hero_image_url'],
+                'tagline' => $systemSettings['landing_primary_tagline'],
             ],
             'auth' => [
                 'user' => $this->serializeUser($user),
